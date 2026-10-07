@@ -73,7 +73,12 @@ button { font: inherit; color: inherit; }
 .card.is-selected { border-color: var(--accent); }
 .card-handle { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 2px; cursor: grab; }
 .card-handle:active { cursor: grabbing; }
-.card-type { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type); }
+.card-type {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; margin-left: -6px; padding: 0 6px;
+  border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type);
+}
+.card-type:hover { background: var(--ground); }
 .card-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--type); flex-shrink: 0; display: inline-block; }
 .card-delete { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; opacity: 0; }
 .card:hover .card-delete, .card.is-selected .card-delete, .card-delete:focus-visible { opacity: 1; }
@@ -100,9 +105,29 @@ button { font: inherit; color: inherit; }
   background: var(--surface); border-radius: 12px; padding: 6px; box-shadow: 0 10px 28px rgba(27, 30, 46, 0.18);
   display: flex; flex-direction: column;
 }
+.slash-menu.opens-up { top: auto; bottom: calc(100% + 6px); }
 .slash-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px; }
 .slash-item { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; font-size: 14px; cursor: pointer; }
 .slash-item.is-active, .slash-item:hover { background: var(--accent-soft); }
+
+/* Bouton « Nouvelle carte » */
+.add-card {
+  position: absolute; left: 20px; bottom: 20px; z-index: 5;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px 0 14px;
+  border: 0; border-radius: 999px; background: var(--ink); color: #fff; font-size: 15px; font-weight: 600;
+  box-shadow: 0 6px 18px rgba(27, 30, 46, 0.22); cursor: pointer;
+}
+.add-card:hover { background: #2c3048; }
+
+/* ---------- Écrans tactiles : rien ne dépend du survol ---------- */
+@media (pointer: coarse) {
+  .card-port { width: 22px; height: 22px; border-width: 3px; opacity: 1; }
+  .card-delete { opacity: 1; width: 36px; height: 36px; }
+  .card-type { min-height: 36px; }
+  .slash-item { padding: 13px 10px; font-size: 15px; }
+  .views button { min-height: 44px; }
+  .react-flow__controls-button { width: 40px; height: 40px; }
+}
 
 /* ---------- Bible ---------- */
 .bible { position: absolute; inset: 0; overflow: auto; display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start; }
@@ -140,4 +165,12 @@ button { font: inherit; color: inherit; }
   .views { order: 3; width: 100%; justify-content: center; margin: 0; }
   .views-pole { display: none; }
   .toile-hint { display: none; }
+  .brand-project, .status { display: none; }
+  .react-flow__minimap { display: none; }
+  .bible { padding: 16px; }
+  .bible-toc { position: static; max-width: none; }
 }
+
+/* Encoches et barres système des téléphones */
+.topbar { padding-top: max(10px, env(safe-area-inset-top)); padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+.add-card { bottom: max(20px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); }

@@ -191,7 +191,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     save: async () => {
-      if (storage.kind === "tauri" && !storage.location()) {
+      if (storage.canPickFolder && !storage.location()) {
         if (!(await storage.pickFolder())) return;
       }
       const files = serialize(toProject(get()));

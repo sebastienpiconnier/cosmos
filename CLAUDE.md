@@ -6,15 +6,33 @@ Application d'écriture pour romanciers « architectes » : une toile libre où 
 
 - **Un seul contenu, plusieurs vues.** Toile, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
-- **Trois gestes** : taper (double-clic sur la toile), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
+- **Trois gestes** : taper (double-clic, appui long ou bouton « + »), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
+- **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
+
+## Multiplateforme (règle du projet)
+
+Cibles : **macOS, Windows, Linux** (Tauri, construits par la CI), **iOS et Android** (Tauri mobile, à initialiser), et le navigateur pour le développement.
+
+Toute fonction doit respecter ces règles :
+
+1. **Rien ne dépend du survol.** Une action visible au survol de la souris doit l'être aussi sur écran tactile (`@media (pointer: coarse)` dans `styles.css`).
+2. **Chaque action a trois chemins** : souris, doigt, clavier. Exemple : créer une carte = double-clic, appui long, bouton « Nouvelle carte » ; changer de type = `/` au clavier ou toucher l'étiquette du type.
+3. **Cibles tactiles ≥ 44 px** pour les actions principales.
+4. **Pas de chemin de fichier écrit à la main** : toujours `join()` de `@tauri-apps/api/path`, et toujours passer par `src/storage/`.
+5. **Raccourcis** : `metaKey || ctrlKey` (Cmd sur Mac, Ctrl ailleurs), jamais l'un sans l'autre.
+6. **On détecte des capacités, pas des systèmes** : `isTouch()`, `storage.canPickFolder` (voir `src/platform.ts`). `isMobileOS()` seulement quand c'est inévitable (stockage).
+7. **Mobile** : pas de sélecteur de dossier, le projet vit dans l'espace privé de l'app (`$APPDATA/projets/`). Pas de dialogue natif de dossier à appeler.
+8. Toute nouvelle permission Tauri va dans `src-tauri/capabilities/default.json` et doit fonctionner sur toutes les cibles.
+
+Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
 
 ## Stack
 
 | Rôle | Choix |
 |---|---|
-| Coquille desktop | Tauri 2 (`src-tauri/`), plugins `fs` et `dialog` |
+| Coquille | Tauri 2 (`src-tauri/`) : macOS, Windows, Linux, iOS, Android ; plugins `fs` et `dialog` |
 | Front | React 19 + TypeScript (strict) + Vite |
 | Toile | React Flow (`@xyflow/react` v12) |
 | Éditeur | TipTap v3 (ProseMirror) |
@@ -29,8 +47,12 @@ npm install
 npm run dev          # navigateur seul, stockage localStorage (démo)
 npm run tauri dev    # app desktop, vrais fichiers sur disque
 npm run build        # tsc --noEmit + vite build (à lancer avant chaque commit)
-npm run tauri build  # bundle .app / .dmg
+npm run tauri build  # installeur pour le système courant
+npm run tauri ios init && npm run tauri ios dev          # iOS (sur Mac, avec Xcode)
+npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
 ```
+
+Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/workflows/release.yml`, qui fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux dans un brouillon de Release GitHub. `ci.yml` vérifie le build à chaque push.
 
 ## Architecture
 
@@ -38,11 +60,12 @@ npm run tauri build  # bundle .app / .dmg
 src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
   store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde
-  App.tsx               Chargement, sauvegarde auto (800 ms après la dernière modif), Cmd+S
+  platform.ts           isTauri, isTouch, isMobileOS
+  App.tsx               Chargement, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
   components/
     TopBar.tsx          Logo, curseur de vues Chaos → Ordre, statut d'enregistrement
-    Toile.tsx           ReactFlow : double-clic = nouvelle carte, éditeur d'étiquette de fil
-    CardNode.tsx        Carte : type, titre, éditeur TipTap, menu « / Transformer en… »
+    Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
+    CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches + liens
     Bientot.tsx         Vues Plan et Manuscrit, pas encore construites
@@ -51,8 +74,9 @@ src/
     index.ts            Choix du stockage, serialize / deserialize
     markdown.ts         Carte ↔ fichier .md (frontmatter), nettoyage HTML
     browser.ts          Dossier simulé dans localStorage
-    tauri.ts            Vrai dossier sur disque
+    tauri.ts            Vrai dossier sur disque (choisi sur ordinateur, privé sur mobile)
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
+.github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
 ```
 
 ### Format d'un projet sur disque
@@ -81,6 +105,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Fils flottants** : `onConnect` enregistre les fils avec `sourceHandle: null, targetHandle: null`. Sinon React Flow cherche le point d'accroche temporaire (`drop`) qui n'existe plus et n'affiche pas le fil.
 - **Toute la carte est une cible** pendant qu'on tire un fil (`useConnection` + Handle `drop` plein cadre). Ne pas l'afficher en dehors d'un tirage, il bloquerait les clics.
 - **Focus d'une nouvelle carte** : React Flow masque un nœud tant qu'il n'est pas mesuré, d'où les quelques essais de `focus()` dans `CardNode`.
+- **Appui long** : écouteurs natifs dans `Toile`. Le navigateur émule ensuite mousedown/click sous le doigt, donc sur la carte créée : ces événements sont avalés pendant 400 ms. Les écouteurs sont en phase de capture, car d3-zoom (sous React Flow) stoppe la propagation des événements tactiles.
+- **Menu des types** : options en `onPointerDown={preventDefault}` + `onClick`, pour garder le focus dans l'éditeur à la souris comme au doigt.
 - **Sécurité** : les `.md` viennent du disque, `markdownToHtml` passe par `sanitizeHtml` (liste blanche de balises). La Bible affiche ce HTML avec `dangerouslySetInnerHTML` : ne jamais court-circuiter le nettoyage.
 - **Raccourcis** : React Flow ignore Suppr/Retour arrière dans les champs et l'éditeur. Les nouveaux raccourcis globaux doivent faire de même.
 - **Sauvegarde** : seuls les fichiers modifiés sont réécrits (diff avec `lastFiles`), les cartes supprimées sont effacées du disque.
@@ -96,7 +122,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple
+1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme
 2. Toile : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
@@ -104,10 +130,11 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)
-9. Plus tard : synchronisation / collaboration (Yjs), version mobile
+9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand la toile est très dézoomée (menu hors du zoom de React Flow)
+10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
 ## Méthode de travail attendue
 
 - Avant de coder une étape de la feuille de route, proposer un court plan (fichiers touchés, impact sur le format de projet).
 - Après chaque changement : `npm run build` doit passer sans erreur ni avertissement TypeScript.
-- Tester à la main dans `npm run dev` : créer une carte, la transformer, relier deux cartes, recharger la page, vérifier la Bible.
+- Tester à la main dans `npm run dev` : créer une carte, la transformer, relier deux cartes, recharger la page, vérifier la Bible. Refaire le parcours en mode tactile.

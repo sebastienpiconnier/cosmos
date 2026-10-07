@@ -16,6 +16,7 @@ function load(): FileMap {
 
 export const browserStorage: Storage = {
   kind: "browser",
+  canPickFolder: false,
   location: () => "Navigateur (démo)",
   pickFolder: async () => true,
   async readAll() {

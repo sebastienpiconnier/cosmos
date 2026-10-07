@@ -1,5 +1,6 @@
-// La toile : on double-clique n'importe où pour créer une carte, on tire un fil
-// d'un point de connexion à une autre carte, on double-clique un fil pour l'étiqueter.
+// La toile : on crée une carte n'importe où (double-clic à la souris, appui long
+// au doigt, ou bouton « + »), on tire un fil d'un point de connexion vers une autre
+// carte, on double-clique (ou touche, sur écran tactile) un fil pour l'étiqueter.
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
@@ -16,6 +17,10 @@ import { useCosmos } from "../store";
 import { CardNode } from "./CardNode";
 import { FloatingEdge } from "./FloatingEdge";
 import { typeInfo } from "../types";
+import { isTouch } from "../platform";
+
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
 
 const nodeTypes = { card: CardNode };
 const edgeTypes = { floating: FloatingEdge };
@@ -34,6 +39,7 @@ export function Toile() {
   const wrapper = useRef<HTMLDivElement>(null);
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);
+  const touch = isTouch();
 
   // Arrivée depuis la Bible : on centre la carte demandée.
   useEffect(() => {
@@ -50,9 +56,86 @@ export function Toile() {
     addCard({ x: pos.x - 20, y: pos.y - 20 }); // la carte prend le focus elle-même
   };
 
+  const isPane = (target: EventTarget | null) =>
+    target instanceof HTMLElement && target.classList.contains("react-flow__pane");
+
   const onDoubleClick = (e: ReactMouseEvent) => {
-    if ((e.target as HTMLElement).classList.contains("react-flow__pane")) createAt(e.clientX, e.clientY);
+    if (isPane(e.target)) createAt(e.clientX, e.clientY);
   };
+
+  // Bouton « + » : nouvelle carte au centre de l'écran, légèrement décalée
+  // à chaque appui pour ne pas empiler les cartes.
+  const addCount = useRef(0);
+  const createInCenter = () => {
+    const rect = wrapper.current?.getBoundingClientRect();
+    if (!rect) return;
+    const shift = (addCount.current++ % 5) * 28;
+    createAt(rect.left + rect.width / 2 - 100 + shift, rect.top + rect.height / 2 - 60 + shift);
+  };
+
+  // Appui long sur la toile (écran tactile ou stylet) : nouvelle carte à cet endroit.
+  // Au relâchement, le navigateur émule mousedown/click sous le doigt, c'est-à-dire
+  // sur la carte qu'on vient de créer : on avale ces événements pendant un court instant,
+  // sinon ils déplaceraient le focus (ou ouvriraient le menu du type).
+  const createAtRef = useRef(createAt);
+  createAtRef.current = createAt;
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let start: { x: number; y: number } | null = null;
+    let fired = false;
+    let swallowUntil = 0;
+    const cancel = () => {
+      clearTimeout(timer);
+      start = null;
+    };
+    const down = (e: PointerEvent) => {
+      fired = false;
+      if (e.pointerType === "mouse" || !e.isPrimary || !isPane(e.target)) return;
+      start = { x: e.clientX, y: e.clientY };
+      timer = setTimeout(() => {
+        if (!start) return;
+        fired = true;
+        navigator.vibrate?.(10);
+        createAtRef.current(start.x, start.y);
+        start = null;
+      }, LONG_PRESS_MS);
+    };
+    const move = (e: PointerEvent) => {
+      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > LONG_PRESS_TOLERANCE) cancel();
+    };
+    const touchEnd = (e: TouchEvent) => {
+      if (fired) {
+        if (e.cancelable) e.preventDefault();
+        swallowUntil = Date.now() + 400;
+      }
+      fired = false;
+    };
+    const swallow = (e: Event) => {
+      if (Date.now() < swallowUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    const ghostEvents = ["mousedown", "mouseup", "click"] as const;
+    ghostEvents.forEach((t) => window.addEventListener(t, swallow, true));
+    // Phase de capture : la toile (d3-zoom) stoppe la propagation des événements tactiles.
+    el.addEventListener("pointerdown", down, true);
+    el.addEventListener("pointermove", move, true);
+    el.addEventListener("pointerup", cancel, true);
+    el.addEventListener("pointercancel", cancel, true);
+    el.addEventListener("touchend", touchEnd, { capture: true, passive: false });
+    return () => {
+      cancel();
+      el.removeEventListener("pointerdown", down, true);
+      el.removeEventListener("pointermove", move, true);
+      el.removeEventListener("pointerup", cancel, true);
+      el.removeEventListener("pointercancel", cancel, true);
+      el.removeEventListener("touchend", touchEnd, true);
+      ghostEvents.forEach((t) => window.removeEventListener(t, swallow, true));
+    };
+  }, []);
 
   const openLabelEditor = (edge: Edge, x: number, y: number) => {
     const rect = wrapper.current?.getBoundingClientRect();
@@ -86,6 +169,10 @@ export function Toile() {
         onEdgeDoubleClick={(e, edge) => {
           e.stopPropagation();
           openLabelEditor(edge, e.clientX, e.clientY);
+        }}
+        // Au doigt, le double-tap sur un fil fin est laborieux : un simple appui suffit.
+        onEdgeClick={(e, edge) => {
+          if (touch) openLabelEditor(edge, e.clientX, e.clientY);
         }}
         connectionMode={ConnectionMode.Loose}
         zoomOnDoubleClick={false}
@@ -132,8 +219,16 @@ export function Toile() {
         />
       )}
 
+      <button type="button" className="add-card" onClick={createInCenter}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Nouvelle carte
+      </button>
+
       <div className="toile-hint">
-        Double-clic pour écrire · Tire un fil depuis un bord · <strong>/</strong> pour transformer une carte
+        {touch ? "Appui long pour écrire" : "Double-clic pour écrire"} · Tire un fil depuis un bord ·{" "}
+        <strong>/</strong> ou l'étiquette pour transformer
       </div>
     </div>
   );

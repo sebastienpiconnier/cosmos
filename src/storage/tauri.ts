@@ -1,15 +1,22 @@
-// Stockage sur disque via Tauri : l'auteur choisit un dossier projet,
-// Cosmos y lit et écrit cosmos.json et cartes/*.md.
+// Stockage sur disque via Tauri.
+// - Ordinateur : l'auteur choisit un dossier projet (mémorisé pour la prochaine fois).
+// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, le projet vit
+//   dans l'espace privé de l'app. La synchronisation entre appareils viendra plus tard.
+// Dans les deux cas : cosmos.json + cartes/*.md, exactement le même format.
 
 import { open } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
-import { join } from "@tauri-apps/api/path";
+import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
 import { CARDS_DIR, META_FILE, type FileMap } from "./paths";
+import { isMobileOS } from "../platform";
 
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
+const MOBILE_PROJECT = "mon-projet";
+const mobile = isMobileOS();
 
 let folder: string | null = (() => {
+  if (mobile) return null; // résolu à la première lecture (API asynchrone)
   try {
     return localStorage.getItem(LAST_FOLDER_KEY);
   } catch {
@@ -17,11 +24,18 @@ let folder: string | null = (() => {
   }
 })();
 
+async function projectFolder(): Promise<string | null> {
+  if (!folder && mobile) folder = await join(await appDataDir(), "projets", MOBILE_PROJECT);
+  return folder;
+}
+
 export const tauriStorage: Storage = {
   kind: "tauri",
-  location: () => (folder ? folder.split(/[\\/]/).pop() ?? folder : null),
+  canPickFolder: !mobile,
+  location: () => (mobile ? "Sur cet appareil" : folder ? (folder.split(/[\\/]/).pop() ?? folder) : null),
 
   async pickFolder() {
+    if (mobile) return true;
     const chosen = await open({ directory: true, title: "Choisir le dossier du projet" });
     if (typeof chosen !== "string") return false;
     folder = chosen;
@@ -34,11 +48,12 @@ export const tauriStorage: Storage = {
   },
 
   async readAll() {
-    if (!folder) return null;
-    const metaPath = await join(folder, META_FILE);
+    const dir = await projectFolder();
+    if (!dir) return null;
+    const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
-    const cardsDir = await join(folder, CARDS_DIR);
+    const cardsDir = await join(dir, CARDS_DIR);
     if (await exists(cardsDir)) {
       for (const entry of await readDir(cardsDir)) {
         if (entry.isFile && entry.name.endsWith(".md")) {
@@ -50,13 +65,14 @@ export const tauriStorage: Storage = {
   },
 
   async write(files, removed) {
-    if (!folder) throw new Error("Aucun dossier projet choisi");
-    await mkdir(await join(folder, CARDS_DIR), { recursive: true });
+    const dir = await projectFolder();
+    if (!dir) throw new Error("Aucun dossier projet choisi");
+    await mkdir(await join(dir, CARDS_DIR), { recursive: true });
     for (const [path, content] of Object.entries(files)) {
-      await writeTextFile(await join(folder, ...path.split("/")), content);
+      await writeTextFile(await join(dir, ...path.split("/")), content);
     }
     for (const path of removed) {
-      const full = await join(folder, ...path.split("/"));
+      const full = await join(dir, ...path.split("/"));
       if (await exists(full)) await remove(full);
     }
   },

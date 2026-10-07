@@ -2,19 +2,23 @@
 //   cosmos.json        positions, fils, titre du projet
 //   cartes/<id>.md     une carte par fichier, Markdown + frontmatter
 //
-// - Dans Tauri : de vrais fichiers sur disque (dossier choisi par l'auteur).
-// - Dans un navigateur (npm run dev) : les mêmes fichiers simulés dans localStorage.
+// - Tauri sur ordinateur (macOS, Windows, Linux) : dossier choisi par l'auteur.
+// - Tauri sur mobile (iOS, Android) : dossier privé de l'app (pas de sélecteur de dossier).
+// - Navigateur (npm run dev) : les mêmes fichiers simulés dans localStorage.
 
 import type { Project, ProjectMeta } from "../types";
 import { cardToFile, fileToCard } from "./markdown";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
 import { CARDS_DIR, META_FILE, cardPath, type FileMap } from "./paths";
+import { isTauri } from "../platform";
 
 export * from "./paths";
 
 export interface Storage {
   kind: "browser" | "tauri";
+  /** L'auteur peut choisir où est son projet (faux sur mobile et dans le navigateur). */
+  canPickFolder: boolean;
   /** Libellé lisible de l'emplacement courant (nom du dossier…). */
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */
@@ -24,7 +28,7 @@ export interface Storage {
   write(files: FileMap, removed: string[]): Promise<void>;
 }
 
-export const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export { isTauri };
 
 export const storage: Storage = isTauri() ? tauriStorage : browserStorage;
 

@@ -51,7 +51,7 @@ export function TopBar() {
         <span className={`status status-${status}`} role="status">
           {STATUS_LABEL[status]}
         </span>
-        {storage.kind === "tauri" && (
+        {storage.canPickFolder && (
           <button type="button" className="ghost-button" onClick={openFolder}>
             Ouvrir un dossier
           </button>
