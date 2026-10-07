@@ -115,6 +115,11 @@ export const fr = {
   toile: {
     addCard: "Nouvelle carte",
     addCardHint: "Raccourci : touche N",
+    addFrame: "Nouveau cadre",
+    addFrameHint: "Nouveau cadre, autour des cartes sélectionnées (touche C)",
+    frameTitle: "Nom du cadre",
+    frameTitleAria: "Nom du cadre",
+    deleteFrame: "Supprimer le cadre (ses cartes restent)",
     undo: "Annuler",
     redo: "Rétablir",
     undoHint: "Annuler (Ctrl ou Cmd + Z)",

@@ -114,6 +114,11 @@ export const en: Messages = {
   toile: {
     addCard: "New card",
     addCardHint: "Shortcut: N key",
+    addFrame: "New frame",
+    addFrameHint: "New frame, around the selected cards (C key)",
+    frameTitle: "Frame name",
+    frameTitleAria: "Frame name",
+    deleteFrame: "Delete the frame (its cards stay)",
     undo: "Undo",
     redo: "Redo",
     undoHint: "Undo (Ctrl or Cmd + Z)",

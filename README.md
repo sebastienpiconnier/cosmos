@@ -27,6 +27,7 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Cartes libres** : double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche `N`, et tu écris directement. Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Six types de carte** : Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Fils étiquetés** : tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche.
+- **Cadres** : un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche `C` ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes.
 - **Annuler et rétablir** : `Ctrl`/`Cmd`+`Z` et `Ctrl`/`Cmd`+`Maj`+`Z`, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
 - **Recherche** : la loupe de la barre du haut, ou `Ctrl`/`Cmd`+`F`, retrouve une carte par son titre ou son texte et la montre sur le canevas.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
@@ -72,7 +73,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 
 | Étape | Contenu |
 |---|---|
-| Canevas | Images, cadres de regroupement, redimensionnement des cartes |
+| Canevas | Images sur les cartes, redimensionnement des cartes |
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
@@ -123,7 +124,7 @@ L'app s'ouvre sur l'accueil : la liste de tes projets et un formulaire « Nouvea
 
 ## Fichiers
 
-Chaque projet est un dossier : `cosmos.json` (titre, positions et liens), `cartes/*.md` (une carte par fichier Markdown) et, pour un scénario, `scenario.fountain`. Ils restent lisibles dans n'importe quel éditeur.
+Chaque projet est un dossier : `cosmos.json` (titre, positions, liens et cadres), `cartes/*.md` (une carte par fichier Markdown) et, pour un scénario, `scenario.fountain`. Ils restent lisibles dans n'importe quel éditeur.
 
 ```markdown
 ---

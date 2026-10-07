@@ -6,7 +6,7 @@ Application d'écriture pour romanciers et scénaristes « architectes » : un c
 
 - **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre. Ce qu'on crée dans une vue existe aussitôt dans les autres : une scène ou un personnage écrits dans le scénario, une fiche créée dans la Bible, ont leur carte sur le canevas.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
-- **Trois gestes** : taper (double-clic, clic droit, appui long, bouton « + » ou touche N), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
+- **Trois gestes** : taper (double-clic, clic droit, appui long, bouton « + » ou touche N), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
@@ -127,6 +127,7 @@ src/
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
+    FrameNode.tsx       Cadre de regroupement : titre, redimensionnement, suppression
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
     Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
@@ -172,7 +173,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes)
+  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif)
   cartes/<id>.md       une carte par fichier
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
@@ -216,6 +217,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément (avec la carte de son décor et le fil « se passe à », pour un en-tête standard), un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
 - **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
+- **Cadres de regroupement** : ils vivent dans `frames`, à part de `nodes` (toutes les vues lisent `nodes` comme la liste des cartes). `Toile` les passe à React Flow avant les cartes. Une carte n'est pas rattachée à un cadre : c'est sa position qui compte, et le store déplace avec le cadre les cartes dont le centre est dedans. Pas de `parentId` React Flow, qui rendrait les positions des cartes relatives et changerait le format.
+- **Intérieur d'un cadre** : le nœud est en `pointer-events: none`, seuls l'en-tête et les poignées répondent. Sinon le double-clic et le clic droit ne créeraient plus de carte dans un cadre.
+- **Redimensionner un cadre par le haut ou la gauche** change aussi sa position : `onNodesChange` ne déplace pas les cartes quand le même lot contient un changement de dimensions.
 - **Annuler et rétablir** : l'historique vit dans le store (`past`, `future`) et ne contient que les cartes, les fils et le scénario. Toute action qui les modifie appelle `record()` AVANT de changer l'état ; deux gestes de même étiquette à moins de 800 ms (lettres d'un titre, déplacement) ne font qu'une étape. Une nouvelle action du store sans `record()` serait impossible à annuler.
 - **Annuler n'efface jamais de texte du scénario** : un `setScreenplay` venu de l'éditeur vide l'historique du canevas (l'éditeur a le sien). Seul le séquencier passe `undoable`. Même chose pour `setKind` et pour un titre de projet qui touche la page de titre.
 - **Annuler dans un champ** : Cmd/Ctrl+Z est laissé au champ ou à l'éditeur qui a le focus. Le raccourci global ne répond qu'en dehors.
@@ -249,7 +253,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 ## Feuille de route
 
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
-2. Canevas : (fait) annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N ; (reste) images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes
+2. Canevas : (fait) annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C) ; (reste) images (glisser-déposer, copiées dans `medias/`), redimensionnement des cartes
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)

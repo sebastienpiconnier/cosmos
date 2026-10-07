@@ -39,6 +39,16 @@ export interface CardLayout {
   width?: number;
 }
 
+/** Cadre de regroupement : un rectangle nommé derrière les cartes (« Acte 1 ? », « Le phare »). */
+export interface Frame {
+  id: string;
+  title: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Fil entre deux cartes, avec une étiquette libre ("soupçonne", "se passe à"…). */
 export interface Link {
   id: string;
@@ -59,6 +69,8 @@ export interface ProjectMeta {
   sceneNumbers?: boolean;
   layout: CardLayout[];
   links: Link[];
+  /** Cadres de regroupement. Absent : aucun. Les cartes n'y sont pas rattachées : c'est leur position qui compte. */
+  frames?: Frame[];
   viewport?: { x: number; y: number; zoom: number };
 }
 

@@ -2,7 +2,7 @@
 // au doigt, ou bouton « + »), on tire un fil d'un point de connexion vers une autre
 // carte, on double-clique (ou touche, sur écran tactile) un fil pour l'étiqueter.
 
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -15,6 +15,7 @@ import {
 } from "@xyflow/react";
 import { useCosmos } from "../store";
 import { CardNode } from "./CardNode";
+import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
 import type { CardData } from "../types";
 import { useT } from "../i18n";
@@ -24,7 +25,7 @@ import { isTouch } from "../platform";
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
 
-const nodeTypes = { card: CardNode };
+const nodeTypes = { card: CardNode, frame: FrameNode };
 const edgeTypes = { floating: FloatingEdge };
 
 interface LabelEditor {
@@ -37,6 +38,10 @@ interface LabelEditor {
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
     useCosmos();
+  const frames = useCosmos((s) => s.frames);
+  const addFrame = useCosmos((s) => s.addFrame);
+  // Les cadres d'abord : ils se dessinent derrière les cartes.
+  const allNodes = useMemo(() => [...frames, ...nodes], [frames, nodes]);
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -76,16 +81,27 @@ export function Toile() {
     createAt(rect.left + rect.width / 2 - 100, rect.top + rect.height / 2 - 60);
   };
 
-  // Raccourci clavier : N, hors d'un champ ou d'une carte en cours d'écriture.
+  // Nouveau cadre : autour des cartes sélectionnées, sinon au centre de l'écran.
+  const createFrame = () => {
+    const rect = wrapper.current?.getBoundingClientRect();
+    if (!rect) return;
+    addFrame(screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }));
+  };
+
+  // Raccourcis clavier : N (carte) et C (cadre), hors d'un champ ou d'une carte en cours d'écriture.
   const createInCenterRef = useRef(createInCenter);
   createInCenterRef.current = createInCenter;
+  const createFrameRef = useRef(createFrame);
+  createFrameRef.current = createFrame;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const key = e.key.toLowerCase();
+      if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
       e.preventDefault();
-      createInCenterRef.current();
+      if (key === "n") createInCenterRef.current();
+      else createFrameRef.current();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -168,7 +184,7 @@ export function Toile() {
   return (
     <div className="toile" ref={wrapper} onDoubleClick={onDoubleClick}>
       <ReactFlow
-        nodes={nodes}
+        nodes={allNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -223,7 +239,7 @@ export function Toile() {
           pannable
           zoomable
           // Classe plutôt que couleur : la teinte vient du CSS (clair/sombre).
-          nodeClassName={(n) => `minimap-node type-${(n.data as CardData).type}`}
+          nodeClassName={(n) => (n.type === "frame" ? "minimap-frame" : `minimap-node type-${(n.data as CardData).type}`)}
         />
       </ReactFlow>
 
@@ -252,6 +268,11 @@ export function Toile() {
       </button>
 
       <div className="history-buttons">
+        <button type="button" className="icon-button" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 3.2" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+          </svg>
+        </button>
         <button type="button" className="icon-button" disabled={!canUndo} aria-label={t.toile.undo} title={t.toile.undoHint} onClick={undo}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9 14L4 9l5-5" />

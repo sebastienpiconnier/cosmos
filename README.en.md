@@ -27,6 +27,7 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Free-form cards**: double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing. Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Six card types**: Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Labeled threads**: drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge.
+- **Frames**: a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards along.
 - **Undo and redo**: `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
 - **Search**: the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
 - **Minimap and zoom** to find your way as the canvas grows.
@@ -72,7 +73,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 | Step | Content |
 |---|---|
-| Canvas | Images, grouping frames, card resizing |
+| Canvas | Images on cards, card resizing |
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
@@ -123,7 +124,7 @@ The app opens on the home screen: the list of your projects and a “New project
 
 ## Files
 
-Each project is a folder: `cosmos.json` (title, positions and links), `cartes/*.md` (one card per Markdown file) and, for a screenplay, `scenario.fountain`. They stay readable in any editor. File and folder names are the same in every language.
+Each project is a folder: `cosmos.json` (title, positions, links and frames), `cartes/*.md` (one card per Markdown file) and, for a screenplay, `scenario.fountain`. They stay readable in any editor. File and folder names are the same in every language.
 
 ```markdown
 ---

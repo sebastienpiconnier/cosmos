@@ -214,6 +214,25 @@ button { font: inherit; color: inherit; }
   box-shadow: var(--shadow-pop); outline: none;
 }
 
+/* ---------- Cadre de regroupement ---------- */
+/* Le cadre est derrière les cartes et son intérieur laisse passer les clics (créer une carte dedans,
+   tirer le canevas) : seuls son en-tête et ses poignées répondent. */
+.react-flow__node-frame { pointer-events: none !important; }
+.frame { width: 100%; height: 100%; border: 2px dashed var(--line-2); border-radius: 16px; background: var(--dropzone); }
+.frame.is-selected { border-color: var(--accent); }
+.frame-handle { pointer-events: all; display: flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; padding: 8px 10px; cursor: grab; }
+.frame-handle:active { cursor: grabbing; }
+.frame-title { min-width: 10ch; max-width: 100%; min-height: 32px; padding: 0 8px; field-sizing: content; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: 500 16px var(--font-display); text-overflow: ellipsis; }
+.frame-title:hover { border-color: var(--line-2); }
+.frame-title:focus-visible { border-color: var(--line-2); background: var(--surface); color: var(--ink); }
+.frame-title::placeholder { color: var(--placeholder); }
+.frame .card-delete { opacity: 0; }
+.frame:hover .card-delete, .frame.is-selected .card-delete, .frame .card-delete:focus-visible { opacity: 1; }
+.frame .react-flow__resize-control { pointer-events: all; }
+.frame-resize-line { border-color: transparent !important; }
+.frame-resize-handle { width: 12px !important; height: 12px !important; border-radius: 4px !important; background: var(--surface) !important; border: 2px solid var(--accent) !important; }
+.react-flow__minimap-node.minimap-frame { fill: none; stroke: var(--line-2); stroke-width: 6; }
+
 /* ---------- Carte ---------- */
 .card {
   --type: var(--muted);
@@ -299,6 +318,9 @@ button { font: inherit; color: inherit; }
   .card-port { width: 22px; height: 22px; border-width: 3px; opacity: 1; }
   .card-delete { opacity: 1; width: 36px; height: 36px; }
   .card-type { min-height: 36px; }
+  .frame .card-delete { opacity: 1; }
+  .frame-resize-handle { width: 22px !important; height: 22px !important; }
+  .frame-title { min-height: 40px; }
   .slash-item { padding: 13px 10px; font-size: 15px; }
   .views button { min-height: 44px; }
   .react-flow__controls-button { width: 40px; height: 40px; }

@@ -13,7 +13,7 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
+import { isProjectKind, type CardData, type CardType, type Frame, type Project, type ProjectKind } from "./types";
 import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
@@ -31,6 +31,31 @@ import {
 import { getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
+/** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
+export type FrameNode = Node<{ title: string }, "frame">;
+
+const FRAME_SIZE = { width: 520, height: 360 };
+/** Marge autour des cartes qu'un cadre entoure (plus haute en tête, pour son titre). */
+const FRAME_PADDING = { side: 32, top: 64, bottom: 32 };
+
+const toFrameNode = (frame: Frame): FrameNode => ({
+  id: frame.id,
+  type: "frame",
+  position: { x: frame.x, y: frame.y },
+  data: { title: frame.title },
+  width: frame.width,
+  height: frame.height,
+  // Derrière les cartes ; l'intérieur laisse passer les clics (voir styles.css).
+  zIndex: -1,
+  dragHandle: ".frame-handle",
+});
+
+const frameBox = (f: FrameNode): Box => ({
+  x: f.position.x,
+  y: f.position.y,
+  width: f.width ?? f.measured?.width ?? FRAME_SIZE.width,
+  height: f.height ?? f.measured?.height ?? FRAME_SIZE.height,
+});
 export type View = "toile" | "plan" | "bible" | "manuscrit";
 export type SaveStatus = "enregistre" | "modifie" | "enregistrement" | "erreur";
 
@@ -104,7 +129,14 @@ interface CosmosState {
   dismissOpenFailed: () => void;
   lastFiles: FileMap;
 
-  onNodesChange: (changes: NodeChange<CardNode>[]) => void;
+  /** Cadres de regroupement, affichés derrière les cartes. */
+  frames: FrameNode[];
+  /** Nouveau cadre : autour des cartes sélectionnées s'il y en a, sinon centré sur le point donné. */
+  addFrame: (center: { x: number; y: number }) => string;
+  updateFrame: (id: string, patch: { title: string }) => void;
+  /** Supprime le cadre ; les cartes qu'il contenait restent. */
+  deleteFrame: (id: string) => void;
+  onNodesChange: (changes: NodeChange<CardNode | FrameNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (c: Connection) => void;
 
@@ -127,6 +159,7 @@ interface CosmosState {
 /** Ce qu'une annulation restaure. Les réglages du projet (titre, type, format) n'en font pas partie. */
 export interface Snapshot {
   nodes: CardNode[];
+  frames: FrameNode[];
   edges: Edge[];
   screenplay: Screenplay | null;
 }
@@ -156,7 +189,10 @@ function fromProject(p: Project) {
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
   const paperChosen = isPaper(p.meta.paper);
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, edges };
+  const frames = (p.meta.frames ?? [])
+    .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
+    .map((f) => toFrameNode({ ...f, title: String(f.title ?? "") }));
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges };
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -207,7 +243,10 @@ function openProject(p: Project) {
 }
 
 function toProject(
-  s: Pick<CosmosState, "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "edges" | "screenplay">,
+  s: Pick<
+    CosmosState,
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay"
+  >,
 ): Project {
   return {
     meta: {
@@ -223,6 +262,14 @@ function toProject(
         width: typeof n.style?.width === "number" ? n.style.width : undefined,
       })),
       links: s.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: String(e.label ?? "") })),
+      ...(s.frames.length > 0
+        ? {
+            frames: s.frames.map((f) => {
+              const box = frameBox(f);
+              return { id: f.id, title: f.data.title, x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) };
+            }),
+          }
+        : {}),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
@@ -274,24 +321,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
     lastTag = tag;
     lastAt = now;
     if (merge) return;
-    const { nodes, edges, screenplay, past } = get();
-    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, edges, screenplay }], future: [] });
+    const { nodes, frames, edges, screenplay, past } = get();
+    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay }], future: [] });
   };
   const forgetHistory = () => {
     lastTag = "";
     if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
   };
   const restore = (from: "past" | "future") => {
-    const { past, future, nodes, edges, screenplay } = get();
+    const { past, future, nodes, frames, edges, screenplay } = get();
     const stack = from === "past" ? past : future;
     const target = stack[stack.length - 1];
     if (!target) return;
     lastTag = "";
-    const here: Snapshot = { nodes, edges, screenplay };
+    const here: Snapshot = { nodes, frames, edges, screenplay };
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
       nodes: target.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+      frames: target.frames.map((f) => (f.selected ? { ...f, selected: false } : f)),
       edges: target.edges,
       screenplay: target.screenplay,
       pendingFocusId: null,
@@ -491,16 +539,87 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dismissOpenFailed: () => set({ openFailed: false }),
     lastFiles: {},
 
+    frames: [],
+    addFrame: (center) => {
+      record();
+      const chosen = get().nodes.filter((n) => n.selected);
+      let frame: Frame;
+      if (chosen.length > 0) {
+        // Autour des cartes sélectionnées.
+        const around = boxes(chosen);
+        const left = Math.min(...around.map((b) => b.x)) - FRAME_PADDING.side;
+        const top = Math.min(...around.map((b) => b.y)) - FRAME_PADDING.top;
+        const right = Math.max(...around.map((b) => b.x + b.width)) + FRAME_PADDING.side;
+        const bottom = Math.max(...around.map((b) => b.y + b.height)) + FRAME_PADDING.bottom;
+        frame = { id: newId(), title: "", x: left, y: top, width: right - left, height: bottom - top };
+      } else {
+        frame = {
+          id: newId(),
+          title: "",
+          x: Math.round(center.x - FRAME_SIZE.width / 2),
+          y: Math.round(center.y - FRAME_SIZE.height / 2),
+          ...FRAME_SIZE,
+        };
+      }
+      set({ frames: [...get().frames.map((f) => ({ ...f, selected: false })), { ...toFrameNode(frame), selected: true }] });
+      touch();
+      return frame.id;
+    },
+    updateFrame: (id, patch) => {
+      record(`frame:${id}:title`);
+      set({ frames: get().frames.map((f) => (f.id === id ? { ...f, data: { ...f.data, ...patch } } : f)) });
+      touch();
+    },
+    deleteFrame: (id) => {
+      record();
+      set({ frames: get().frames.filter((f) => f.id !== id) });
+      touch();
+    },
     onNodesChange: (changes) => {
+      const frameIds = new Set(get().frames.map((f) => f.id));
+      const isFrame = (c: NodeChange<CardNode | FrameNode>) => "id" in c && frameIds.has(c.id);
+      const frameChanges = changes.filter(isFrame) as NodeChange<FrameNode>[];
+      const cardChanges = changes.filter((c) => !isFrame(c)) as NodeChange<CardNode>[];
+
       // Sélection et mesure ne modifient pas le projet, et n'entrent pas dans l'historique.
-      const removed = changes.filter((c) => c.type === "remove").map((c) => c.id);
-      if (removed.length > 0) record();
+      const removed = cardChanges.filter((c) => c.type === "remove").map((c) => c.id);
+      const resized = frameChanges.some((c) => c.type === "dimensions" && c.resizing !== undefined);
+      const changed =
+        resized || changes.some((c) => c.type === "position" || c.type === "remove") || cardChanges.some((c) => c.type === "dimensions");
+      if (changes.some((c) => c.type === "remove")) record();
+      else if (resized) record("resize");
       else if (changes.some((c) => c.type === "position")) record("move");
+
+      // Un cadre qu'on déplace emmène les cartes qu'il contient (leur centre est dedans).
+      // Pas quand on le redimensionne par le haut ou la gauche : sa position change, pas son contenu.
+      let nodes = get().nodes;
+      for (const change of frameChanges) {
+        if (change.type !== "position" || !change.position) continue;
+        if (frameChanges.some((c) => c.type === "dimensions" && c.id === change.id)) continue;
+        const frame = get().frames.find((f) => f.id === change.id);
+        if (!frame) continue;
+        const box = frameBox(frame);
+        const dx = change.position.x - box.x;
+        const dy = change.position.y - box.y;
+        if (dx === 0 && dy === 0) continue;
+        nodes = nodes.map((n) => {
+          const [card] = boxes([n]);
+          const cx = card.x + card.width / 2;
+          const cy = card.y + card.height / 2;
+          const inside = cx >= box.x && cx <= box.x + box.width && cy >= box.y && cy <= box.y + box.height;
+          return inside ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } } : n;
+        });
+      }
+
       let { screenplay } = get();
       // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, son lien avec le scénario est défait.
       if (screenplay) for (const id of removed) screenplay = releaseCard(screenplay, id);
-      set({ nodes: applyNodeChanges(changes, get().nodes), screenplay });
-      if (changes.some((c) => c.type === "position" || c.type === "remove" || c.type === "dimensions")) touch();
+      set({
+        nodes: applyNodeChanges(cardChanges, nodes),
+        frames: frameChanges.length > 0 ? applyNodeChanges(frameChanges, get().frames) : get().frames,
+        screenplay,
+      });
+      if (changed) touch();
     },
     onEdgesChange: (changes) => {
       if (changes.some((c) => c.type === "remove")) record();
