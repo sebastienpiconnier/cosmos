@@ -16,7 +16,9 @@ import {
 import { useCosmos } from "../store";
 import { CardNode } from "./CardNode";
 import { FloatingEdge } from "./FloatingEdge";
-import { typeInfo } from "../types";
+import type { CardData } from "../types";
+import { useT } from "../i18n";
+import { useSettings } from "../settings";
 import { isTouch } from "../platform";
 
 const LONG_PRESS_MS = 500;
@@ -40,6 +42,8 @@ export function Toile() {
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);
   const touch = isTouch();
+  const t = useT();
+  const theme = useSettings((s) => s.theme);
 
   // Arrivée depuis la Bible : on centre la carte demandée.
   useEffect(() => {
@@ -174,6 +178,7 @@ export function Toile() {
         onEdgeClick={(e, edge) => {
           if (touch) openLabelEditor(edge, e.clientX, e.clientY);
         }}
+        colorMode={theme}
         connectionMode={ConnectionMode.Loose}
         zoomOnDoubleClick={false}
         deleteKeyCode={["Delete", "Backspace"]}
@@ -183,22 +188,23 @@ export function Toile() {
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         defaultEdgeOptions={{
           type: "floating",
-          style: { stroke: "#3F43C4", strokeWidth: 1.6 },
+          // Variables CSS : les fils suivent le mode clair/sombre.
+          style: { stroke: "var(--edge)", strokeWidth: 1.6 },
           labelBgPadding: [8, 4],
           labelBgBorderRadius: 999,
-          labelStyle: { fill: "#2A2D93", fontWeight: 500, fontSize: 12 },
-          labelBgStyle: { fill: "#FFFFFF", stroke: "#C9CCD8" },
+          labelStyle: { fill: "var(--accent-ink)", fontWeight: 500, fontSize: 12 },
+          labelBgStyle: { fill: "var(--surface)", stroke: "var(--line-2)" },
         }}
         proOptions={{ hideAttribution: false }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="#C9CCD8" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} />
         <Controls showInteractive={false} position="bottom-right" />
         <MiniMap
           position="top-right"
           pannable
           zoomable
-          nodeColor={(n) => typeInfo((n.data as { type: Parameters<typeof typeInfo>[0] }).type).color}
-          maskColor="rgba(238,240,244,0.7)"
+          // Classe plutôt que couleur : la teinte vient du CSS (clair/sombre).
+          nodeClassName={(n) => `minimap-node type-${(n.data as CardData).type}`}
         />
       </ReactFlow>
 
@@ -207,8 +213,8 @@ export function Toile() {
           className="label-editor"
           style={{ left: labelEditor.x, top: labelEditor.y }}
           autoFocus
-          placeholder="Nature du lien (ex. soupçonne)"
-          aria-label="Étiquette du fil"
+          placeholder={t.toile.labelPlaceholder}
+          aria-label={t.toile.labelAria}
           value={labelEditor.value}
           onChange={(e) => setLabelEditor({ ...labelEditor, value: e.target.value })}
           onBlur={commitLabel}
@@ -223,12 +229,11 @@ export function Toile() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>
-        Nouvelle carte
+        {t.toile.addCard}
       </button>
 
       <div className="toile-hint">
-        {touch ? "Appui long pour écrire" : "Double-clic pour écrire"} · Tire un fil depuis un bord ·{" "}
-        <strong>/</strong> ou l'étiquette pour transformer
+        {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
 import { CARDS_DIR, META_FILE, type FileMap } from "./paths";
 import { isMobileOS } from "../platform";
+import { getT } from "../i18n";
 
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
 const MOBILE_PROJECT = "mon-projet";
@@ -32,11 +33,11 @@ async function projectFolder(): Promise<string | null> {
 export const tauriStorage: Storage = {
   kind: "tauri",
   canPickFolder: !mobile,
-  location: () => (mobile ? "Sur cet appareil" : folder ? (folder.split(/[\\/]/).pop() ?? folder) : null),
+  location: () => (mobile || !folder ? null : (folder.split(/[\\/]/).pop() ?? folder)),
 
   async pickFolder() {
     if (mobile) return true;
-    const chosen = await open({ directory: true, title: "Choisir le dossier du projet" });
+    const chosen = await open({ directory: true, title: getT().dialog.pickFolder });
     if (typeof chosen !== "string") return false;
     folder = chosen;
     try {

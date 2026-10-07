@@ -15,6 +15,7 @@ import {
 import { nanoid } from "nanoid";
 import type { CardData, CardType, Project } from "./types";
 import { deserialize, serialize, storage, type FileMap } from "./storage";
+import { getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
 export type View = "toile" | "plan" | "bible" | "manuscrit";
@@ -88,13 +89,16 @@ function toProject(s: Pick<CosmosState, "title" | "nodes" | "edges">): Project {
   };
 }
 
-/** Projet d'exemple affiché au premier lancement. */
+const p = (text: string) => `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</p>`;
+
+/** Projet d'exemple affiché au premier lancement, dans la langue de l'interface. */
 function demoProject(): Project {
+  const d = getT().demo;
   const ines = newId(), phare = newId(), idee = newId(), scene = newId();
   return {
     meta: {
       version: 1,
-      title: "Mon premier projet",
+      title: d.title,
       layout: [
         { id: idee, x: 60, y: 60 },
         { id: ines, x: 120, y: 300 },
@@ -102,15 +106,15 @@ function demoProject(): Project {
         { id: scene, x: 560, y: 420 },
       ],
       links: [
-        { id: newId(), source: ines, target: phare, label: "y travaille" },
-        { id: newId(), source: scene, target: phare, label: "se passe à" },
+        { id: newId(), source: ines, target: phare, label: d.linkWorksAt },
+        { id: newId(), source: scene, target: phare, label: d.linkSetIn },
       ],
     },
     cards: [
-      { id: idee, type: "idee", title: "", html: "<p>Un phare qui s’allume tout seul chaque 13 du mois ?</p>" },
-      { id: ines, type: "personnage", title: "Inès Morvan", html: "<p>Gardienne remplaçante. Ne supporte pas le silence.</p>" },
-      { id: phare, type: "lieu", title: "Phare de Kerlaouen", html: "<p>Îlot accessible à marée basse.</p>" },
-      { id: scene, type: "scene", title: "Inès trouve le journal de bord", html: "<p>Dernière entrée datée d’après la disparition.</p>" },
+      { id: idee, type: "idee", title: "", html: p(d.idea) },
+      { id: ines, type: "personnage", title: d.characterTitle, html: p(d.characterBody) },
+      { id: phare, type: "lieu", title: d.placeTitle, html: p(d.placeBody) },
+      { id: scene, type: "scene", title: d.sceneTitle, html: p(d.sceneBody) },
     ],
   };
 }

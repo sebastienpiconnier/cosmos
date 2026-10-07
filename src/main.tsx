@@ -9,6 +9,10 @@ import "@fontsource/ibm-plex-serif/400.css";
 import "@xyflow/react/dist/style.css";
 import "./styles.css";
 import { App } from "./App";
+import { initSettings } from "./settings";
+
+// Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
+initSettings();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

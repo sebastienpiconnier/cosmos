@@ -1,19 +1,73 @@
-/* Cosmos : jetons de design repris de la maquette. */
+/* Cosmos : jetons de design repris de la maquette.
+   Règle : aucune couleur en dur dans les composants, uniquement ces variables.
+   Le thème est posé sur <html data-theme="light|dark"> par settings.ts. */
 :root {
   --ink: #1b1e2e;
   --ink-2: #4a4f63;
   --muted: #5a5f73;
+  --placeholder: #6e7388;
   --line: #d9dce5;
   --line-2: #c9ccd8;
   --ground: #eef0f4;
   --surface: #ffffff;
+  --hover: #e2e4ec;
   --accent: #3f43c4;
   --accent-soft: #e4e5fa;
   --accent-ink: #2a2d93;
+  --strong-bg: #1b1e2e;
+  --strong-fg: #ffffff;
+  --strong-hover: #2c3048;
+  --danger: #b42318;
+  --edge: #3f43c4;
+  --dot: #c9ccd8;
+  --dropzone: rgba(63, 67, 196, 0.08);
+  --minimap-mask: rgba(238, 240, 244, 0.7);
+  --shadow-card: 0 4px 14px rgba(27, 30, 46, 0.1);
+  --shadow-pop: 0 10px 28px rgba(27, 30, 46, 0.18);
+
+  /* Couleurs des types de carte (texte et pastilles, contraste AA sur --surface) */
+  --type-idee: #5a5f73;
+  --type-personnage: #3f43c4;
+  --type-lieu: #1e7f72;
+  --type-scene: #a65f00;
+  --type-theme: #b03a78;
+  --type-question: #6b7085;
+
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-text: "IBM Plex Serif", Georgia, serif;
-  --shadow-card: 0 4px 14px rgba(27, 30, 46, 0.1);
+}
+
+:root[data-theme="dark"] {
+  --ink: #e7e9f1;
+  --ink-2: #b9bdcc;
+  --muted: #9ca1b4;
+  --placeholder: #8f94a8;
+  --line: #2c3043;
+  --line-2: #3b4058;
+  --ground: #13151d;
+  --surface: #1d2030;
+  --hover: #282c3f;
+  --accent: #9a9df5;
+  --accent-soft: #2c2f5c;
+  --accent-ink: #cdcfff;
+  --strong-bg: #e7e9f1;
+  --strong-fg: #13151d;
+  --strong-hover: #ffffff;
+  --danger: #ff8a7a;
+  --edge: #8a8ef0;
+  --dot: #333852;
+  --dropzone: rgba(154, 157, 245, 0.12);
+  --minimap-mask: rgba(19, 21, 29, 0.7);
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.55);
+
+  --type-idee: #a3a8bc;
+  --type-personnage: #9a9df5;
+  --type-lieu: #4cc2b0;
+  --type-scene: #f0a350;
+  --type-theme: #ec85bd;
+  --type-question: #8e93a8;
 }
 
 * { box-sizing: border-box; }
@@ -38,30 +92,63 @@ button { font: inherit; color: inherit; }
 .views { display: flex; align-items: center; gap: 4px; margin: 0 auto; background: var(--ground); border-radius: 999px; padding: 4px; }
 .views-pole { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 0 10px; }
 .views button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-size: 14px; cursor: pointer; min-height: 36px; }
-.views button:hover { background: #e2e4ec; }
-.views button.is-current { background: var(--ink); color: #fff; font-weight: 600; }
+.views button:hover { background: var(--hover); }
+.views button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 
 .actions { display: flex; align-items: center; gap: 8px; }
 .status { font-size: 13px; color: var(--muted); }
-.status-erreur { color: #b42318; font-weight: 600; }
+.status-erreur { color: var(--danger); font-weight: 600; }
 .ghost-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 14px; cursor: pointer; }
 .ghost-button:hover { border-color: var(--line-2); background: var(--ground); }
+.icon-button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; cursor: pointer; color: var(--ink); }
+.icon-button:hover, .icon-button[aria-expanded="true"] { border-color: var(--line-2); background: var(--ground); }
+
+/* Réglages */
+.settings { position: relative; }
+.settings-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: 240px;
+  display: flex; flex-direction: column; gap: 6px; padding: 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop);
+}
+.settings-panel label { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.settings-panel select {
+  min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+}
 
 /* ---------- Toile ---------- */
 .toile { position: absolute; inset: 0; }
-.toile .react-flow { background: var(--ground); }
+/* .dark est ajouté par React Flow en mode sombre : même spécificité, donc on le cite. */
+.toile .react-flow, .toile .react-flow.dark {
+  background: var(--ground);
+  /* Variables de React Flow, alignées sur nos jetons */
+  --xy-background-color-default: var(--ground);
+  --xy-background-pattern-dots-color-default: var(--dot);
+  --xy-minimap-background-color-default: var(--surface);
+  --xy-minimap-mask-background-color-default: var(--minimap-mask);
+  --xy-controls-button-background-color-default: var(--surface);
+  --xy-controls-button-background-color-hover-default: var(--hover);
+  --xy-controls-button-color-default: var(--ink);
+  --xy-controls-button-border-color-default: var(--line);
+}
+.react-flow__minimap-node.type-idee { fill: var(--type-idee); }
+.react-flow__minimap-node.type-personnage { fill: var(--type-personnage); }
+.react-flow__minimap-node.type-lieu { fill: var(--type-lieu); }
+.react-flow__minimap-node.type-scene { fill: var(--type-scene); }
+.react-flow__minimap-node.type-theme { fill: var(--type-theme); }
+.react-flow__minimap-node.type-question { fill: var(--type-question); }
 .toile-hint {
   position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
   background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 13px; color: var(--ink-2);
-  box-shadow: 0 2px 8px rgba(27, 30, 46, 0.08); pointer-events: none; white-space: nowrap;
+  box-shadow: var(--shadow-card); pointer-events: none; white-space: nowrap;
 }
 .toile-hint strong { color: var(--ink); }
 
 .label-editor {
   position: absolute; transform: translate(-50%, -50%); z-index: 10;
   min-width: 220px; height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 2px solid var(--accent); background: var(--surface); font: inherit; font-size: 14px;
-  box-shadow: 0 6px 18px rgba(27, 30, 46, 0.18); outline: none;
+  border: 2px solid var(--accent); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+  box-shadow: var(--shadow-pop); outline: none;
 }
 
 /* ---------- Carte ---------- */
@@ -85,24 +172,24 @@ button { font: inherit; color: inherit; }
 .card-delete:hover { background: var(--ground); color: var(--ink); }
 
 .card-title { display: block; width: 100%; border: 0; outline: none; background: transparent; padding: 2px 12px; font: 600 16px var(--font-ui); color: var(--ink); }
-.card-title::placeholder { color: #9a9eb0; font-weight: 500; }
+.card-title::placeholder { color: var(--placeholder); font-weight: 500; }
 
 .card-editor, .card-editor:focus-visible { padding: 4px 12px 12px; min-height: 28px; outline: none; font: 15px/1.5 var(--font-text); color: var(--ink); cursor: text; }
 .card-editor p { margin: 0 0 6px; }
 .card-editor p:last-child { margin-bottom: 0; }
 .card-editor h2, .card-editor h3 { font-family: var(--font-display); font-weight: 500; margin: 8px 0 4px; }
 .card-editor ul, .card-editor ol { margin: 0 0 6px; padding-left: 20px; }
-.card-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #9a9eb0; float: left; height: 0; pointer-events: none; }
+.card-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
 
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; }
 .card:hover .card-port, .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
 
 .card-dropzone { position: absolute; inset: 0; width: auto; height: auto; transform: none; border: 0; border-radius: 12px; background: transparent; z-index: 5; }
-.card-dropzone:hover, .card-dropzone.connectingto { background: rgba(63, 67, 196, 0.08); outline: 2px dashed var(--accent); outline-offset: 2px; }
+.card-dropzone:hover, .card-dropzone.connectingto { background: var(--dropzone); outline: 2px dashed var(--accent); outline-offset: 2px; }
 
 .slash-menu {
   position: absolute; left: 12px; top: calc(100% + 6px); z-index: 20; width: 220px;
-  background: var(--surface); border-radius: 12px; padding: 6px; box-shadow: 0 10px 28px rgba(27, 30, 46, 0.18);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: var(--shadow-pop);
   display: flex; flex-direction: column;
 }
 .slash-menu.opens-up { top: auto; bottom: calc(100% + 6px); }
@@ -114,10 +201,10 @@ button { font: inherit; color: inherit; }
 .add-card {
   position: absolute; left: 20px; bottom: 20px; z-index: 5;
   display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px 0 14px;
-  border: 0; border-radius: 999px; background: var(--ink); color: #fff; font-size: 15px; font-weight: 600;
-  box-shadow: 0 6px 18px rgba(27, 30, 46, 0.22); cursor: pointer;
+  border: 0; border-radius: 999px; background: var(--strong-bg); color: var(--strong-fg); font-size: 15px; font-weight: 600;
+  box-shadow: var(--shadow-pop); cursor: pointer;
 }
-.add-card:hover { background: #2c3048; }
+.add-card:hover { background: var(--strong-hover); }
 
 /* ---------- Écrans tactiles : rien ne dépend du survol ---------- */
 @media (pointer: coarse) {

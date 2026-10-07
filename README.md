@@ -2,6 +2,8 @@
 
 Du chaos au monde ordonné : une toile pour les écrivains qui construisent leur histoire avant de l'écrire.
 
+*From chaos to an ordered world: a canvas for writers who build their story before writing it. Interface in English and French, light and dark modes.*
+
 ## Démarrer
 
 Prérequis : Node 20+ et Rust (https://rustup.rs). En plus, sur Mac : les outils Xcode en ligne de commande (`xcode-select --install`) ; sous Windows : les Build Tools de Visual Studio (C++) et WebView2 (déjà présent sur Windows 10 et 11) ; sous Linux : `libwebkit2gtk-4.1-dev` et ses dépendances (voir `ci.yml`).
@@ -36,6 +38,7 @@ Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertiss
 - **Tirer un fil** depuis un point au bord d'une carte vers une autre, puis nommer le lien (« soupçonne », « se passe à »). Pour le renommer : double-clic sur le fil (ou simple appui au doigt).
 - **Bible** : sommaire et fiches générés à partir des cartes.
 - Sauvegarde automatique, ou **Cmd+S** (Ctrl+S sous Windows et Linux).
+- **Réglages** (icône en haut à droite) : langue de l'interface (français, anglais) et apparence (comme le système, claire, sombre).
 
 ## Fichiers
 

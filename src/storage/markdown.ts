@@ -82,6 +82,6 @@ export function fileToCard(text: string): CardData | null {
   } catch {
     /* titre non quoté : on le garde tel quel */
   }
-  const type = (CARD_TYPES.some((c) => c.type === fields.type) ? fields.type : "idee") as CardType;
+  const type = (CARD_TYPES.includes(fields.type as CardType) ? fields.type : "idee") as CardType;
   return { id: fields.id, type, title, html: markdownToHtml(m[2]) };
 }

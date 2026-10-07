@@ -5,10 +5,12 @@ import { TopBar } from "./components/TopBar";
 import { Toile } from "./components/Toile";
 import { Bible } from "./components/Bible";
 import { Bientot } from "./components/Bientot";
+import { useT } from "./i18n";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 
 export function App() {
+  const t = useT();
   const view = useCosmos((s) => s.view);
   const loaded = useCosmos((s) => s.loaded);
   const load = useCosmos((s) => s.load);
@@ -46,7 +48,7 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [save]);
 
-  if (!loaded) return <div className="loading">Ouverture du projet…</div>;
+  if (!loaded) return <div className="loading">{t.app.loading}</div>;
 
   return (
     <ReactFlowProvider>

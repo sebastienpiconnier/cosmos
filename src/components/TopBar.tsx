@@ -1,23 +1,21 @@
-import { useCosmos, type SaveStatus, type View } from "../store";
+import { useCosmos, type View } from "../store";
 import { storage } from "../storage";
+import { useT } from "../i18n";
+import { Settings } from "./Settings";
 
-const VIEWS: { view: View; label: string; ready: boolean }[] = [
-  { view: "toile", label: "Toile", ready: true },
-  { view: "plan", label: "Plan", ready: false },
-  { view: "bible", label: "Bible", ready: true },
-  { view: "manuscrit", label: "Manuscrit", ready: false },
-];
-
-const STATUS_LABEL: Record<SaveStatus, string> = {
-  enregistre: "Enregistré",
-  modifie: "Modifications non enregistrées",
-  enregistrement: "Enregistrement…",
-  erreur: "Erreur d'enregistrement",
-};
+const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
+const READY: Record<View, boolean> = { toile: true, plan: false, bible: true, manuscrit: false };
 
 export function TopBar() {
+  const t = useT();
   const { view, setView, status, save, openFolder } = useCosmos();
-  const location = storage.location();
+
+  const location =
+    storage.kind === "browser"
+      ? t.location.browser
+      : !storage.canPickFolder
+        ? t.location.device
+        : storage.location();
 
   return (
     <header className="topbar">
@@ -30,35 +28,36 @@ export function TopBar() {
         {location && <span className="brand-project">{location}</span>}
       </div>
 
-      <nav className="views" aria-label="Vues du projet">
-        <span className="views-pole">Chaos</span>
+      <nav className="views" aria-label={t.views.aria}>
+        <span className="views-pole">{t.views.chaos}</span>
         {VIEWS.map((v) => (
           <button
-            key={v.view}
+            key={v}
             type="button"
-            className={view === v.view ? "is-current" : ""}
-            aria-current={view === v.view ? "page" : undefined}
-            title={v.ready ? undefined : "Bientôt"}
-            onClick={() => setView(v.view)}
+            className={view === v ? "is-current" : ""}
+            aria-current={view === v ? "page" : undefined}
+            title={READY[v] ? undefined : t.views.soon}
+            onClick={() => setView(v)}
           >
-            {v.label}
+            {t.views[v]}
           </button>
         ))}
-        <span className="views-pole">Ordre</span>
+        <span className="views-pole">{t.views.order}</span>
       </nav>
 
       <div className="actions">
         <span className={`status status-${status}`} role="status">
-          {STATUS_LABEL[status]}
+          {t.status[status]}
         </span>
         {storage.canPickFolder && (
           <button type="button" className="ghost-button" onClick={openFolder}>
-            Ouvrir un dossier
+            {t.actions.openFolder}
           </button>
         )}
         <button type="button" className="ghost-button" onClick={save}>
-          Enregistrer
+          {t.actions.save}
         </button>
+        <Settings />
       </div>
     </header>
   );

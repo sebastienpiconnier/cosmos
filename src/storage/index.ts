@@ -19,7 +19,7 @@ export interface Storage {
   kind: "browser" | "tauri";
   /** L'auteur peut choisir où est son projet (faux sur mobile et dans le navigateur). */
   canPickFolder: boolean;
-  /** Libellé lisible de l'emplacement courant (nom du dossier…). */
+  /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */
   pickFolder(): Promise<boolean>;

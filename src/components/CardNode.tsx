@@ -8,19 +8,12 @@ import { Handle, Position, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { CARD_TYPES, typeInfo, type CardType } from "../types";
+import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
+import { fmt, getT, useT } from "../i18n";
+import { useSettings } from "../settings";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-const TITLE_PLACEHOLDER: Record<CardType, string> = {
-  idee: "Titre (facultatif)",
-  personnage: "Nom du personnage",
-  lieu: "Nom du lieu",
-  scene: "Titre de la scène",
-  theme: "Thème",
-  question: "La question",
-};
 
 /** Menu ouvert par "/" (avec la plage de texte à effacer) ou par l'étiquette du type. */
 type MenuState = { via: "slash"; from: number; to: number; query: string } | { via: "label"; query: "" };
@@ -28,7 +21,8 @@ type MenuState = { via: "slash"; from: number; to: number; query: string } | { v
 function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
   const deleteCard = useCosmos((s) => s.deleteCard);
-  const info = typeInfo(data.type);
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
 
   const [slash, setSlash] = useState<MenuState | null>(null);
   const [active, setActive] = useState(0);
@@ -41,8 +35,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     setSlash(menu);
   };
   const options = useMemo(
-    () => (slash ? CARD_TYPES.filter((t) => norm(t.label).includes(norm(slash.query))) : []),
-    [slash],
+    () => (slash ? CARD_TYPES.filter((type) => norm(t.types[type].label).includes(norm(slash.query))) : []),
+    [slash, t],
   );
 
   // Refs pour que les gestionnaires TipTap (créés une seule fois) voient l'état courant.
@@ -75,12 +69,13 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
-      Placeholder.configure({ placeholder: "Écris… ( / pour transformer la carte )" }),
+      // Fonction : relue à chaque rendu, donc suit le changement de langue.
+      Placeholder.configure({ placeholder: () => getT().card.bodyPlaceholder }),
     ],
     content: data.html,
     immediatelyRender: true,
     editorProps: {
-      attributes: { class: "card-editor", "aria-label": "Contenu de la carte" },
+      attributes: { class: "card-editor", "aria-label": getT().card.bodyAria },
       handleKeyDown: (_view, event) => {
         const { slash: s, options: opts, active: a } = stateRef.current;
         if (!s || !opts.length) return false;
@@ -93,7 +88,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
           return true;
         }
         if (event.key === "Enter") {
-          pickRef.current(opts[a].type);
+          pickRef.current(opts[a]);
           return true;
         }
         if (event.key === "Escape") {
@@ -110,15 +105,19 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     onSelectionUpdate: ({ editor: ed }) => detectSlash(ed),
   });
 
-  // Menu ouvert depuis l'étiquette : on le ferme avec Échap, en touchant ailleurs
-  // ou quand la carte n'est plus sélectionnée.
+  // Changement de langue : on met à jour ce que TipTap a figé à la création.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.setOptions({
+      editorProps: { ...editor.options.editorProps, attributes: { class: "card-editor", "aria-label": t.card.bodyAria } },
+    });
+    editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang)); // redessine le texte indicatif
+  }, [lang, editor, t]);
+
+  // Menu ouvert depuis l'étiquette : on le ferme avec Échap ou en touchant ailleurs.
   const labelMenuOpen = slash?.via === "label";
   useEffect(() => {
     if (!labelMenuOpen) return;
-    if (!selected) {
-      setSlash(null);
-      return;
-    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSlash(null);
     };
@@ -131,7 +130,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onDown);
     };
-  }, [labelMenuOpen, selected]);
+  }, [labelMenuOpen]);
 
   // Pendant qu'on tire un fil, toute la carte devient une cible de dépôt.
   const connection = useConnection();
@@ -154,7 +153,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
   }, [pendingFocus, editor]);
 
   return (
-    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}`} style={{ ["--type" as string]: info.color }}>
+    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -173,19 +172,19 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
           className="card-type nodrag"
           aria-haspopup="listbox"
           aria-expanded={slash?.via === "label"}
-          aria-label={`Type : ${info.label}. Changer le type`}
+          aria-label={fmt(t.card.changeType, { type: t.types[data.type].label })}
           onClick={() => {
-            setActive(Math.max(0, CARD_TYPES.findIndex((t) => t.type === data.type)));
+            setActive(Math.max(0, CARD_TYPES.indexOf(data.type)));
             openMenu(slash?.via === "label" ? null : { via: "label", query: "" });
           }}
         >
           <span className="card-dot" />
-          {info.label}
+          {t.types[data.type].label}
         </button>
         <button
           type="button"
           className="card-delete nodrag"
-          aria-label="Supprimer la carte"
+          aria-label={t.card.delete}
           onClick={() => deleteCard(id)}
         >
           ×
@@ -195,8 +194,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
       <input
         className="card-title nodrag"
         value={data.title}
-        placeholder={TITLE_PLACEHOLDER[data.type]}
-        aria-label="Titre de la carte"
+        placeholder={t.types[data.type].titlePlaceholder}
+        aria-label={t.card.titleAria}
         onChange={(e) => updateCard(id, { title: e.target.value })}
       />
 
@@ -205,20 +204,20 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
       </div>
 
       {slash && options.length > 0 && (
-        <div className={`slash-menu nodrag${menuUp ? " opens-up" : ""}`} role="listbox" aria-label="Transformer en">
-          <div className="slash-title">Transformer en…</div>
-          {options.map((t, i) => (
+        <div className={`slash-menu nodrag${menuUp ? " opens-up" : ""}`} role="listbox" aria-label={t.card.menuTitle}>
+          <div className="slash-title">{t.card.menuTitle}</div>
+          {options.map((type, i) => (
             <button
-              key={t.type}
+              key={type}
               type="button"
               role="option"
               aria-selected={i === active}
               className={`slash-item${i === active ? " is-active" : ""}`}
               onPointerDown={(e) => e.preventDefault() /* garde le focus dans l'éditeur */}
-              onClick={() => pick(t.type)}
+              onClick={() => pick(type)}
             >
-              <span className="card-dot" style={{ background: t.color }} />
-              {t.label}
+              <span className="card-dot" style={{ background: typeColor(type) }} />
+              {t.types[type].label}
             </button>
           ))}
         </div>

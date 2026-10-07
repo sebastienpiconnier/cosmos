@@ -3,16 +3,11 @@
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
-export const CARD_TYPES: { type: CardType; label: string; color: string; bibleSection: string }[] = [
-  { type: "idee", label: "Idée", color: "#5A5F73", bibleSection: "Idées en vrac" },
-  { type: "personnage", label: "Personnage", color: "#3F43C4", bibleSection: "Personnages" },
-  { type: "lieu", label: "Lieu", color: "#1E7F72", bibleSection: "Lieux" },
-  { type: "scene", label: "Scène", color: "#C2700F", bibleSection: "Scènes" },
-  { type: "theme", label: "Thème", color: "#B03A78", bibleSection: "Thèmes" },
-  { type: "question", label: "Question ouverte", color: "#7A7F93", bibleSection: "Questions ouvertes" },
-];
+/** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
+export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "theme", "question"];
 
-export const typeInfo = (t: CardType) => CARD_TYPES.find((c) => c.type === t) ?? CARD_TYPES[0];
+/** Couleur d'un type, en variable CSS (s'adapte au mode clair/sombre). */
+export const typeColor = (t: CardType) => `var(--type-${t})`;
 
 /** Contenu d'une carte. Le corps est stocké en Markdown sur disque, en HTML dans l'éditeur. */
 export interface CardData {

@@ -10,6 +10,7 @@ Application d'écriture pour romanciers « architectes » : une toile libre où 
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
+- **Multilingue et mode sombre dès le départ** : aucun texte ni aucune couleur en dur dans les composants (voir les sections dédiées).
 
 ## Multiplateforme (règle du projet)
 
@@ -28,6 +29,31 @@ Toute fonction doit respecter ces règles :
 
 Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
 
+## Multilingue (règle du projet)
+
+Langues : **français** (référence) et **anglais**. Système maison, sans dépendance (`src/i18n/`).
+
+1. **Aucun texte d'interface en dur** dans les composants, y compris `aria-label`, `placeholder`, `title` et messages d'erreur affichés.
+2. Une nouvelle chaîne s'ajoute d'abord dans `src/i18n/fr.ts`. TypeScript refuse alors de compiler tant que `en.ts` ne la traduit pas.
+3. Lire les textes avec `useT()` dans un composant, `getT()` ailleurs ; variables avec `fmt(t.card.changeType, { type })`.
+4. **Ajouter une langue** : copier `en.ts` en `de.ts` (par exemple), traduire, l'ajouter à `DICTIONARIES` dans `langs.ts`. Le menu Réglages la propose automatiquement.
+5. Typographie propre à chaque langue : en français apostrophe ’, guillemets « », espace avant `: ; ? !` ; en anglais apostrophe ’ et guillemets “ ”.
+6. La langue est un **réglage de l'appareil** (`src/settings.ts`), jamais une donnée du projet. Le contenu de l'auteur n'est pas traduit, et le **format de fichier ne se traduit jamais** (`cartes/`, `cosmos.json`, valeurs de `type:` restent identiques dans toutes les langues).
+7. Tri et dates : passer la langue courante (`localeCompare(b, lang)`, `Intl`).
+8. Les textes doivent supporter l'allongement (l'allemand fait +30 %) : pas de largeur fixe sur un libellé.
+
+Première ouverture : langue du système si elle est disponible, sinon anglais.
+
+## Mode sombre (règle du projet)
+
+Apparence : **Comme le système** (par défaut), **Claire** ou **Sombre**, dans le menu Réglages.
+
+1. **Aucune couleur en dur** hors des deux blocs de jetons en tête de `src/styles.css` (`:root` et `:root[data-theme="dark"]`). Tout nouveau jeton se définit dans les deux.
+2. Les couleurs de type de carte sont des variables `--type-<type>` (`typeColor(type)` en TS).
+3. Contraste AA (4,5:1) vérifié dans les deux thèmes pour tout texte, y compris les textes indicatifs.
+4. React Flow reçoit `colorMode` et ses variables `--xy-*` sont branchées sur nos jetons. Pour les fils et étiquettes, passer `var(--…)` dans `style`, jamais une couleur.
+5. Dans l'app Tauri, la barre de titre native suit le choix (`setTheme`).
+
 ## Stack
 
 | Rôle | Choix |
@@ -39,6 +65,8 @@ Tester les deux modes : dans Chrome, outils de développement, mode appareil (ta
 | État | Zustand (`src/store.ts`) |
 | Markdown | `marked` (md → html) et `turndown` (html → md) |
 | Polices | Fontsource, embarquées (l'app marche hors ligne) |
+| Langues | `src/i18n/` maison (fr, en), typé |
+| Thème | Variables CSS clair/sombre, `data-theme` sur `<html>` |
 
 ## Commandes
 
@@ -61,9 +89,16 @@ src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
   store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde
   platform.ts           isTauri, isTouch, isMobileOS
+  settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
+  i18n/
+    fr.ts               Textes de référence (type Messages)
+    en.ts               Traduction anglaise
+    langs.ts            Liste des langues, détection
+    index.ts            useT(), getT(), fmt()
   App.tsx               Chargement, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
   components/
     TopBar.tsx          Logo, curseur de vues Chaos → Ordre, statut d'enregistrement
+    Settings.tsx        Menu Réglages : langue, apparence
     Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
@@ -106,6 +141,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Toute la carte est une cible** pendant qu'on tire un fil (`useConnection` + Handle `drop` plein cadre). Ne pas l'afficher en dehors d'un tirage, il bloquerait les clics.
 - **Focus d'une nouvelle carte** : React Flow masque un nœud tant qu'il n'est pas mesuré, d'où les quelques essais de `focus()` dans `CardNode`.
 - **Appui long** : écouteurs natifs dans `Toile`. Le navigateur émule ensuite mousedown/click sous le doigt, donc sur la carte créée : ces événements sont avalés pendant 400 ms. Les écouteurs sont en phase de capture, car d3-zoom (sous React Flow) stoppe la propagation des événements tactiles.
+- **Textes figés par TipTap** : le texte indicatif est une fonction (relue à chaque rendu) et l'`aria-label` de l'éditeur est mis à jour par `setOptions` quand la langue change.
+- **React Flow en sombre** : il ajoute la classe `.dark` ; nos surcharges citent `.react-flow.dark` pour garder la priorité. La mini-carte colore les cartes par classe (`type-<type>`), pas par couleur.
 - **Menu des types** : options en `onPointerDown={preventDefault}` + `onClick`, pour garder le focus dans l'éditeur à la souris comme au doigt.
 - **Sécurité** : les `.md` viennent du disque, `markdownToHtml` passe par `sanitizeHtml` (liste blanche de balises). La Bible affiche ce HTML avec `dangerouslySetInnerHTML` : ne jamais court-circuiter le nettoyage.
 - **Raccourcis** : React Flow ignore Suppr/Retour arrière dans les champs et l'éditeur. Les nouveaux raccourcis globaux doivent faire de même.
@@ -113,16 +150,16 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Conventions
 
-- Interface **entièrement en français**, tutoiement, typographie française : guillemets « », apostrophe ’, espace avant `: ; ? !` dans les textes affichés.
+- Interface **multilingue** (voir plus haut), français de référence au tutoiement, anglais direct et chaleureux.
 - **Pas de tiret cadratin (—)** dans les textes d'interface ni la documentation : virgules, deux-points ou parenthèses.
 - Code et noms techniques en anglais, commentaires en français.
 - Accessibilité : vrais `<button>`, `aria-label` sur les boutons icône, cibles tactiles ≥ 44 px pour les actions principales, contraste AA. Viser la conformité RGAA.
-- Couleurs et polices : uniquement via les variables de `src/styles.css` (repris de la maquette Cosmos).
+- Couleurs et polices : uniquement via les variables de `src/styles.css` (repris de la maquette Cosmos), valables en clair et en sombre.
 - Pas de dépendance lourde sans raison : vérifier d'abord si React Flow ou TipTap le font déjà.
 
 ## Feuille de route
 
-1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme
+1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre
 2. Toile : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
@@ -137,4 +174,4 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 - Avant de coder une étape de la feuille de route, proposer un court plan (fichiers touchés, impact sur le format de projet).
 - Après chaque changement : `npm run build` doit passer sans erreur ni avertissement TypeScript.
-- Tester à la main dans `npm run dev` : créer une carte, la transformer, relier deux cartes, recharger la page, vérifier la Bible. Refaire le parcours en mode tactile.
+- Tester à la main dans `npm run dev` : créer une carte, la transformer, relier deux cartes, recharger la page, vérifier la Bible. Refaire le parcours en mode tactile, en anglais et en mode sombre.
