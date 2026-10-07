@@ -104,7 +104,8 @@ export const en: Messages = {
 
   toile: {
     addCard: "New card",
-    hintMouse: "Double-click to write",
+    addCardHint: "Shortcut: N key",
+    hintMouse: "Double-click or right-click to write",
     hintTouch: "Long-press to write",
     hintLink: "Drag a thread from an edge",
     hintTransform: "or the label to transform",
@@ -116,11 +117,14 @@ export const en: Messages = {
     tocTitle: "Contents, built automatically",
     tocAria: "Bible contents",
     seeOnCanvas: "Show on canvas",
+    add: "New entry",
+    addType: "New entry: {type}",
+    titleAria: "Entry title",
     toDig: "To explore",
     linkedTo: "Linked to",
     untitled: "Untitled",
     emptyTitle: "Your bible is empty",
-    emptyBody: "Create cards on the canvas and transform them with “/”: they will show up here, neatly sorted.",
+    emptyBody: "Create a first entry below, or cards on the canvas: they will show up here, neatly sorted.",
   },
 
   soon: {

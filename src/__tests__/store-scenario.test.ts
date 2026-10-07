@@ -228,11 +228,13 @@ describe("lien scène ↔ carte", () => {
     expect(disk()).not.toHaveProperty(cardPath("lanterne"));
   });
 
-  it("carte créée depuis le scénario : sous les autres, sans focus, reliée une seule fois", async () => {
+  it("carte créée depuis le scénario : sur une place libre, sans focus, reliée une seule fois", async () => {
     const id = state().addTitledCard("lieu", "Phare, Lanterne");
     const created = state().nodes.find((n) => n.id === id)!;
     expect(created.data).toMatchObject({ type: "lieu", title: "Phare, Lanterne" });
-    expect(created.position.y).toBeGreaterThan(400);
+    // Les trois cartes du projet sont en x = 0 : la nouvelle ne se pose sur aucune d'elles.
+    const others = state().nodes.filter((n) => n.id !== id);
+    expect(others.every((n) => Math.abs(n.position.x - created.position.x) >= 240 || Math.abs(n.position.y - created.position.y) >= 150)).toBe(true);
     expect(state().pendingFocusId).toBeNull();
 
     state().linkCards("lanterne", id, "se passe à");

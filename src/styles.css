@@ -312,7 +312,17 @@ button { font: inherit; color: inherit; }
 .bible-main h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; margin: 4px 0 4px; }
 .bible-entry { --type: var(--muted); background: var(--surface); border-radius: 16px; padding: 22px 26px; }
 .bible-entry header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.bible-entry h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; margin: 0; }
+.bible-entry h2 { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 500; font-size: 22px; margin: 0; }
+/* Titre d'une fiche : un champ qui ressemble à un titre, modifiable sur place. */
+.bible-title { width: 100%; min-height: 40px; margin-left: -8px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-overflow: ellipsis; }
+.bible-title:hover { border-color: var(--line); }
+.bible-title:focus-visible { border-color: var(--line-2); }
+.bible-title::placeholder { color: var(--placeholder); }
+.bible-title.is-slugline { font-size: 17px; }
+.bible-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.bible-add .eyebrow { flex-basis: 100%; }
+.bible-add .ghost-button { display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; width: auto; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); font-size: 14px; }
+.empty-view .bible-add { justify-content: center; border-top: 0; }
 .bible-body { font: 17px/1.6 var(--font-text); margin-top: 8px; }
 .bible-body p { margin: 0 0 10px; }
 .bible-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }

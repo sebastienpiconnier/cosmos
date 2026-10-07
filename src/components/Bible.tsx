@@ -1,9 +1,11 @@
-// La bible se construit toute seule à partir des cartes typées de la toile.
-// Aucune donnée propre : c'est une autre lecture du même projet.
+// La bible se construit toute seule à partir des cartes typées du canevas.
+// Aucune donnée propre : c'est une autre lecture du même projet. On peut aussi y créer une fiche
+// et la nommer : c'est une carte comme les autres, qui apparaît aussitôt sur le canevas.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { typeColor, type CardType } from "../types";
+import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 
@@ -16,6 +18,16 @@ export function Bible() {
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
   const setView = useCosmos((s) => s.setView);
+  const updateCard = useCosmos((s) => s.updateCard);
+  const addTitledCard = useCosmos((s) => s.addTitledCard);
+
+  // Fiche qui vient d'être créée ici : elle reste en tête et son titre prend le focus,
+  // sans sauter dans l'ordre alphabétique à chaque lettre tapée.
+  const [fresh, setFresh] = useState<string | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (fresh) mainRef.current?.querySelector<HTMLInputElement>(`input[data-card="${fresh}"]`)?.focus();
+  }, [fresh]);
 
   const sections = useMemo(
     () =>
@@ -24,12 +36,17 @@ export function Bible() {
         cards: nodes
           .filter((n) => n.data.type === type)
           .map((n) => n.data)
-          .sort((a, b) => a.title.localeCompare(b.title, lang)),
+          .sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : a.title.localeCompare(b.title, lang))),
       })).filter((s) => s.cards.length > 0),
-    [nodes, lang],
+    [nodes, lang, fresh],
   );
   const [current, setCurrent] = useState<CardType | null>(null);
   const shown = sections.find((s) => s.type === current) ?? sections[0];
+
+  const create = (type: CardType) => {
+    setCurrent(type);
+    setFresh(addTitledCard(type, ""));
+  };
 
   const titleOf = (id: string) => {
     const d = nodes.find((n) => n.id === id)?.data;
@@ -40,11 +57,31 @@ export function Bible() {
     return text ? (text.length > 32 ? `${text.slice(0, 32)}…` : text) : t.bible.untitled;
   };
 
-  if (!sections.length) {
+  /** Une fiche de chaque type peut naître ici. */
+  const adders = (
+    <div className="bible-add">
+      <div className="eyebrow">{t.bible.add}</div>
+      {ORDER.map((type) => (
+        <button
+          key={type}
+          type="button"
+          className="ghost-button"
+          aria-label={fmt(t.bible.addType, { type: types[type].label })}
+          onClick={() => create(type)}
+        >
+          <span className="card-dot" style={{ background: typeColor(type) }} />
+          {types[type].label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (!shown) {
     return (
       <div className="empty-view">
         <h1>{t.bible.emptyTitle}</h1>
         <p>{t.bible.emptyBody}</p>
+        {adders}
       </div>
     );
   }
@@ -71,17 +108,32 @@ export function Bible() {
             </li>
           ))}
         </ul>
+        {adders}
       </nav>
 
-      <section className="bible-main" aria-label={types[shown.type].section}>
+      <section className="bible-main" aria-label={types[shown.type].section} ref={mainRef}>
         <h1>{types[shown.type].section}</h1>
         {shown.cards.map((card) => {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
           return (
             <article key={card.id} className="bible-entry" style={{ ["--type" as string]: typeColor(shown.type) }}>
               <header>
-                <h2 className={kind === "scenario" && shown.type === "scene" ? "is-slugline" : undefined}>
-                  {card.title || t.bible.untitled}
+                <h2>
+                  {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
+                  <input
+                    type="text"
+                    data-card={card.id}
+                    className={`bible-title${kind === "scenario" && shown.type === "scene" ? " is-slugline" : ""}`}
+                    value={card.title}
+                    placeholder={types[shown.type].titlePlaceholder}
+                    aria-label={t.bible.titleAria}
+                    autoComplete="off"
+                    onChange={(e) => updateCard(card.id, { title: e.target.value })}
+                    onBlur={() => card.id === fresh && setFresh(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                    }}
+                  />
                 </h2>
                 <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
                   {t.bible.seeOnCanvas}

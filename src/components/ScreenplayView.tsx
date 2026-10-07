@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { SuggestionMenu } from "./SuggestionMenu";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
+import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
@@ -118,15 +119,30 @@ export function ScreenplayView() {
 
   const emit = useCallback(() => {
     clearTimeout(timer.current);
-    const doc = pending.current;
+    let doc = pending.current;
     if (!doc) return;
     pending.current = null;
+    const ed = editorRef.current;
+    // Une scène ou un personnage écrits à l'instant reçoivent leur carte sur le canevas.
+    if (ed && !ed.isDestroyed && ed.state.doc === doc) {
+      const host = {
+        addCard: (type: "scene" | "personnage", title: string) => useCosmos.getState().addTitledCard(type, title),
+        characterCards: () =>
+          useCosmos
+            .getState()
+            .nodes.filter((n) => n.data.type === "personnage")
+            .map((n) => n.data.title),
+        locale: useSettings.getState().lang,
+      };
+      doc = adoptNew(ed, host) ?? doc;
+    }
     const next = fromDoc(doc.toJSON(), synced.current?.titlePage ?? {});
     synced.current = next;
     useCosmos.getState().setScreenplay(next);
   }, []);
 
   const pickRef = useRef<(index: number) => void>(() => {});
+  const editorRef = useRef<Editor | null>(null);
 
   const track = (ed: Editor) => {
     const index = ed.state.selection.$from.index(0);
@@ -189,13 +205,17 @@ export function ScreenplayView() {
     },
     onCreate: ({ editor: ed }) => track(ed),
     onSelectionUpdate: ({ editor: ed }) => track(ed),
-    onUpdate: ({ editor: ed }) => {
+    onUpdate: ({ editor: ed, transaction }) => {
+      // Les liens posés par adoptNew ne sont pas une frappe : rien à reconvertir une seconde fois.
+      if (transaction.getMeta(ADOPT_META)) return;
       pending.current = ed.state.doc;
       clearTimeout(timer.current);
       timer.current = setTimeout(emit, EMIT_DELAY);
       track(ed);
     },
   });
+
+  editorRef.current = editor;
 
   // En quittant la vue, et avant Cmd/Ctrl+S, ce qui attend part tout de suite dans le store.
   useEffect(() => {
@@ -278,7 +298,7 @@ export function ScreenplayView() {
     const { state, view } = editor;
     const { schema, doc } = state;
     const title = card.title.trim();
-    const heading = schema.nodes.sceneHeading.create({ cardId: card.id }, title ? schema.text(title) : null);
+    const heading = schema.nodes.sceneHeading.create({ cardId: card.id, known: true }, title ? schema.text(title) : null);
     // Document encore vierge : la scène prend la place de la ligne vide.
     const blank = doc.childCount === 1 && doc.firstChild!.content.size === 0;
     const at = blank ? 0 : doc.content.size;
@@ -319,7 +339,7 @@ export function ScreenplayView() {
     const pos = posOf(editor.state.doc, target.index);
     const node = editor.state.doc.nodeAt(pos);
     if (node?.type.name === "sceneHeading") {
-      editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, null, { ...node.attrs, cardId: id }));
+      editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, null, { ...node.attrs, cardId: id, known: true }));
       emit();
     }
   };

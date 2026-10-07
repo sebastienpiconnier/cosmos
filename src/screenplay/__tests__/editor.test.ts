@@ -7,6 +7,7 @@ import type { Screenplay, ScreenplayElement } from "../model";
 import { parse } from "../parse";
 import { serialize } from "../serialize";
 import { fromDoc, screenplayExtensions, setElementType, toDoc } from "../editor";
+import { adoptNew } from "../editor/adopt";
 import courtFr from "./fixtures/court-fr.fountain?raw";
 import shortEn from "./fixtures/short-en.fountain?raw";
 import torture from "./fixtures/torture.fountain?raw";
@@ -331,5 +332,79 @@ describe("sortir au clavier", () => {
     expect(press("Tab")).toBe(true);
     expect(press("Escape")).toBe(true);
     expect(onEscape).toHaveBeenCalled();
+  });
+});
+
+describe("ce qu'on écrit alimente le canevas", () => {
+  const created: [string, string][] = [];
+  const host = (cards: string[] = []) => ({
+    addCard: (type: "scene" | "personnage", title: string) => {
+      created.push([type, title]);
+      if (type === "personnage") cards.push(title);
+      return `carte${created.length}`;
+    },
+    characterCards: () => cards,
+    locale: "fr",
+  });
+
+  it("une scène et ses personnages écrits au clavier reçoivent leurs cartes, une seule fois", () => {
+    created.length = 0;
+    const cards = ["Inès Morvan"];
+    open([]);
+    type("int. phare - nuit");
+    // L'en-tête est encore seul : il est peut-être en cours de frappe.
+    expect(adoptNew(editor, host(cards))).toBeNull();
+    press("Enter");
+    type("La lampe est froide.");
+    press("Enter");
+    press("Tab");
+    type("hugo (h.c.)");
+    // Le personnage n'a pas encore de réplique : son nom n'est pas fini.
+    adoptNew(editor, host(cards));
+    expect(created).toEqual([["scene", "INT. PHARE - NUIT"]]);
+    press("Enter");
+    type("Tu ne devrais pas monter seule.");
+    press("Enter");
+    press("Tab");
+    type("inès");
+    press("Enter");
+    type("J’arrive.");
+    adoptNew(editor, host(cards));
+
+    // Hugo est nouveau ; Inès a déjà sa carte (« Inès Morvan »).
+    expect(created).toEqual([
+      ["scene", "INT. PHARE - NUIT"],
+      ["personnage", "Hugo"],
+    ]);
+    expect(model().elements[0]).toEqual({ type: "sceneHeading", text: "INT. PHARE - NUIT", cardId: "carte1" });
+    // Rien de plus au passage suivant.
+    expect(adoptNew(editor, host(cards))).toBeNull();
+    expect(created).toHaveLength(2);
+  });
+
+  it("un fichier ouvert n'est pas transformé en cartes d'office", () => {
+    created.length = 0;
+    open("INT. PHARE - NUIT\n\nLa lampe.\n\nHUGO\nOui.\n");
+    expect(adoptNew(editor, host())).toBeNull();
+    expect(created).toEqual([]);
+    // Mais une scène ajoutée à ce fichier, si.
+    cursorAtEnd(3);
+    press("Enter");
+    type("ext. port - jour");
+    press("Enter");
+    type("Hugo attend.");
+    adoptNew(editor, host());
+    expect(created).toEqual([["scene", "EXT. PORT - JOUR"]]);
+  });
+
+  it("la création des cartes n'entre pas dans l'historique d'annulation", () => {
+    created.length = 0;
+    open([]);
+    type("int. phare - nuit");
+    press("Enter");
+    type("La lampe.");
+    adoptNew(editor, host());
+    editor.commands.undo();
+    expect(model().elements.find((el) => el.type === "sceneHeading")?.cardId).toBe("carte1");
   });
 });

@@ -105,7 +105,8 @@ export const fr = {
 
   toile: {
     addCard: "Nouvelle carte",
-    hintMouse: "Double-clic pour écrire",
+    addCardHint: "Raccourci : touche N",
+    hintMouse: "Double-clic ou clic droit pour écrire",
     hintTouch: "Appui long pour écrire",
     hintLink: "Tire un fil depuis un bord",
     hintTransform: "ou l’étiquette pour transformer",
@@ -117,11 +118,14 @@ export const fr = {
     tocTitle: "Sommaire, généré automatiquement",
     tocAria: "Sommaire de la bible",
     seeOnCanvas: "Voir sur le canevas",
+    add: "Nouvelle fiche",
+    addType: "Nouvelle fiche : {type}",
+    titleAria: "Titre de la fiche",
     toDig: "À creuser",
     linkedTo: "Relié à",
     untitled: "Sans titre",
     emptyTitle: "La bible est vide",
-    emptyBody: "Crée des cartes sur le canevas et transforme-les avec « / » : elles apparaîtront ici, rangées.",
+    emptyBody: "Crée une première fiche ci-dessous, ou des cartes sur le canevas : elles apparaîtront ici, rangées.",
   },
 
   soon: {

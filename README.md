@@ -24,14 +24,14 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 
 ### Le canevas
 
-- **Cartes libres** : double-clic sur le canevas, appui long au doigt ou bouton « Nouvelle carte », et tu écris directement. Texte riche (gras, italique, listes).
+- **Cartes libres** : double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche `N`, et tu écris directement. Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Six types de carte** : Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Fils étiquetés** : tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
 
 ### La Bible
 
-Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change.
+Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas.
 
 ### Romans et scénarios
 
@@ -47,7 +47,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
 - **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
 - **Complétion** : les personnages et les décors de la Bible se proposent pendant que tu écris, avec les extensions (V.O., H.C.) et les moments (JOUR, NUIT). Un personnage ou un décor inconnu peut devenir une carte en un geste.
-- **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène. Renommer l'un renomme l'autre, et les cartes sans texte attendent dans « Scènes à écrire ».
+- **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène, et renommer l'un renomme l'autre. Une scène ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes** : le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence, en format US Letter ou A4.
 - **Séquencier** : la liste des scènes dans l'ordre, avec leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
 - **Exports** : PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).

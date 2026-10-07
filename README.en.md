@@ -24,14 +24,14 @@ Cosmos is under active development (version 0.1). Here is what works today.
 
 ### The canvas
 
-- **Free-form cards**: double-click the canvas, long-press with a finger or use the “New card” button, and start writing. Rich text (bold, italic, lists).
+- **Free-form cards**: double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing. Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Six card types**: Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Labeled threads**: drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge.
 - **Minimap and zoom** to find your way as the canvas grows.
 
 ### The Bible
 
-A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes.
+A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas.
 
 ### Novels and screenplays
 
@@ -47,7 +47,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **All from the keyboard**: `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
 - **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
 - **Completion**: characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
-- **Linked to the canvas**: each scene heading is linked to its Scene card. Renaming one renames the other, and cards with no text wait under “Scenes to write”.
+- **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
 - **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
 - **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).

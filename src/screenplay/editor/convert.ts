@@ -22,6 +22,8 @@ function toNode(el: ScreenplayElement): JSONContent {
     attrs.sceneNumber = el.sceneNumber ?? null;
   }
   if (el.type === "character") attrs.dual = el.dual === true;
+  // Ce qui vient du modèle est connu du projet : aucune carte à créer pour lui.
+  if (el.type === "sceneHeading" || el.type === "character") attrs.known = true;
   if (el.type !== "parenthetical" && el.type !== "dialogue") attrs.forced = el.forced === true;
   const node: JSONContent = { type: el.type, attrs };
   if (el.text !== "") node.content = [{ type: "text", text: el.text }];

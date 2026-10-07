@@ -48,12 +48,15 @@ export const Doc = Node.create({ name: "doc", topNode: true, content: "block+" }
 
 // L'action est déclarée en premier : c'est le type par défaut d'un document vide.
 export const Action = element("action", { forced: flag("forced") });
+// « known » : l'élément est déjà connu du projet (lu dans le fichier, ou sa carte a été créée).
+// Un en-tête ou un personnage écrit à l'instant ne l'est pas encore : sa carte est à créer.
 export const SceneHeading = element("sceneHeading", {
   cardId: text("card"),
   sceneNumber: text("number"),
   forced: flag("forced"),
+  known: flag("known"),
 });
-export const Character = element("character", { dual: flag("dual"), forced: flag("forced") });
+export const Character = element("character", { dual: flag("dual"), forced: flag("forced"), known: flag("known") });
 export const Parenthetical = element("parenthetical", {});
 export const Dialogue = element("dialogue", {});
 export const Transition = element("transition", { forced: flag("forced") });

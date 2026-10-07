@@ -67,15 +67,27 @@ export function Toile() {
     if (isPane(e.target)) createAt(e.clientX, e.clientY);
   };
 
-  // Bouton « + » : nouvelle carte au centre de l'écran, légèrement décalée
-  // à chaque appui pour ne pas empiler les cartes.
-  const addCount = useRef(0);
+  // Bouton « + » et touche N : nouvelle carte au centre de l'écran (le store la décale si la place est prise).
   const createInCenter = () => {
     const rect = wrapper.current?.getBoundingClientRect();
     if (!rect) return;
-    const shift = (addCount.current++ % 5) * 28;
-    createAt(rect.left + rect.width / 2 - 100 + shift, rect.top + rect.height / 2 - 60 + shift);
+    createAt(rect.left + rect.width / 2 - 100, rect.top + rect.height / 2 - 60);
   };
+
+  // Raccourci clavier : N, hors d'un champ ou d'une carte en cours d'écriture.
+  const createInCenterRef = useRef(createInCenter);
+  createInCenterRef.current = createInCenter;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      e.preventDefault();
+      createInCenterRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Appui long sur la toile (écran tactile ou stylet) : nouvelle carte à cet endroit.
   // Au relâchement, le navigateur émule mousedown/click sous le doigt, c'est-à-dire
@@ -162,6 +174,11 @@ export function Toile() {
         onEdgesChange={onEdgesChange}
         onConnectStart={() => (edgeCountBeforeConnect.current = useCosmos.getState().edges.length)}
         onConnect={onConnect}
+        // Clic droit sur le canevas : nouvelle carte à cet endroit (le menu du navigateur reste sur les cartes).
+        onPaneContextMenu={(event) => {
+          event.preventDefault();
+          createAt(event.clientX, event.clientY);
+        }}
         onConnectEnd={(event) => {
           // Un fil vient d'être créé : on propose tout de suite de l'étiqueter.
           const all = useCosmos.getState().edges;
@@ -225,7 +242,7 @@ export function Toile() {
         />
       )}
 
-      <button type="button" className="add-card" onClick={createInCenter}>
+      <button type="button" className="add-card" title={t.toile.addCardHint} aria-keyshortcuts="N" onClick={createInCenter}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>

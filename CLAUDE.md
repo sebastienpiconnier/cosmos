@@ -4,9 +4,9 @@ Application d'écriture pour romanciers et scénaristes « architectes » : un c
 
 ## Principes produit (à respecter dans toute évolution)
 
-- **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
+- **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre. Ce qu'on crée dans une vue existe aussitôt dans les autres : une scène ou un personnage écrits dans le scénario, une fiche créée dans la Bible, ont leur carte sur le canevas.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
-- **Trois gestes** : taper (double-clic, appui long ou bouton « + »), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
+- **Trois gestes** : taper (double-clic, clic droit, appui long, bouton « + » ou touche N), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
@@ -111,6 +111,7 @@ src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
   store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde
   platform.ts           isTauri, isTouch, isMobileOS
+  placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
@@ -123,11 +124,11 @@ src/
     Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
     TopBar.tsx          Logo, titre du projet, curseur de vues Chaos → Ordre, statut, bouton « Projets »
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
-    Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
+    Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
-    Bible.tsx           Sommaire auto par type + fiches + liens
+    Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
     ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
     Sequencier.tsx      Vue Plan d'un scénario : scènes dans l'ordre, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
@@ -151,6 +152,7 @@ src/
       keymap.ts         Tab, Maj+Tab, Entrée, Maj+Entrée, Retour arrière, Échap
       autodetect.ts     Détection à la frappe (int., ext., parenthèse) et majuscules
       autocomplete.ts   Suggestions : personnages, extensions, préfixes, décors, moments (fonctions pures)
+      adopt.ts          Une scène ou un personnage écrits à l'instant reçoivent leur carte sur le canevas
       index.ts          screenplayExtensions() : l'assemblage
   storage/
     paths.ts            Format du dossier projet
@@ -209,6 +211,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Sauvegarde** : seuls les fichiers modifiés sont réécrits (diff avec `lastFiles`), les cartes supprimées sont effacées du disque.
 - **Scénario non modifié** : tant que `screenplay === savedScreenplay` dans le store, `scenario.fountain` est réécrit tel quel, à l'octet près. Les fonctions de `link.ts` rendent donc le même objet quand rien ne change : ne pas recréer le scénario sans raison.
 - **Lien scène ↔ carte** : l'en-tête fait foi au chargement. Dans un scénario, une carte Scène qui reçoit un titre entre aussitôt dans le texte, à la fin (`appendScene`) : elle doit apparaître tout de suite dans le séquencier et l'éditeur. Supprimer une carte Scène ou changer son type (`releaseCard`) retire l'en-tête s'il n'a encore aucun texte, sinon seulement la note de lien : le texte d'une scène n'est jamais supprimé. Un titre de carte vidé ne touche pas à l'en-tête (un en-tête vide disparaîtrait du fichier).
+- **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément, un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
+- **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
+- **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
 - **Barre du haut stable** : le statut d'enregistrement empile tous ses libellés (un seul visible) pour garder la même largeur, et la durée d'un scénario est affichée même à zéro. Rien ne doit se décaler pendant un enregistrement.
 - **Titre du projet** : il se modifie dans la barre du haut (`setTitle`). La page de titre du scénario suit seulement si elle portait l'ancien titre.
 - **Éditeur de scénario, source de vérité** : le document TipTap n'est qu'une lecture. `ScreenplayView` le reconvertit en `Screenplay` 250 ms après la dernière frappe (et tout de suite en quittant la vue ou sur Cmd/Ctrl+S) ; il ne recharge l'éditeur que si le scénario du store change sans lui (`synced`).

@@ -19,6 +19,7 @@ import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
+import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import {
   appendScene,
   headingTitles,
@@ -97,7 +98,7 @@ interface CosmosState {
   onConnect: (c: Connection) => void;
 
   addCard: (pos: { x: number; y: number }, type?: CardType) => string;
-  /** Carte créée depuis une autre vue que la toile : posée sous les autres, sans prendre le focus. */
+  /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
   linkCards: (source: string, target: string, label: string) => void;
@@ -135,6 +136,15 @@ function fromProject(p: Project) {
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
   return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, edges };
 }
+
+/** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
+const boxes = (nodes: CardNode[]): Box[] =>
+  nodes.map((n) => ({
+    x: n.position.x,
+    y: n.position.y,
+    width: typeof n.style?.width === "number" ? n.style.width : CARD_WIDTH,
+    height: n.measured?.height ?? CARD_SIZE.height,
+  }));
 
 /** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
 function sceneCards(nodes: CardNode[]): SceneCard[] {
@@ -428,15 +438,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     addCard: (pos, type = "idee") => {
       const card: CardData = { id: newId(), type, title: "", html: "" };
-      const node = { ...toNode(card, pos.x, pos.y), selected: true };
+      // À l'endroit demandé s'il est libre, sinon juste à côté : deux cartes ne se chevauchent pas.
+      const spot = freeSpot(pos, boxes(get().nodes));
+      const node = { ...toNode(card, spot.x, spot.y), selected: true };
       set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
       touch();
       return card.id;
     },
     addTitledCard: (type, title) => {
       const card: CardData = { id: newId(), type, title, html: "" };
-      const lowest = get().nodes.reduce((y, n) => Math.max(y, n.position.y), -140);
-      set({ nodes: [...get().nodes, toNode(card, 80, lowest + 220)] });
+      const spot = firstFreeCell(boxes(get().nodes));
+      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
       touch();
       return card.id;
     },

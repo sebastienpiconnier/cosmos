@@ -99,8 +99,9 @@ const sorted = (count: Map<string, number>, locale: string) =>
   [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], locale)).map(([name]) => name);
 
 /** Vrai aussi pour un début de nom (« HUGO L », « INÈS ») : on ne propose pas de créer ce qui existe. */
+export const matchesCharacter = (cardTitle: string, name: string) => fold(cardTitle).startsWith(fold(name));
 const hasCharacterCard = (data: SuggestData, name: string) =>
-  data.characterCards.some((title) => fold(title).startsWith(fold(name)));
+  data.characterCards.some((title) => matchesCharacter(title, name));
 
 const hasLocationCard = (data: SuggestData, location: string) =>
   data.locationCards.some((title) => fold(title) === fold(location));
