@@ -17,7 +17,7 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phase 0 faite (Vitest, `npm test`, étape ajoutée à `ci.yml`). Reste à vérifier en CI : le dépôt n'a pas encore de dépôt distant, et `ci.yml` ne se déclenche que sur `main` alors que la branche locale est `master`. Prochaine étape : phase 1.
+Dernière session : 7 octobre 2026, phase 0 faite (Vitest, `npm test`, étape ajoutée à `ci.yml`). Dépôt publié sur GitHub (branche `main`), CI au vert. Prochaine étape : phase 1.
 
 ---
 
