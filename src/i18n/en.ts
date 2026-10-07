@@ -100,6 +100,10 @@ export const en: Messages = {
     roman: "Novel",
     scenario: "Screenplay",
     hint: "Adapts the vocabulary and the writing editor. You can change it anytime.",
+    paper: "Page size",
+    paperLetter: "US Letter",
+    paperA4: "A4",
+    paperHint: "Used to estimate the screenplay’s pages and running time.",
   },
 
   scenario: {
@@ -191,6 +195,23 @@ export const en: Messages = {
       createLocation: "Create the location {name}",
     },
     linkSetIn: "takes place at",
+    // Pages and running time: an estimate, hence the “≈”.
+    pageOf: "Page {page} of {pages}",
+    pageShort: "p. {n}",
+    lengthShort: "{n} p.",
+    pagesOne: "{n} page",
+    pagesMany: "{n} pages",
+    minutes: "≈ {n} min",
+    lengthAria: "Estimated running time of the screenplay",
+    sequencer: {
+      title: "Step outline",
+      listAria: "Scenes in screenplay order",
+      empty: "No scene yet. Write a first scene heading in the Screenplay view.",
+      hint: "Drag a scene, or use the arrows, to change the order of the screenplay.",
+      moveUp: "Move the scene “{title}” up",
+      moveDown: "Move the scene “{title}” down",
+      moved: "Scene “{title}” moved to position {n}.",
+    },
   },
 
   demo: {

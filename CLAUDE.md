@@ -127,6 +127,8 @@ src/
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches + liens
     ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
+    Sequencier.tsx      Vue Plan d'un scénario : scènes dans l'ordre, longueur, réordonnancement
+    usePagination.ts    Pagination du scénario courant (hook)
     Bientot.tsx         Vues Plan et Manuscrit (roman), pas encore construites
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
     model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
@@ -135,6 +137,9 @@ src/
     serialize.ts        Modèle → Fountain (lignes vides et marqueurs de forçage)
     link.ts             Lien en-tête de scène ↔ carte Scène ([[cosmos:id]]), fonctions pures
     scenes.ts           Lecture par scènes : liste, personnages qui parlent, décor
+    layout.ts           Gabarit de page (Letter, A4) : source unique pour le compteur et le futur PDF
+    paginate.ts         Estimation des pages par comptage de lignes
+    sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
     editor/             Éditeur TipTap : un nœud bloc par élément
       nodes.ts          Schéma (six éléments éditables + « preserved » pour le reste)
       convert.ts        Screenplay ↔ document ProseMirror (un élément = un nœud de premier niveau)
@@ -156,7 +161,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), positions des cartes, fils (avec étiquettes)
+  cosmos.json          titre, type (roman | scenario), format de page (paper, facultatif), positions des cartes, fils (avec étiquettes)
   cartes/<id>.md       une carte par fichier
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
@@ -195,6 +200,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Majuscules du scénario** : seul l'élément en cours d'écriture est mis en majuscules (`autodetect.ts`), jamais au chargement, ni en annulant, ni pendant une saisie composée (accents morts, IME). Le CSS met le reste en majuscules à l'affichage.
 - **Éléments conservés** (note, section, texte mis de côté…) : leurs libellés viennent de variables CSS `--sp-label-*` posées par React, pour suivre la langue sans redessiner les nœuds.
 - **Complétion du scénario** : le menu ne présélectionne une suggestion que si elle complète le texte tapé (`active` vaut -1 sinon), pour qu'Entrée continue de passer à l'élément suivant sur un nom déjà complet. Ses touches sont prises dans `editorProps.handleKeyDown`, avant le clavier de l'éditeur.
+- **Séquencier, glisser-déposer** : l'index de la scène glissée vit dans une ref, pas seulement dans l'état React. Le dépôt peut arriver avant le rendu suivant et lirait sinon une valeur périmée.
 - **Page de titre Fountain** : une clé ne commence pas par un marqueur et ne contient pas de note, sinon un en-tête forcé en première ligne (`.PHARE [[cosmos:id]]`) est pris pour une page de titre.
 
 ## Conventions
@@ -209,7 +215,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 4 du plan)
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 5 du plan)
 2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue

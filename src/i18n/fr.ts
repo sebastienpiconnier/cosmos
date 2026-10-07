@@ -101,6 +101,10 @@ export const fr = {
     roman: "Roman",
     scenario: "Scénario",
     hint: "Adapte le vocabulaire et l’éditeur d’écriture. Modifiable à tout moment.",
+    paper: "Format de page",
+    paperLetter: "US Letter",
+    paperA4: "A4",
+    paperHint: "Sert à estimer les pages et la durée du scénario.",
   },
 
   // Vocabulaire propre aux scénarios : remplace celui du roman quand le projet est un scénario.
@@ -193,6 +197,23 @@ export const fr = {
       createLocation: "Créer le décor {name}",
     },
     linkSetIn: "se passe à",
+    // Pages et durée : une estimation, d'où le « ≈ ».
+    pageOf: "Page {page} sur {pages}",
+    pageShort: "p. {n}",
+    lengthShort: "{n} p.",
+    pagesOne: "{n} page",
+    pagesMany: "{n} pages",
+    minutes: "≈ {n} min",
+    lengthAria: "Durée estimée du scénario",
+    sequencer: {
+      title: "Séquencier",
+      listAria: "Scènes dans l’ordre du scénario",
+      empty: "Pas encore de scène. Écris un premier en-tête dans la vue Scénario.",
+      hint: "Glisse une scène, ou utilise les flèches, pour changer l’ordre du scénario.",
+      moveUp: "Monter la scène « {title} »",
+      moveDown: "Descendre la scène « {title} »",
+      moved: "Scène « {title} » déplacée en position {n}.",
+    },
   },
 
   // Projet d'exemple du premier lancement (devient le contenu de l'auteur ensuite).

@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
+import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
@@ -41,6 +42,8 @@ export function ScreenplayView() {
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
   const setView = useCosmos((s) => s.setView);
+  const paper = useCosmos((s) => s.paper);
+  const pagination = usePagination();
 
   const barRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState<{ index: number; type: EditableType | null }>({ index: 0, type: null });
@@ -325,6 +328,9 @@ export function ScreenplayView() {
                 <span className="is-slugline">
                   {s.number}. {s.text || sp.untitledScene}
                 </span>
+                {pagination && pagination.startPage[s.index] !== undefined && (
+                  <span className="sp-towrite">{fmt(sp.pageShort, { n: pagination.startPage[s.index] })}</span>
+                )}
               </button>
             </li>
           ))}
@@ -399,7 +405,7 @@ export function ScreenplayView() {
         </div>
 
         <div className="sp-scroll">
-          <div className="sp-page" style={labels} lang={lang} ref={pageRef}>
+          <div className="sp-page" data-paper={paper} style={labels} lang={lang} ref={pageRef}>
             <EditorContent editor={editor} />
             {menu && (
               <SuggestionMenu
@@ -413,6 +419,14 @@ export function ScreenplayView() {
             )}
           </div>
         </div>
+        {/* Pied de page : position dans le scénario et durée estimée. */}
+        {pagination && pagination.pages > 0 && (
+          <p className="sp-footer" role="status">
+            {fmt(sp.pageOf, { page: pagination.startPage[Math.min(current.index, pagination.startPage.length - 1)] ?? 1, pages: pagination.pages })}
+            {" · "}
+            {fmt(sp.minutes, { n: minutesFor(pagination.pages) })}
+          </p>
+        )}
       </div>
 
       <aside className="sp-side" aria-label={sp.inSceneTitle}>

@@ -6,16 +6,19 @@ import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
+import { PAPERS, isPaper } from "../screenplay/layout";
 
 export function Settings() {
   const t = useT();
   const { lang, themePref, setLang, setThemePref } = useSettings();
   const kind = useCosmos((s) => s.kind);
   const setKind = useCosmos((s) => s.setKind);
+  const paper = useCosmos((s) => s.paper);
+  const setPaper = useCosmos((s) => s.setPaper);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -81,6 +84,26 @@ export function Settings() {
           <p className="settings-hint" id={ids.kindHint}>
             {t.kinds.hint}
           </p>
+          {kind === "scenario" && (
+            <>
+              <label htmlFor={ids.paper}>{t.kinds.paper}</label>
+              <select
+                id={ids.paper}
+                value={paper}
+                aria-describedby={ids.paperHint}
+                onChange={(e) => isPaper(e.target.value) && setPaper(e.target.value)}
+              >
+                {PAPERS.map((p) => (
+                  <option key={p} value={p}>
+                    {p === "letter" ? t.kinds.paperLetter : t.kinds.paperA4}
+                  </option>
+                ))}
+              </select>
+              <p className="settings-hint" id={ids.paperHint}>
+                {t.kinds.paperHint}
+              </p>
+            </>
+          )}
 
           {/* Réglages de l'appareil (langue, apparence) */}
           <div className="eyebrow settings-sep">{t.settings.title}</div>

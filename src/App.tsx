@@ -6,6 +6,7 @@ import { Toile } from "./components/Toile";
 import { Bible } from "./components/Bible";
 import { Bientot } from "./components/Bientot";
 import { ScreenplayView } from "./components/ScreenplayView";
+import { Sequencier } from "./components/Sequencier";
 import { useT } from "./i18n";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
@@ -29,7 +30,7 @@ export function App() {
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.status !== "modifie") return;
       const same =
-        s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind;
+        s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind && s.paper === prev.paper;
       if (same && s.status === prev.status) return;
       clearTimeout(timer);
       timer = setTimeout(() => useCosmos.getState().save(), AUTOSAVE_DELAY);
@@ -61,7 +62,7 @@ export function App() {
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}
-          {view === "plan" && <Bientot view="plan" />}
+          {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Bientot view="plan" />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}
           {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Bientot view="manuscrit" />)}
         </main>

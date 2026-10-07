@@ -13,11 +13,11 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [x] Phase 2 : stockage et lien avec les cartes
 - [x] Phase 3 : l'éditeur
 - [x] Phase 4 : complétion
-- [ ] Phase 5 : pages, minutes, séquencier minimal
+- [x] Phase 5 : pages, minutes, séquencier minimal
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0 à 4 faites. Prochaine étape : phase 5 (pages, minutes, séquencier minimal).
+Dernière session : 7 octobre 2026, phases 0 à 5 faites. Prochaine étape : phase 6 (exports).
 
 Notes de la phase 1 :
 
@@ -53,6 +53,17 @@ Notes de la phase 4 :
 - Une carte Personnage « Hugo Le Bris » propose aussi « HUGO » ; les noms et décors déjà utilisés dans le scénario passent devant, par fréquence.
 - La création de carte est proposée pour un personnage sans carte et, après le tiret de l'en-tête, pour un décor sans carte. Le fil n'est tiré que pour un décor, depuis la carte de la scène si elle existe.
 - Le rapprochement décor ↔ carte se fait sur le nom exact : « PHARE, LANTERNE » ne retrouve pas la carte « Phare de Kerlaouen ».
+
+Notes de la phase 5 :
+
+- `src/screenplay/layout.ts` (gabarits Letter et A4), `paginate.ts` (estimation), `sequence.ts` (blocs et déplacement), `src/components/Sequencier.tsx` et `usePagination.ts`.
+- Valeurs de référence des tests : la fixture française fait 29 lignes, soit une page ; répétée 150 fois, entre 82 et 86 pages en Letter.
+- Letter : 60 caractères d'action et 55 lignes par page. A4 : 57 caractères et 59 lignes (valeur posée à la main, à caler sur le PDF en phase 6).
+- Règles de bas de page : un en-tête de scène n'est jamais en dernière ligne, et un personnage n'est pas séparé de sa première ligne de réplique (ajout par rapport au plan).
+- `cosmos.json` gagne le champ facultatif `paper`, écrit seulement pour A4. Letter reste le défaut, quelle que soit la langue.
+- Séquencier : les sections (`# Acte II`) sont des blocs fixes ; une scène qui en franchit une change d'acte. Ce qui précède le premier bloc reste en tête. Déplacement à la souris (glisser) ou par les boutons Monter et Descendre (doigt, clavier).
+- Affichage : durée et pages dans la barre du haut, « Page 3 sur 6 » sous la feuille, page de début dans la liste des scènes. Dans le séquencier, la durée d'une scène n'est affichée qu'à partir d'une demi-page.
+- Les gabarits par actes et les durées cibles de la maquette du séquencier viendront avec l'étape 4 de la feuille de route.
 
 ---
 

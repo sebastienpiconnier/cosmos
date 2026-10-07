@@ -48,6 +48,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
 - **Completion**: characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
 - **Linked to the canvas**: each scene heading is linked to its Scene card. Renaming one renames the other, and cards with no text wait under “Scenes to write”.
+- **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
+- **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
 - **An open file**: the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
 
 ### Comfort
@@ -68,7 +70,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
-| Screenplay | Page and minute counter, step outline, PDF, Fountain and FDX exports (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
+| Screenplay | PDF, Fountain and FDX exports, Fountain import, act templates in the step outline (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
 | Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |

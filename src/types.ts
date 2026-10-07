@@ -2,6 +2,7 @@
 // Une carte naît "idee" (note libre) et peut être typée plus tard via le menu "/".
 
 import type { Screenplay } from "./screenplay/model";
+import type { Paper } from "./screenplay/layout";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
@@ -52,6 +53,8 @@ export interface ProjectMeta {
   title: string;
   /** Absent dans les projets créés avant le mode scénario : vaut alors "roman". */
   kind?: ProjectKind;
+  /** Format de page du scénario. Absent : "letter". */
+  paper?: Paper;
   layout: CardLayout[];
   links: Link[];
   viewport?: { x: number; y: number; zoom: number };

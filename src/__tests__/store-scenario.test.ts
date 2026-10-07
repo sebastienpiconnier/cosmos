@@ -85,6 +85,22 @@ describe("projet roman", () => {
     );
   });
 
+  it("format de page : Letter par défaut (non écrit), A4 enregistré et relu", async () => {
+    await state().load();
+    await state().save();
+    expect(state().paper).toBe("letter");
+    expect(JSON.parse(disk()[META_FILE])).not.toHaveProperty("paper");
+
+    state().setPaper("a4");
+    expect(state().status).toBe("modifie");
+    await state().save();
+    expect(JSON.parse(disk()[META_FILE]).paper).toBe("a4");
+
+    useCosmos.setState({ paper: "letter" });
+    await state().load();
+    expect(state().paper).toBe("a4");
+  });
+
   it("revenir en roman garde le fichier", async () => {
     await state().load();
     state().setKind("scenario");

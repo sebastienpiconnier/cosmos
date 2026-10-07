@@ -2,14 +2,21 @@ import { useCosmos, type View } from "../store";
 import { storage } from "../storage";
 import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
+import { fmt } from "../i18n";
+import { useSettings } from "../settings";
+import { minutesFor, usePagination } from "./usePagination";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 const READY: Record<View, boolean> = { toile: true, plan: false, bible: true, manuscrit: false };
 
 export function TopBar() {
   const { t, views, kind } = useVocab();
-  // L'éditeur de scénario existe ; le manuscrit en prose pas encore.
-  const ready = (v: View) => READY[v] || (v === "manuscrit" && kind === "scenario");
+  // Un scénario a son séquencier et son éditeur ; le plan et le manuscrit du roman pas encore.
+  const ready = (v: View) => READY[v] || kind === "scenario";
+  const lang = useSettings((s) => s.lang);
+  const pagination = usePagination();
+  const pages = kind === "scenario" ? (pagination?.pages ?? 0) : 0;
+  const pageCount = fmt(new Intl.PluralRules(lang).select(pages) === "one" ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: pages });
   const { view, setView, status, save, openFolder } = useCosmos();
 
   const location =
@@ -48,6 +55,12 @@ export function TopBar() {
       </nav>
 
       <div className="actions">
+        {pages > 0 && (
+          <span className="runtime" aria-label={t.screenplay.lengthAria}>
+            <strong>{fmt(t.screenplay.minutes, { n: minutesFor(pages) })}</strong>
+            <span>{pageCount}</span>
+          </span>
+        )}
         <span className={`status status-${status}`} role="status">
           {t.status[status]}
         </span>

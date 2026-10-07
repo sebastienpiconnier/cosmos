@@ -16,6 +16,7 @@ import { nanoid } from "nanoid";
 import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
 import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap } from "./storage";
 import type { Screenplay } from "./screenplay/model";
+import { isPaper, type Paper } from "./screenplay/layout";
 import { headingTitles, initialScreenplay, renameHeading, unlinkCard, type SceneCard } from "./screenplay/link";
 import { getT } from "./i18n";
 
@@ -29,6 +30,9 @@ interface CosmosState {
   title: string;
   kind: ProjectKind;
   setKind: (kind: ProjectKind) => void;
+  /** Format de page du scénario (estimation des pages, puis PDF). */
+  paper: Paper;
+  setPaper: (paper: Paper) => void;
   nodes: CardNode[];
   edges: Edge[];
   /** Texte du scénario (scenario.fountain). null tant que le projet n'a jamais été un scénario. */
@@ -84,7 +88,8 @@ function fromProject(p: Project) {
   });
   const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating" }));
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
-  return { title: p.meta.title, kind, nodes, edges };
+  const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : "letter";
+  return { title: p.meta.title, kind, paper, nodes, edges };
 }
 
 /** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
@@ -121,12 +126,14 @@ function openProject(p: Project) {
   };
 }
 
-function toProject(s: Pick<CosmosState, "title" | "kind" | "nodes" | "edges" | "screenplay">): Project {
+function toProject(s: Pick<CosmosState, "title" | "kind" | "paper" | "nodes" | "edges" | "screenplay">): Project {
   return {
     meta: {
       version: 1,
       title: s.title,
       kind: s.kind,
+      // Le format par défaut ne s'écrit pas : cosmos.json reste identique pour qui n'y touche pas.
+      ...(s.paper !== "letter" ? { paper: s.paper } : {}),
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -183,6 +190,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
       if (kind === "scenario" && !screenplay) set({ kind, screenplay: initialScreenplay(title, sceneCards(nodes)) });
       else set({ kind });
+      touch();
+    },
+    paper: "letter",
+    setPaper: (paper) => {
+      set({ paper });
       touch();
     },
     nodes: [],
