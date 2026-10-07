@@ -161,9 +161,34 @@ describe("travailler sur plusieurs projets", () => {
     await state().start();
     await state().createProject({ title: "Roman", kind: "roman" });
     state().addCard({ x: 0, y: 0 });
-    vi.spyOn(storage, "write").mockRejectedValueOnce(new Error("disque plein"));
+    const write = vi.spyOn(storage, "write").mockRejectedValue(new Error("disque plein"));
     await state().closeProject();
     expect(state()).toMatchObject({ screen: "project", status: "erreur" });
+
+    // « Projets » retente l'enregistrement ; tant qu'il échoue, on reste.
+    await state().closeProject();
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(state().screen).toBe("project");
+
+    // « Revenir aux projets sans enregistrer » : on sort quand même, sans nouvelle écriture.
+    await state().closeProject(true);
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(state().screen).toBe("home");
+  });
+
+  it("enregistrement rétabli : « Projets » enregistre puis revient à l'accueil", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await state().start();
+    await state().createProject({ title: "Roman", kind: "roman" });
+    state().addCard({ x: 0, y: 0 });
+    vi.spyOn(storage, "write").mockRejectedValueOnce(new Error("disque absent"));
+    await state().save();
+    expect(state().status).toBe("erreur");
+
+    await state().closeProject();
+    expect(state().screen).toBe("home");
+    storage.select(state().projects[0].id);
+    expect(Object.keys(await files()).filter((path) => path.startsWith("cartes/"))).toHaveLength(1);
   });
 });
 

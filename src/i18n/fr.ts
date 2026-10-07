@@ -9,6 +9,10 @@ export const fr = {
   app: {
     loading: "Ouverture du projet…",
     openFailed: "Le dossier de ton projet n’a pas pu être ouvert. Choisis-le à nouveau avec « Ouvrir un dossier » : tes fichiers n’ont pas été modifiés.",
+    saveFailed: "L’enregistrement a échoué. Tes dernières modifications ne sont pas encore sur le disque.",
+    saveFailedFolder: "L’enregistrement a échoué : l’app n’a pas pu écrire dans le dossier du projet. S’il est sur un autre disque ou dans OneDrive, reviens aux projets et rouvre-le avec « Ouvrir un dossier… » pour redonner l’accès.",
+    retry: "Réessayer",
+    leaveUnsaved: "Revenir aux projets sans enregistrer",
   },
 
   // Écran d'accueil : choisir le projet sur lequel travailler.

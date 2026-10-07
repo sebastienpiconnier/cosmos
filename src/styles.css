@@ -84,6 +84,14 @@ button { font: inherit; color: inherit; }
 
 .app { display: flex; flex-direction: column; height: 100%; }
 .app-main { flex: 1; min-height: 0; position: relative; }
+/* Message d'échec d'enregistrement, sous la barre du haut */
+.app-alert {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 20px;
+  background: var(--surface); border-bottom: 2px solid var(--danger); color: var(--ink); font-size: 14px; line-height: 1.45;
+}
+.app-alert > span:first-child { flex: 1 1 320px; }
+.app-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 /* ---------- Accueil : choisir ou créer un projet ---------- */
 .home { display: flex; flex-direction: column; height: 100%; }
 .home-actions { margin-left: auto; }
@@ -226,7 +234,11 @@ button { font: inherit; color: inherit; }
 .card-editor p:last-child { margin-bottom: 0; }
 .card-editor h2, .card-editor h3 { font-family: var(--font-display); font-weight: 500; margin: 8px 0 4px; }
 .card-editor ul, .card-editor ol { margin: 0 0 6px; padding-left: 20px; }
-.card-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
+/* Texte indicatif d'une carte vide. Il peut tenir sur deux lignes (carte étroite, langue plus longue) :
+   le paragraphe grandit avec lui (flow-root), et sa largeur annulée (marge négative) laisse le curseur
+   en haut à gauche, par-dessus. */
+.card-editor p.is-editor-empty:first-child { display: flow-root; }
+.card-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; width: 100%; margin-right: -100%; pointer-events: none; }
 
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; }
 .card:hover .card-port, .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }

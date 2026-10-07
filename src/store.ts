@@ -74,8 +74,8 @@ interface CosmosState {
   importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
   tryExample: () => Promise<void>;
-  /** Enregistre et revient à l'accueil. */
-  closeProject: () => Promise<void>;
+  /** Enregistre et revient à l'accueil. `force` : y revenir même si l'enregistrement a échoué. */
+  closeProject: (force?: boolean) => Promise<void>;
   /** Retire un projet de la liste de l'accueil, sans toucher à ses fichiers. */
   unlistProject: (id: string) => Promise<void>;
   /** Le dossier du projet n'a pas pu être ouvert : un message, à l'accueil, invite à le choisir à nouveau. */
@@ -371,10 +371,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (get().screen === "project" && get().status === "modifie") await get().save();
     },
 
-    closeProject: async () => {
-      if (get().status === "modifie") await get().save();
-      // Un enregistrement en échec garde le projet à l'écran : rien n'est perdu en revenant à l'accueil.
-      if (get().status === "erreur") return;
+    closeProject: async (force = false) => {
+      if (!force) {
+        // On retente aussi après un échec : la cause a pu disparaître (disque rebranché).
+        if (get().status !== "enregistre") await get().save();
+        // Toujours en échec : le projet reste à l'écran, un message propose de réessayer ou de quitter quand même.
+        if (get().status === "erreur") return;
+      }
       await refreshProjects();
       set({ screen: "home", focusMode: false });
     },

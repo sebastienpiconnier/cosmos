@@ -9,6 +9,7 @@ import { ScreenplayView } from "./components/ScreenplayView";
 import { Sequencier } from "./components/Sequencier";
 import { Home } from "./components/Home";
 import { useT } from "./i18n";
+import { storage } from "./storage";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 
@@ -19,6 +20,8 @@ export function App() {
   const loaded = useCosmos((s) => s.loaded);
   const screen = useCosmos((s) => s.screen);
   const focusMode = useCosmos((s) => s.focusMode);
+  const status = useCosmos((s) => s.status);
+  const closeProject = useCosmos((s) => s.closeProject);
   const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
 
@@ -65,6 +68,19 @@ export function App() {
       <div className="app">
         {/* Mode focus du scénario : la barre du haut s'efface, la feuille prend la place. */}
         {!(focusMode && view === "manuscrit" && kind === "scenario") && <TopBar />}
+        {status === "erreur" && (
+          <div className="app-alert" role="alert">
+            <span>{storage.canPickFolder ? t.app.saveFailedFolder : t.app.saveFailed}</span>
+            <span className="app-alert-actions">
+              <button type="button" className="ghost-button" onClick={save}>
+                {t.app.retry}
+              </button>
+              <button type="button" className="ghost-button" onClick={() => closeProject(true)}>
+                {t.app.leaveUnsaved}
+              </button>
+            </span>
+          </div>
+        )}
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}

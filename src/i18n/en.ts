@@ -8,6 +8,10 @@ export const en: Messages = {
   app: {
     loading: "Opening project…",
     openFailed: "Your project folder couldn’t be opened. Choose it again with “Open folder”: your files have not been changed.",
+    saveFailed: "Saving failed. Your latest changes are not on disk yet.",
+    saveFailedFolder: "Saving failed: the app couldn’t write to the project folder. If it is on another drive or in OneDrive, go back to your projects and reopen it with “Open folder…” to grant access again.",
+    retry: "Try again",
+    leaveUnsaved: "Back to projects without saving",
   },
 
   // Home screen: choose the project to work on.

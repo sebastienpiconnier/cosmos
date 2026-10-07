@@ -46,7 +46,9 @@ export const tauriStorage: Storage = {
 
   async pickFolder() {
     if (mobile) return true;
-    const chosen = await open({ directory: true, title: getT().dialog.pickFolder });
+    // recursive : sans lui, Tauri n'autorise que les fichiers placés directement dans le dossier,
+    // et l'écriture des cartes (sous-dossier cartes/) est refusée hors du dossier personnel.
+    const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickFolder });
     if (typeof chosen !== "string") return false;
     current = chosen;
     return true;

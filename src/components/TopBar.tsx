@@ -57,7 +57,7 @@ export function TopBar() {
         <span className={`status status-${status}`} role="status">
           {t.status[status]}
         </span>
-        <button type="button" className="ghost-button" title={t.home.backHint} onClick={closeProject}>
+        <button type="button" className="ghost-button" title={t.home.backHint} onClick={() => closeProject()}>
           {t.home.projects}
         </button>
         <button type="button" className="ghost-button" onClick={save}>
