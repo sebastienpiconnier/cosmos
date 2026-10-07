@@ -131,6 +131,7 @@ src/
     rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
     parse.ts            Fountain → modèle
     serialize.ts        Modèle → Fountain (lignes vides et marqueurs de forçage)
+    link.ts             Lien en-tête de scène ↔ carte Scène ([[cosmos:id]]), fonctions pures
   storage/
     paths.ts            Format du dossier projet
     index.ts            Choix du stockage, serialize / deserialize
@@ -147,7 +148,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 MonRoman/
   cosmos.json          titre, type (roman | scenario), positions des cartes, fils (avec étiquettes)
   cartes/<id>.md       une carte par fichier
-  scenario.fountain    texte du scénario (projets scénario, à venir)
+  scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
 
 ```markdown
@@ -176,6 +177,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Sécurité** : les `.md` viennent du disque, `markdownToHtml` passe par `sanitizeHtml` (liste blanche de balises). La Bible affiche ce HTML avec `dangerouslySetInnerHTML` : ne jamais court-circuiter le nettoyage.
 - **Raccourcis** : React Flow ignore Suppr/Retour arrière dans les champs et l'éditeur. Les nouveaux raccourcis globaux doivent faire de même.
 - **Sauvegarde** : seuls les fichiers modifiés sont réécrits (diff avec `lastFiles`), les cartes supprimées sont effacées du disque.
+- **Scénario non modifié** : tant que `screenplay === savedScreenplay` dans le store, `scenario.fountain` est réécrit tel quel, à l'octet près. Les fonctions de `link.ts` rendent donc le même objet quand rien ne change : ne pas recréer le scénario sans raison.
+- **Lien scène ↔ carte** : l'en-tête fait foi au chargement. Supprimer une carte Scène ou changer son type retire la note de lien, jamais le texte de la scène. Un titre de carte vidé ne touche pas à l'en-tête (un en-tête vide disparaîtrait du fichier).
+- **Page de titre Fountain** : une clé ne commence pas par un marqueur et ne contient pas de note, sinon un en-tête forcé en première ligne (`.PHARE [[cosmos:id]]`) est pris pour une page de titre.
 
 ## Conventions
 

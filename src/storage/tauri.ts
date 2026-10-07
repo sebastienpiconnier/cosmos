@@ -2,13 +2,13 @@
 // - Ordinateur : l'auteur choisit un dossier projet (mémorisé pour la prochaine fois).
 // - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, le projet vit
 //   dans l'espace privé de l'app. La synchronisation entre appareils viendra plus tard.
-// Dans les deux cas : cosmos.json + cartes/*.md, exactement le même format.
+// Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
-import { CARDS_DIR, META_FILE, type FileMap } from "./paths";
+import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
 
@@ -62,6 +62,8 @@ export const tauriStorage: Storage = {
         }
       }
     }
+    const screenplayPath = await join(dir, SCREENPLAY_FILE);
+    if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
     return files;
   },
 

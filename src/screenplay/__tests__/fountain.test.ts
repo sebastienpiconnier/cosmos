@@ -17,20 +17,20 @@ describe("classification", () => {
   it("scénario court en français", () => {
     const sp = parse(courtFr);
     expect(sp.titlePage).toEqual({
-      Title: "Le Phare de Kerlaouen",
+      Title: "Le Phare des Absents",
       Credit: "Écrit par",
-      Author: "Inès Morvan",
+      Author: "Anonyme",
       "Draft date": "7 octobre 2026",
     });
     expect(shape(sp)).toEqual([
       "sceneHeading: INT. PHARE, LANTERNE - NUIT",
-      "action: La lampe est froide. Sur la console, un cahier relié de cuir, ouvert.",
+      "action: La lampe est froide. Sur la console, un cahier relié de cuir, ouvert. Inès s’approche, sa lampe frontale tremble sur les pages.",
       "character: INÈS",
       "parenthetical: (à voix basse)",
-      "dialogue: C’est daté d’hier.",
-      "action: Elle tourne la page. L’écriture s’arrête au milieu d’une phrase.\nDehors, la mer cogne contre l’îlot.",
+      "dialogue: Le 13 octobre. Il n’était plus là depuis un mois.",
+      "action: Elle tourne la page. Une écriture serrée, la même, jusqu’à hier.\nDehors, la mer cogne contre l’îlot.",
       "character: HUGO (H.C.)",
-      "dialogue: Inès ? Tu es là-haut ?",
+      "dialogue: Tu ne devrais pas monter seule.",
       "character: INÈS",
       "dialogue: J’arrive.",
       "parenthetical: (un temps)",

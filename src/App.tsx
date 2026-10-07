@@ -26,7 +26,9 @@ export function App() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.status !== "modifie") return;
-      if (s.nodes === prev.nodes && s.edges === prev.edges && s.status === prev.status) return;
+      const same =
+        s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind;
+      if (same && s.status === prev.status) return;
       clearTimeout(timer);
       timer = setTimeout(() => useCosmos.getState().save(), AUTOSAVE_DELAY);
     });

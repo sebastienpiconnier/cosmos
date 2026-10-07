@@ -10,14 +10,30 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 
 - [x] Phase 0 : outillage de tests
 - [x] Phase 1 : modèle, parseur, sérialiseur
-- [ ] Phase 2 : stockage et lien avec les cartes
+- [x] Phase 2 : stockage et lien avec les cartes
 - [ ] Phase 3 : l'éditeur
 - [ ] Phase 4 : complétion
 - [ ] Phase 5 : pages, minutes, séquencier minimal
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0 et 1 faites. Phase 1 : `src/screenplay/` (`model.ts`, `rules.ts`, `parse.ts`, `serialize.ts`), 47 tests, couverture 99 % (`npm run coverage`, seuil 90 %). Le modèle a gagné `sceneNumber` et `depth` ; les parenthèses d'une didascalie font partie de son texte. Limites connues : plusieurs lignes vides de suite sont ramenées à une seule, et l'écriture est normalisée (`#Acte` devient `# Acte`, `>FIN<` devient `> FIN <`). `fountain-js` n'a pas été ajouté comme référence. Fixture française écrite d'après l'exemple du plan, à aligner sur la maquette `scenario-Ecriture` quand elle sera dans le dépôt. Prochaine étape : phase 2.
+Dernière session : 7 octobre 2026, phases 0, 1 et 2 faites. Prochaine étape : phase 3 (l'éditeur).
+
+Notes de la phase 1 :
+
+- Code dans `src/screenplay/` : `model.ts`, `rules.ts` (règles de détection partagées), `parse.ts`, `serialize.ts`. Couverture 99 % (`npm run coverage`, seuil 90 %).
+- Le modèle a gagné `sceneNumber` et `depth` (niveau de section). Les parenthèses d'une didascalie font partie de son texte.
+- Limites connues : plusieurs lignes vides de suite sont ramenées à une seule, et l'écriture est normalisée (`#Acte` devient `# Acte`, `>FIN<` devient `> FIN <`).
+- `fountain-js` n'a pas été ajouté comme référence de test.
+- La fixture française reprend la scène de la maquette `scenario-Ecriture`.
+
+Notes de la phase 2 :
+
+- `scenario.fountain` est lu et écrit par les deux stockages. Il est créé au premier passage en scénario, ou à l'ouverture d'un projet scénario qui n'en a pas ; revenir en roman ne le supprime pas.
+- `src/screenplay/link.ts` : lecture des liens, renommage dans les deux sens, listes « scènes sans carte » et « cartes sans scène » (à brancher sur le panneau « Scènes à écrire » en phase 3).
+- Un fichier Fountain que l'auteur n'a pas modifié dans Cosmos n'est jamais réécrit (pas de normalisation silencieuse d'un fichier venu d'ailleurs).
+- Choix faits : une carte Scène sans titre ne reçoit pas d'en-tête à la création du fichier ; vider le titre d'une carte ne touche pas à son en-tête ; une carte qui change de type perd son lien ; si deux en-têtes citent la même carte, le premier compte.
+- Tests du store dans `src/__tests__/store-scenario.test.ts` (environnement `happy-dom`). Pas encore testé à la main dans l'app Tauri.
 
 ---
 

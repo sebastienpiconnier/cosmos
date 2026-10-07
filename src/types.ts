@@ -1,6 +1,8 @@
 // Modèle de données de Cosmos.
 // Une carte naît "idee" (note libre) et peut être typée plus tard via le menu "/".
 
+import type { Screenplay } from "./screenplay/model";
+
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
 /**
@@ -59,4 +61,6 @@ export interface ProjectMeta {
 export interface Project {
   meta: ProjectMeta;
   cards: CardData[];
+  /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. */
+  screenplay: Screenplay | null;
 }

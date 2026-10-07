@@ -1,6 +1,7 @@
 // Couche de stockage. Le format est le même partout : un "dossier projet"
 //   cosmos.json        positions, fils, titre du projet
 //   cartes/<id>.md     une carte par fichier, Markdown + frontmatter
+//   scenario.fountain  texte du scénario (projets scénario uniquement)
 //
 // - Tauri sur ordinateur (macOS, Windows, Linux) : dossier choisi par l'auteur.
 // - Tauri sur mobile (iOS, Android) : dossier privé de l'app (pas de sélecteur de dossier).
@@ -10,7 +11,9 @@ import type { Project, ProjectMeta } from "../types";
 import { cardToFile, fileToCard } from "./markdown";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, META_FILE, cardPath, type FileMap } from "./paths";
+import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, cardPath, type FileMap } from "./paths";
+import { parse as parseScreenplay } from "../screenplay/parse";
+import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
 
 export * from "./paths";
@@ -35,6 +38,8 @@ export const storage: Storage = isTauri() ? tauriStorage : browserStorage;
 export function serialize(project: Project): FileMap {
   const files: FileMap = { [META_FILE]: JSON.stringify(project.meta, null, 2) };
   for (const card of project.cards) files[cardPath(card.id)] = cardToFile(card);
+  // Un projet roman n'a pas de scénario : le fichier n'est jamais créé pour lui.
+  if (project.screenplay) files[SCREENPLAY_FILE] = serializeScreenplay(project.screenplay);
   return files;
 }
 
@@ -46,5 +51,6 @@ export function deserialize(files: FileMap): Project | null {
     .filter(([path]) => path.startsWith(`${CARDS_DIR}/`) && path.endsWith(".md"))
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null);
-  return { meta, cards };
+  const screenplay = SCREENPLAY_FILE in files ? parseScreenplay(files[SCREENPLAY_FILE]) : null;
+  return { meta, cards, screenplay };
 }

@@ -14,7 +14,9 @@ import {
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
-import { deserialize, serialize, storage, type FileMap } from "./storage";
+import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap } from "./storage";
+import type { Screenplay } from "./screenplay/model";
+import { headingTitles, initialScreenplay, renameHeading, unlinkCard, type SceneCard } from "./screenplay/link";
 import { getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
@@ -29,6 +31,12 @@ interface CosmosState {
   setKind: (kind: ProjectKind) => void;
   nodes: CardNode[];
   edges: Edge[];
+  /** Texte du scénario (scenario.fountain). null tant que le projet n'a jamais été un scénario. */
+  screenplay: Screenplay | null;
+  /** Le scénario tel qu'il est sur disque : tant qu'il n'a pas changé, le fichier n'est pas réécrit. */
+  savedScreenplay: Screenplay | null;
+  /** Remplace le scénario (éditeur). Les titres des cartes liées suivent leurs en-têtes. */
+  setScreenplay: (screenplay: Screenplay) => void;
   view: View;
   focusId: string | null;
   /** Carte qui vient d'être créée : son éditeur prend le focus dès qu'il est prêt. */
@@ -75,7 +83,41 @@ function fromProject(p: Project) {
   return { title: p.meta.title, kind, nodes, edges };
 }
 
-function toProject(s: Pick<CosmosState, "title" | "kind" | "nodes" | "edges">): Project {
+/** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
+function sceneCards(nodes: CardNode[]): SceneCard[] {
+  return nodes
+    .filter((n) => n.data.type === "scene")
+    .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x)
+    .map((n) => ({ id: n.id, title: n.data.title }));
+}
+
+/** L'en-tête fait foi : les cartes Scène liées prennent le texte de leur en-tête. */
+function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode[] {
+  const titles = headingTitles(screenplay);
+  let changed = false;
+  const next = nodes.map((n) => {
+    const title = titles.get(n.id);
+    if (n.data.type !== "scene" || title === undefined || title === n.data.title) return n;
+    changed = true;
+    return { ...n, data: { ...n.data, title } };
+  });
+  return changed ? next : nodes;
+}
+
+/** État à adopter quand on ouvre un projet. `dirty` : l'ouverture a produit des changements à enregistrer. */
+function openProject(p: Project) {
+  const base = fromProject(p);
+  // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
+  const screenplay =
+    p.screenplay ?? (base.kind === "scenario" ? initialScreenplay(base.title, sceneCards(base.nodes)) : null);
+  const nodes = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
+  return {
+    state: { ...base, nodes, screenplay, savedScreenplay: p.screenplay },
+    dirty: screenplay !== p.screenplay || nodes !== base.nodes,
+  };
+}
+
+function toProject(s: Pick<CosmosState, "title" | "kind" | "nodes" | "edges" | "screenplay">): Project {
   return {
     meta: {
       version: 1,
@@ -90,6 +132,7 @@ function toProject(s: Pick<CosmosState, "title" | "kind" | "nodes" | "edges">): 
       links: s.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: String(e.label ?? "") })),
     },
     cards: s.nodes.map((n) => n.data),
+    screenplay: s.screenplay,
   };
 }
 
@@ -121,6 +164,7 @@ function demoProject(): Project {
       { id: phare, type: "lieu", title: d.placeTitle, html: p(d.placeBody) },
       { id: scene, type: "scene", title: d.sceneTitle, html: p(d.sceneBody) },
     ],
+    screenplay: null,
   };
 }
 
@@ -131,11 +175,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
     title: "",
     kind: "roman",
     setKind: (kind) => {
-      set({ kind });
+      const { screenplay, title, nodes } = get();
+      // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
+      if (kind === "scenario" && !screenplay) set({ kind, screenplay: initialScreenplay(title, sceneCards(nodes)) });
+      else set({ kind });
       touch();
     },
     nodes: [],
     edges: [],
+    screenplay: null,
+    savedScreenplay: null,
+    setScreenplay: (screenplay) => {
+      set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay) });
+      touch();
+    },
     view: "toile",
     focusId: null,
     pendingFocusId: null,
@@ -168,13 +221,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return card.id;
     },
     updateCard: (id, patch) => {
-      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)) });
+      const nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
+      let { screenplay } = get();
+      const card = nodes.find((n) => n.id === id)?.data;
+      if (screenplay && card) {
+        // Une carte qui n'est plus une Scène perd son lien ; sinon son en-tête suit son titre.
+        if (card.type !== "scene") screenplay = unlinkCard(screenplay, id);
+        else if (typeof patch.title === "string") screenplay = renameHeading(screenplay, id, patch.title);
+      }
+      set({ nodes, screenplay });
       touch();
     },
     deleteCard: (id) => {
+      const { screenplay } = get();
       set({
         nodes: get().nodes.filter((n) => n.id !== id),
         edges: get().edges.filter((e) => e.source !== id && e.target !== id),
+        // Le texte de la scène reste dans le scénario : seule la note de lien est retirée.
+        screenplay: screenplay && unlinkCard(screenplay, id),
       });
       touch();
     },
@@ -187,8 +251,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     load: async () => {
       const files = await storage.readAll();
-      const project = (files && deserialize(files)) || demoProject();
-      set({ ...fromProject(project), lastFiles: files ?? {}, loaded: true, status: files ? "enregistre" : "modifie" });
+      const { state, dirty } = openProject((files && deserialize(files)) || demoProject());
+      set({ ...state, lastFiles: files ?? {}, loaded: true, status: files && !dirty ? "enregistre" : "modifie" });
     },
 
     openFolder: async () => {
@@ -196,7 +260,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const files = await storage.readAll();
       if (files) {
         const project = deserialize(files);
-        if (project) set({ ...fromProject(project), lastFiles: files, status: "enregistre" });
+        if (project) {
+          const { state, dirty } = openProject(project);
+          set({ ...state, lastFiles: files, status: dirty ? "modifie" : "enregistre" });
+        }
       } else {
         // Dossier vide : on y enregistre le projet courant.
         set({ lastFiles: {}, status: "modifie" });
@@ -208,8 +275,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (storage.canPickFolder && !storage.location()) {
         if (!(await storage.pickFolder())) return;
       }
+      const { screenplay, savedScreenplay } = get();
       const files = serialize(toProject(get()));
       const prev = get().lastFiles;
+      // Scénario inchangé depuis le disque : on garde le fichier tel quel, à l'octet près
+      // (il peut venir d'un autre logiciel, que la sérialisation normaliserait).
+      if (screenplay && screenplay === savedScreenplay && SCREENPLAY_FILE in prev) {
+        files[SCREENPLAY_FILE] = prev[SCREENPLAY_FILE];
+      }
       const changed: FileMap = {};
       for (const [path, content] of Object.entries(files)) if (prev[path] !== content) changed[path] = content;
       const removed = Object.keys(prev).filter((path) => !(path in files));
@@ -217,7 +290,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       try {
         await storage.write(changed, removed);
         // Si l'auteur a modifié quelque chose pendant l'écriture, on reste "modifié".
-        set({ lastFiles: files, status: get().status === "enregistrement" ? "enregistre" : get().status });
+        set({
+          lastFiles: files,
+          savedScreenplay: screenplay,
+          status: get().status === "enregistrement" ? "enregistre" : get().status,
+        });
       } catch (err) {
         console.error(err);
         set({ status: "erreur" });
