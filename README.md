@@ -51,6 +51,8 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Pages et minutes** : le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence, en format US Letter ou A4.
 - **Séquencier** : la liste des scènes dans l'ordre, avec leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
 - **Exports** : PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
+- **Import** : un fichier `.fountain` existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
+- **Numéros de scène et mode focus** : numérotation en option dans la marge, et un mode qui ne garde que la feuille à l'écran.
 - **Un fichier ouvert** : le texte est enregistré dans `scenario.fountain`, au format [Fountain](https://fountain.io), lisible par les autres logiciels de scénario.
 
 ### Confort
@@ -72,7 +74,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
-| Scénario | Import d'un fichier Fountain, numéros de scène, mode focus, gabarits par actes dans le séquencier (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
+| Scénario | Gabarits par actes et durées cibles dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
 | Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Export | Bible et manuscrit en PDF, docx, epub |

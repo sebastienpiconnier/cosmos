@@ -15,9 +15,9 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [x] Phase 4 : complétion
 - [x] Phase 5 : pages, minutes, séquencier minimal
 - [x] Phase 6 : exports
-- [ ] Phase 7 : finitions
+- [x] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0 à 6 faites. Prochaine étape : phase 7 (finitions).
+Dernière session : 7 octobre 2026. **Les huit phases du plan sont faites.** Il reste les vérifications à la main listées ci-dessous et ce qui est rangé dans « Plus tard ».
 
 Notes de la phase 1 :
 
@@ -76,6 +76,20 @@ Notes de la phase 6 :
 - Coupe des répliques : « (À SUIVRE) » en bas de page et « NOM (SUITE) » en haut de la suivante en français, « (MORE) » et « (CONT'D) » en anglais.
 - Limites du PDF : l'emphase Fountain (`*italique*`, `**gras**`, `_souligné_`) est imprimée telle quelle, le dialogue double est imprimé l'un sous l'autre, et le PDF n'est pas balisé pour l'accessibilité (pdf-lib ne le permet pas).
 - Les notes `[[…]]` et le texte mis de côté ne sont exportés ni en PDF ni en FDX ; l'export Fountain garde tout, liens `[[cosmos:id]]` compris.
+
+Notes de la phase 7 :
+
+- **Import** : `src/screenplay/import.ts` (fonction pure) et le bouton « Importer un scénario Fountain… » de l'accueil. Une carte Scène par en-tête, une carte Personnage par nom qui parle, une carte Décor par lieu (en-têtes à préfixe standard seulement), un fil « se passe à » de chaque scène vers son décor. Le synopsis Fountain (`= …`) qui suit un en-tête devient le texte de sa carte. Le fichier d'origine n'est pas modifié ; l'import refuse un dossier qui contient déjà un projet.
+- **Numéros de scène** : option du projet (`sceneNumbers` dans `cosmos.json`, écrit seulement si activé). Numéros affichés dans la marge de l'éditeur, imprimés dans le PDF et exportés en FDX. Ils ne sont pas écrits dans `scenario.fountain` ; un numéro déjà présent dans le fichier (`#12A#`) passe devant. Le verrouillage pour le tournage reste à faire.
+- **Mode focus** : bouton dans la barre d'éléments et Ctrl ou Cmd + Maj + F. La barre du haut, la liste des scènes et le panneau de droite s'effacent.
+- Vérifié par tests et dans Edge piloté par script (import par le vrai sélecteur de fichier, numéros, focus).
+
+Vérifications à faire à la main (aucune n'a pu l'être ici) :
+
+- ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain ;
+- ouvrir le FDX dans Final Draft ou Fade In ;
+- dans l'app Tauri : relancer l'exe sur un projet hors du dossier personnel, « Enregistrer sous » des exports, import d'un fichier ;
+- sur un vrai téléphone : la barre d'éléments au-dessus du clavier virtuel.
 
 ---
 

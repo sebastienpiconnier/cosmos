@@ -43,6 +43,11 @@ export interface Storage {
   remember(info: { title: string; kind: ProjectKind }): void;
   /** Retire un projet de la liste, sans toucher à ses fichiers. */
   unlist(id: string): void;
+  /**
+   * Import : l'auteur choisit un fichier texte, qui est lu sans être modifié.
+   * `label` décrit le format dans le dialogue. Renvoie null si l'auteur annule.
+   */
+  pickTextFile(label: string, extensions: string[]): Promise<{ name: string; text: string } | null>;
   readAll(): Promise<FileMap | null>;
   /** Oublie le dossier mémorisé (il n'a pas pu être lu) : l'auteur le choisira à nouveau. */
   forget(): void;

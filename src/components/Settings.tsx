@@ -16,10 +16,12 @@ export function Settings({ project = true }: { project?: boolean }) {
   const setKind = useCosmos((s) => s.setKind);
   const paper = useCosmos((s) => s.paper);
   const setPaper = useCosmos((s) => s.setPaper);
+  const sceneNumbers = useCosmos((s) => s.sceneNumbers);
+  const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -104,6 +106,19 @@ export function Settings({ project = true }: { project?: boolean }) {
               </select>
               <p className="settings-hint" id={ids.paperHint}>
                 {t.kinds.paperHint}
+              </p>
+              <label className="settings-check" htmlFor={ids.numbers}>
+                <input
+                  id={ids.numbers}
+                  type="checkbox"
+                  checked={sceneNumbers}
+                  aria-describedby={ids.numbersHint}
+                  onChange={(e) => setSceneNumbers(e.target.checked)}
+                />
+                {t.kinds.sceneNumbers}
+              </label>
+              <p className="settings-hint" id={ids.numbersHint}>
+                {t.kinds.sceneNumbersHint}
               </p>
             </>
           )}

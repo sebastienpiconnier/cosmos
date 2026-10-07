@@ -46,6 +46,20 @@ export const browserStorage: Storage = {
     touchRecent(entry);
   },
   unlist: dropRecent,
+  pickTextFile(_label, extensions) {
+    // Sélecteur de fichier du navigateur, ouvert par un champ invisible.
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = extensions.map((ext) => `.${ext}`).join(",");
+      input.addEventListener("cancel", () => resolve(null));
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        resolve(file ? { name: file.name, text: await file.text() } : null);
+      });
+      input.click();
+    });
+  },
 
   async readAll() {
     const files = load();

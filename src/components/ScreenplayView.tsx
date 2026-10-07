@@ -43,6 +43,24 @@ export function ScreenplayView() {
   const nodes = useCosmos((s) => s.nodes);
   const setView = useCosmos((s) => s.setView);
   const paper = useCosmos((s) => s.paper);
+  const sceneNumbers = useCosmos((s) => s.sceneNumbers);
+  const focusMode = useCosmos((s) => s.focusMode);
+  const setFocusMode = useCosmos((s) => s.setFocusMode);
+
+  // Mode focus : Cmd/Ctrl+Maj+F le bascule ; quitter la vue le termine.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setFocusMode(!useCosmos.getState().focusMode);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      setFocusMode(false);
+    };
+  }, [setFocusMode]);
   const pagination = usePagination();
 
   const barRef = useRef<HTMLDivElement>(null);
@@ -316,7 +334,7 @@ export function ScreenplayView() {
   ) as CSSProperties;
 
   return (
-    <div className="screenplay" ref={rootRef}>
+    <div className={`screenplay${focusMode ? " is-focus" : ""}`} ref={rootRef}>
       <nav className="sp-scenes" aria-label={sp.scenesAria}>
         <div className="eyebrow">{sp.scenesTitle}</div>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
@@ -399,6 +417,16 @@ export function ScreenplayView() {
             <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
             {sp.hintEscape}
           </span>
+          <button
+            type="button"
+            className="sp-focus"
+            aria-pressed={focusMode}
+            title={sp.focusHint}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setFocusMode(!focusMode)}
+          >
+            {focusMode ? sp.focusExit : sp.focus}
+          </button>
         </div>
         <div className="sr-only" aria-live="polite">
           {current.type ? sp.elements[current.type] : ""}
@@ -409,7 +437,7 @@ export function ScreenplayView() {
         </div>
 
         <div className="sp-scroll">
-          <div className="sp-page" data-paper={paper} style={labels} lang={lang} ref={pageRef}>
+          <div className="sp-page" data-paper={paper} data-numbers={sceneNumbers ? "" : undefined} style={labels} lang={lang} ref={pageRef}>
             <EditorContent editor={editor} />
             {menu && (
               <SuggestionMenu

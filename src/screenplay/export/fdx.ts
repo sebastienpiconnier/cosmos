@@ -19,16 +19,18 @@ const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
 const escape = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function buildFdx(screenplay: Screenplay, locale: string): string {
+export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = false): string {
   const paragraphs: string[] = [];
+  let scene = 0;
   for (const el of screenplay.elements) {
+    if (el.type === "sceneHeading") scene++;
     const type = TYPES[el.type];
     let text = type ? printable(el.text) : "";
     if (!type || text === "") continue;
     if (UPPERCASE.has(el.type)) text = text.toLocaleUpperCase(locale);
     const attributes = [
       el.type === "centered" ? ' Alignment="Center"' : "",
-      el.type === "sceneHeading" && el.sceneNumber ? ` Number="${escape(el.sceneNumber)}"` : "",
+      el.type === "sceneHeading" && (el.sceneNumber || numberScenes) ? ` Number="${escape(el.sceneNumber ?? String(scene))}"` : "",
       ` Type="${type}"`,
     ].join("");
     paragraphs.push(`    <Paragraph${attributes}>\n      <Text>${escape(text)}</Text>\n    </Paragraph>`);

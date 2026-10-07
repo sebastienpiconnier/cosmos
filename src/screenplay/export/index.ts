@@ -23,6 +23,8 @@ export interface ExportOptions {
   paper: Paper;
   locale: string;
   strings: TypesetStrings;
+  /** Numéroter les scènes dans le PDF et le FDX. */
+  numberScenes?: boolean;
   /** scenario.fountain tel qu'il est sur disque, quand le scénario n'a pas changé depuis. */
   source?: string;
 }
@@ -51,10 +53,15 @@ export async function exportScreenplay(
     data = encode(options.source ?? serialize(screenplay));
   } else if (format === "fdx") {
     const { buildFdx } = await import("./fdx");
-    data = encode(buildFdx(screenplay, options.locale));
+    data = encode(buildFdx(screenplay, options.locale, options.numberScenes));
   } else {
     const { buildPdf } = await import("./pdf");
-    data = await buildPdf(screenplay, { layout: LAYOUTS[options.paper], locale: options.locale, strings: options.strings });
+    data = await buildPdf(screenplay, {
+      layout: LAYOUTS[options.paper],
+      locale: options.locale,
+      strings: options.strings,
+      numberScenes: options.numberScenes,
+    });
   }
   return { name: `${fileName(options.title, "scenario")}.${format}`, extension: format, mime: MIME[format], data };
 }

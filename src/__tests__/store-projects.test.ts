@@ -20,6 +20,9 @@ beforeEach(() => {
     projects: [],
     openFailed: false,
     homeNotice: false,
+    importNotice: null,
+    sceneNumbers: false,
+    focusMode: false,
     lastFiles: {},
     screenplay: null,
     savedScreenplay: null,
@@ -161,6 +164,91 @@ describe("travailler sur plusieurs projets", () => {
     vi.spyOn(storage, "write").mockRejectedValueOnce(new Error("disque plein"));
     await state().closeProject();
     expect(state()).toMatchObject({ screen: "project", status: "erreur" });
+  });
+});
+
+describe("importer un scénario Fountain", () => {
+  const fountain = "Title: Kerlaouen\n\nINT. PHARE - NUIT\n\nLa lampe est froide.\n\nINÈS\nPersonne ?\n";
+
+  it("nouveau projet scénario, ouvert sur le texte, avec ses cartes et ses fichiers", async () => {
+    await state().start();
+    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "kerlaouen.fountain", text: fountain });
+    await state().importScreenplay();
+
+    expect(state()).toMatchObject({ screen: "project", view: "manuscrit", title: "Kerlaouen", kind: "scenario", status: "enregistre" });
+    expect(state().nodes.map((n) => `${n.data.type}: ${n.data.title}`)).toEqual([
+      "personnage: Inès",
+      "lieu: Phare",
+      "scene: INT. PHARE - NUIT",
+    ]);
+    const written = await files();
+    const scene = state().nodes.find((n) => n.data.type === "scene")!;
+    expect(written[SCREENPLAY_FILE]).toBe(fountain.replace("NUIT\n", `NUIT [[cosmos:${scene.id}]]\n`));
+    expect(Object.keys(written).filter((path) => path.startsWith("cartes/"))).toHaveLength(3);
+    expect(JSON.parse(written[META_FILE]).links).toHaveLength(1);
+
+    await state().closeProject();
+    expect(state().projects).toMatchObject([{ title: "Kerlaouen", kind: "scenario" }]);
+  });
+
+  it("l'auteur annule le choix du fichier : rien ne se passe", async () => {
+    await state().start();
+    vi.spyOn(storage, "pickTextFile").mockResolvedValue(null);
+    const create = vi.spyOn(storage, "create");
+    await state().importScreenplay();
+    expect(create).not.toHaveBeenCalled();
+    expect(state()).toMatchObject({ screen: "home", importNotice: null });
+  });
+
+  it("fichier sans scénario : un message, pas de projet", async () => {
+    await state().start();
+    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "vide.fountain", text: "\n\n" });
+    await state().importScreenplay();
+    expect(state()).toMatchObject({ screen: "home", importNotice: "empty" });
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("dossier déjà occupé par un projet : il n'est ni écrasé ni ouvert à la place", async () => {
+    await state().start();
+    await state().createProject({ title: "Roman", kind: "roman" });
+    await state().closeProject();
+    const id = state().projects[0].id;
+    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "kerlaouen.fountain", text: fountain });
+    vi.spyOn(storage, "create").mockImplementation(async () => {
+      storage.select(id);
+      return true;
+    });
+
+    await state().importScreenplay();
+
+    expect(state()).toMatchObject({ screen: "home", importNotice: "taken" });
+    storage.select(id);
+    const written = await files();
+    expect(JSON.parse(written[META_FILE]).title).toBe("Roman");
+    expect(written).not.toHaveProperty(SCREENPLAY_FILE);
+  });
+});
+
+describe("réglages du scénario", () => {
+  it("numéros de scène : écrits seulement quand l'option est activée, et relus", async () => {
+    await state().start();
+    await state().createProject({ title: "Film", kind: "scenario" });
+    expect(JSON.parse((await files())[META_FILE])).not.toHaveProperty("sceneNumbers");
+
+    state().setSceneNumbers(true);
+    expect(state().status).toBe("modifie");
+    await state().closeProject();
+    await state().openProject(state().projects[0].id);
+    expect(state().sceneNumbers).toBe(true);
+    expect(JSON.parse((await files())[META_FILE]).sceneNumbers).toBe(true);
+  });
+
+  it("le mode focus se termine en revenant à l'accueil", async () => {
+    await state().start();
+    await state().createProject({ title: "Film", kind: "scenario" });
+    state().setFocusMode(true);
+    await state().closeProject();
+    expect(state().focusMode).toBe(false);
   });
 });
 

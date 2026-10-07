@@ -84,6 +84,12 @@ export const tauriStorage: Storage = {
     touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now() });
   },
   unlist: dropRecent,
+  async pickTextFile(label, extensions) {
+    // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.
+    const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions }] });
+    if (typeof path !== "string") return null;
+    return { name: baseName(path), text: await readTextFile(path) };
+  },
 
   async readAll() {
     const dir = await projectFolder();

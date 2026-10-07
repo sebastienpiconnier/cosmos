@@ -18,6 +18,7 @@ export function App() {
   const kind = useCosmos((s) => s.kind);
   const loaded = useCosmos((s) => s.loaded);
   const screen = useCosmos((s) => s.screen);
+  const focusMode = useCosmos((s) => s.focusMode);
   const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
 
@@ -33,7 +34,7 @@ export function App() {
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.screen !== "project" || s.status !== "modifie") return;
       const same =
-        s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind && s.paper === prev.paper;
+        s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind && s.paper === prev.paper && s.sceneNumbers === prev.sceneNumbers;
       if (same && s.status === prev.status) return;
       clearTimeout(timer);
       timer = setTimeout(() => useCosmos.getState().save(), AUTOSAVE_DELAY);
@@ -62,7 +63,8 @@ export function App() {
   return (
     <ReactFlowProvider>
       <div className="app">
-        <TopBar />
+        {/* Mode focus du scénario : la barre du haut s'efface, la feuille prend la place. */}
+        {!(focusMode && view === "manuscrit" && kind === "scenario") && <TopBar />}
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}

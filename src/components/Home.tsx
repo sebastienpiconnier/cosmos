@@ -16,7 +16,8 @@ export function Home() {
   const projects = useCosmos((s) => s.projects);
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject } = useCosmos.getState();
+  const importNotice = useCosmos((s) => s.importNotice);
+  const { openProject, openFolder, createProject, tryExample, unlistProject, importScreenplay } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -60,9 +61,17 @@ export function Home() {
       </header>
 
       <main className="home-main">
-        {(openFailed || notice) && (
+        {(openFailed || notice || importNotice) && (
           <p className="home-alert" role="alert">
-            {openFailed ? (storage.canPickFolder ? t.app.openFailed : h.openFailed) : h.notAProject}
+            {importNotice === "taken"
+              ? h.importTaken
+              : importNotice === "empty"
+                ? h.importEmpty
+                : openFailed
+                  ? storage.canPickFolder
+                    ? t.app.openFailed
+                    : h.openFailed
+                  : h.notAProject}
           </p>
         )}
 
@@ -99,11 +108,16 @@ export function Home() {
               ))}
             </ul>
           )}
-          {storage.canPickFolder && (
-            <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
-              {h.openFolder}
+          <div className="home-buttons">
+            {storage.canPickFolder && (
+              <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
+                {h.openFolder}
+              </button>
+            )}
+            <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importScreenplay)}>
+              {h.importFountain}
             </button>
-          )}
+          </div>
         </section>
 
         <section className="home-panel" aria-labelledby={ids.fresh}>

@@ -41,12 +41,24 @@ export function printable(text: string): string {
 
 const SPEECH = new Set(["parenthetical", "dialogue"]);
 
-export function typeset(elements: ScreenplayElement[], layout: Layout, locale: string, strings: TypesetStrings): TypesetPage[] {
+export interface TypesetOptions {
+  /** Numéroter toutes les scènes (1, 2, 3…). Un numéro écrit dans le fichier (#12A#) passe toujours devant. */
+  numberScenes?: boolean;
+}
+
+export function typeset(
+  elements: ScreenplayElement[],
+  layout: Layout,
+  locale: string,
+  strings: TypesetStrings,
+  options: TypesetOptions = {},
+): TypesetPage[] {
   const perPage = layout.linesPerPage;
   const width = layout.columns.action;
   const pages: TypesetPage[] = [];
   let index = 0; // page courante
   let used = 0; // lignes prises sur la page courante
+  let scene = 0; // rang de la scène en cours
   const upper = (s: string) => s.toLocaleUpperCase(locale);
 
   const page = () => (pages[index] ??= { number: index + 1, lines: [] });
@@ -81,6 +93,7 @@ export function typeset(elements: ScreenplayElement[], layout: Layout, locale: s
       if (used > 0) newPage();
       continue;
     }
+    if (el.type === "sceneHeading") scene++;
     const text = printable(el.text);
     if (text === "") continue;
 
@@ -89,9 +102,10 @@ export function typeset(elements: ScreenplayElement[], layout: Layout, locale: s
         const lines = wrap(upper(text), width);
         // Jamais en bas de page : il lui faut une ligne vide et une ligne de texte.
         open(lines.length + 2);
-        if (el.sceneNumber) {
-          page().lines.push({ row: used, column: -(el.sceneNumber.length + 2), text: el.sceneNumber, bold: true });
-          page().lines.push({ row: used, column: width + 2, text: el.sceneNumber, bold: true });
+        const number = el.sceneNumber ?? (options.numberScenes ? String(scene) : "");
+        if (number) {
+          page().lines.push({ row: used, column: -(number.length + 2), text: number, bold: true });
+          page().lines.push({ row: used, column: width + 2, text: number, bold: true });
         }
         for (const line of lines) put(line, 0, true);
         break;

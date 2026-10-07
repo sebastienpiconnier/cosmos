@@ -44,7 +44,7 @@ Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absen
 
 1. **Ne jamais dupliquer un composant par type de projet** : on lit le vocabulaire avec `useVocab()` (`src/vocab.ts`), qui fusionne `t.scenario` par-dessus le vocabulaire roman.
 2. Les **clés internes ne changent pas** (`lieu` reste `lieu` même affiché « Décor ») : basculer de type ne touche à aucun fichier de carte.
-3. **Éditeur de scénario (à venir, plan détaillé dans `docs/plan-editeur-scenario.md`)** : texte stocké dans **un seul fichier `scenario.fountain`** (Fountain, format texte ouvert lisible par Highland, Fade In, WriterSolo, Slugline, Trelby…). Chaque en-tête de scène est relié à sa carte par une note Fountain `[[cosmos:<id>]]`, ignorée par les autres logiciels. Éléments : en-tête de scène, action, personnage, didascalie (parenthétique), dialogue, transition. **Tab** change le type d'élément, **Entrée** passe à l'élément suivant logique (personnage → dialogue → action). Complétion des noms de personnages et de décors depuis la Bible.
+3. **Éditeur de scénario (fait, plan et notes dans `docs/plan-editeur-scenario.md`)** : texte stocké dans **un seul fichier `scenario.fountain`** (Fountain, format texte ouvert lisible par Highland, Fade In, WriterSolo, Slugline, Trelby…). Chaque en-tête de scène est relié à sa carte par une note Fountain `[[cosmos:<id>]]`, ignorée par les autres logiciels. Éléments : en-tête de scène, action, personnage, didascalie (parenthétique), dialogue, transition. **Tab** change le type d'élément, **Entrée** passe à l'élément suivant logique (personnage → dialogue → action). Complétion des noms de personnages et de décors depuis la Bible.
 4. **Export scénario** : PDF au format standard (Courier 12, marges normalisées, une page ≈ une minute), Fountain, FDX (Final Draft).
 5. La **Bible d'un scénario** ajoute le nombre de scènes par décor et par personnage (utile au dépouillement) ; plus tard : accessoires, costumes, jour/nuit.
 
@@ -143,6 +143,7 @@ src/
     layout.ts           Gabarit de page (Letter, A4) : source unique pour le compteur et le futur PDF
     paginate.ts         Estimation des pages par comptage de lignes
     sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
+    import.ts           Fichier Fountain → projet scénario (cartes Scène, Personnage, Décor)
     export/             Exports : typeset.ts (composition en pages), pdf.ts, fdx.ts, index.ts (chargés à la demande)
     editor/             Éditeur TipTap : un nœud bloc par élément
       nodes.ts          Schéma (six éléments éditables + « preserved » pour le reste)
@@ -167,7 +168,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page (paper, facultatif), positions des cartes, fils (avec étiquettes)
+  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes)
   cartes/<id>.md       une carte par fichier
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
@@ -214,6 +215,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Séquencier, glisser-déposer** : l'index de la scène glissée vit dans une ref, pas seulement dans l'état React. Le dépôt peut arriver avant le rendu suivant et lirait sinon une valeur périmée.
 - **Export PDF** : `pdf.ts` et les polices (importées en `?inline`) ne doivent être atteints que par `import()` dynamique depuis `export/index.ts`, jamais par un import statique, sinon ils entrent dans le paquet de démarrage. La pagination se décide dans `typeset.ts` (pur, testé), pas dans `pdf.ts`.
 - **Exports, enregistrement** : toujours `storage.saveAs()` (dialogue du système dans Tauri, téléchargement dans le navigateur). `ScreenplayView` envoie ce qui attend dans le store dès que l'éditeur perd le focus, pour que l'export voie la dernière frappe.
+- **Numéros de scène** : c'est un affichage (compteur CSS dans l'éditeur, option de `typeset` et de `buildFdx`), jamais une écriture dans `scenario.fountain`. Seul un numéro déjà présent dans le fichier (`#12A#`) est une donnée.
+- **Import Fountain** : passe par `storage.pickTextFile()` puis `storage.create()`, et refuse un dossier déjà occupé (`importNotice: "taken"`) au lieu d'ouvrir ou d'écraser ce qui s'y trouve.
+- **Mode focus** : `focusMode` vit dans le store parce que `App` doit masquer la barre du haut ; `ScreenplayView` le remet à faux en se démontant.
 - **Page de titre Fountain** : une clé ne commence pas par un marqueur et ne contient pas de note, sinon un en-tête forcé en première ligne (`.PHARE [[cosmos:id]]`) est pris pour une page de titre.
 
 ## Conventions
@@ -228,12 +232,12 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 6 du plan), accueil et projets multiples
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
 2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
-5 bis. **Scénario** : éditeur au format standard en Fountain, compteur de pages et de minutes, exports PDF standard, Fountain et FDX. **Plan détaillé en 8 phases : `docs/plan-editeur-scenario.md`** (« Attaque la phase N du plan »)
+5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)

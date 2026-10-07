@@ -55,6 +55,8 @@ export interface ProjectMeta {
   kind?: ProjectKind;
   /** Format de page du scénario. Absent : "letter". */
   paper?: Paper;
+  /** Scénario : numéroter les scènes (éditeur, PDF, FDX). Absent : non. */
+  sceneNumbers?: boolean;
   layout: CardLayout[];
   links: Link[];
   viewport?: { x: number; y: number; zoom: number };

@@ -18,6 +18,7 @@ import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap, type Pr
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
+import { importFountain } from "./screenplay/import";
 import { headingTitles, initialScreenplay, renameHeading, unlinkCard, type SceneCard } from "./screenplay/link";
 import { getT } from "./i18n";
 
@@ -36,6 +37,12 @@ interface CosmosState {
   /** Faux tant que le format n'a pas été fixé (projet roman) : il n'est alors pas écrit dans cosmos.json. */
   paperChosen: boolean;
   setPaper: (paper: Paper) => void;
+  /** Scénario : numéroter les scènes dans l'éditeur et les exports. */
+  sceneNumbers: boolean;
+  setSceneNumbers: (on: boolean) => void;
+  /** Mode focus de l'éditeur de scénario : seule la feuille reste à l'écran. */
+  focusMode: boolean;
+  setFocusMode: (on: boolean) => void;
   nodes: CardNode[];
   edges: Edge[];
   /** Texte du scénario (scenario.fountain). null tant que le projet n'a jamais été un scénario. */
@@ -61,6 +68,10 @@ interface CosmosState {
   start: () => Promise<void>;
   openProject: (id: string) => Promise<void>;
   createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
+  /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
+  importScreenplay: () => Promise<void>;
+  /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
+  importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
   tryExample: () => Promise<void>;
   /** Enregistre et revient à l'accueil. */
@@ -113,7 +124,7 @@ function fromProject(p: Project) {
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
   const paperChosen = isPaper(p.meta.paper);
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
-  return { title: p.meta.title, kind, paper, paperChosen, nodes, edges };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, edges };
 }
 
 /** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
@@ -154,7 +165,7 @@ function openProject(p: Project) {
 }
 
 function toProject(
-  s: Pick<CosmosState, "title" | "kind" | "paper" | "paperChosen" | "nodes" | "edges" | "screenplay">,
+  s: Pick<CosmosState, "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "edges" | "screenplay">,
 ): Project {
   return {
     meta: {
@@ -162,6 +173,7 @@ function toProject(
       title: s.title,
       kind: s.kind,
       ...(s.paperChosen ? { paper: s.paper } : {}),
+      ...(s.sceneNumbers ? { sceneNumbers: true } : {}),
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -247,6 +259,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ paper, paperChosen: true });
       touch();
     },
+    sceneNumbers: false,
+    setSceneNumbers: (sceneNumbers) => {
+      set({ sceneNumbers });
+      touch();
+    },
+    focusMode: false,
+    setFocusMode: (focusMode) => set({ focusMode }),
     nodes: [],
     edges: [],
     screenplay: null,
@@ -303,6 +322,49 @@ export const useCosmos = create<CosmosState>((set, get) => {
       await get().save();
     },
 
+    importNotice: null,
+    importScreenplay: async () => {
+      set({ importNotice: null, homeNotice: false, openFailed: false });
+      const t = getT();
+      let file: { name: string; text: string } | null = null;
+      try {
+        file = await storage.pickTextFile(t.home.fountainFiles, ["fountain", "spmd", "txt"]);
+      } catch (err) {
+        console.error(err);
+        set({ importNotice: "empty" });
+        return;
+      }
+      if (!file) return;
+      const project = importFountain(file.text, {
+        fileName: file.name,
+        locale: useSettings.getState().lang,
+        linkLabel: t.screenplay.linkSetIn,
+        newId,
+      });
+      if (!project.screenplay || project.screenplay.elements.length === 0) {
+        set({ importNotice: "empty" });
+        return;
+      }
+      if (!(await storage.create())) return;
+      // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
+      if (await storage.readAll().catch(() => null)) {
+        storage.forget();
+        set({ importNotice: "taken" });
+        return;
+      }
+      const { state } = openProject(project);
+      set({
+        ...state,
+        savedScreenplay: null,
+        lastFiles: {},
+        screen: "project",
+        view: "manuscrit",
+        focusId: null,
+        status: "modifie",
+      });
+      await get().save();
+    },
+
     tryExample: async () => {
       if (!(await storage.create())) return;
       await get().load();
@@ -314,7 +376,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Un enregistrement en échec garde le projet à l'écran : rien n'est perdu en revenant à l'accueil.
       if (get().status === "erreur") return;
       await refreshProjects();
-      set({ screen: "home" });
+      set({ screen: "home", focusMode: false });
     },
 
     unlistProject: async (id) => {

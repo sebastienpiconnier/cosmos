@@ -151,6 +151,8 @@ button { font: inherit; color: inherit; }
 .export-panel { width: 220px; }
 .export-panel .ghost-button { text-align: left; }
 .export-error { position: absolute; right: 0; top: calc(100% + 8px); white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--danger); }
+.settings-panel label.settings-check { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.settings-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .settings-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
 .settings-sep { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .settings-panel select {
@@ -326,6 +328,10 @@ button { font: inherit; color: inherit; }
 .sp-bar button:hover { background: var(--hover); }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sp-focus { margin-left: auto; border: 1px solid var(--line) !important; }
+/* Mode focus : seule la feuille reste, avec la barre d'éléments. */
+.screenplay.is-focus { grid-template-columns: minmax(0, 1fr); }
+.screenplay.is-focus .sp-scenes, .screenplay.is-focus .sp-side, .screenplay.is-focus .sp-scene-select, .screenplay.is-focus .sp-bar-hint { display: none; }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc
@@ -342,6 +348,12 @@ button { font: inherit; color: inherit; }
 .sp-parenthetical { margin-top: 0; margin-left: 16ch; margin-right: 19ch; }
 .sp-dialogue { margin-top: 0; margin-left: 10ch; margin-right: 15ch; }
 .sp-transition { text-align: right; text-transform: uppercase; }
+/* Numéros de scène (option du projet) : dans la marge gauche, comme sur le PDF. Un numéro écrit
+   dans le fichier (#12A#) passe devant le compteur. */
+.sp-page[data-numbers] .sp-editor { counter-reset: scene; }
+.sp-page[data-numbers] .sp-sceneHeading { counter-increment: scene; position: relative; }
+.sp-page[data-numbers] .sp-sceneHeading::after { content: counter(scene); position: absolute; top: 0; right: 100%; margin-right: 2ch; white-space: nowrap; }
+.sp-page[data-numbers] .sp-sceneHeading[data-number]::after { content: attr(data-number); }
 .sp-el.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
 .sp-transition.is-empty::before { float: right; }
 
@@ -368,6 +380,8 @@ button { font: inherit; color: inherit; }
 /* Feuille plus étroite que 8,5 pouces : on garde la taille du texte, les retraits deviennent proportionnels. */
 @container sp (max-width: 860px) {
   .sp-page { width: 100%; }
+  /* Pas de marge où loger le numéro : il suit l'en-tête. */
+  .sp-page[data-numbers] .sp-sceneHeading::after { position: static; margin: 0 0 0 2ch; color: var(--muted); }
   .sp-editor, .sp-editor:focus-visible { padding: 28px 5% 64px; }
   .sp-character { margin-left: 34%; }
   .sp-parenthetical { margin-left: 24%; margin-right: 14%; }

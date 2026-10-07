@@ -38,7 +38,7 @@ export function ExportMenu() {
   }, [open]);
 
   const run = async (format: ExportFormat) => {
-    const { screenplay, savedScreenplay, lastFiles, title, paper } = useCosmos.getState();
+    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers } = useCosmos.getState();
     if (!screenplay || busy) return;
     setBusy(true);
     setMessage(t.working);
@@ -48,6 +48,7 @@ export function ExportMenu() {
         paper,
         locale: useSettings.getState().lang,
         strings: { more: strings.more, contd: strings.contd },
+        numberScenes: sceneNumbers,
         // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
         source: screenplay === savedScreenplay ? lastFiles[SCREENPLAY_FILE] : undefined,
       });

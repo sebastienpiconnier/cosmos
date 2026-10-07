@@ -23,9 +23,13 @@ export interface PdfOptions {
   layout: Layout;
   locale: string;
   strings: TypesetStrings;
+  numberScenes?: boolean;
 }
 
-export async function buildPdf(screenplay: Screenplay, { layout, locale, strings }: PdfOptions): Promise<Uint8Array> {
+export async function buildPdf(
+  screenplay: Screenplay,
+  { layout, locale, strings, numberScenes }: PdfOptions,
+): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const regular = await pdf.embedFont(fromDataUri(regularData));
@@ -48,7 +52,7 @@ export async function buildPdf(screenplay: Screenplay, { layout, locale, strings
 
   const titleLines = typesetTitlePage(screenplay.titlePage, layout);
   if (titleLines.length > 0) draw(titleLines);
-  const pages = typeset(screenplay.elements, layout, locale, strings);
+  const pages = typeset(screenplay.elements, layout, locale, strings, { numberScenes });
   for (const page of pages) draw(page.lines, page.number);
   // Un PDF sans page n'est pas valide : scénario vide, une feuille blanche.
   if (titleLines.length === 0 && pages.length === 0) pdf.addPage([width, height]);

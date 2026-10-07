@@ -51,6 +51,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
 - **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
 - **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
+- **Import**: an existing `.fountain` file becomes a project, with its Scene, Character and Location cards already created and linked.
+- **Scene numbers and focus mode**: optional numbering in the margin, and a mode that keeps only the page on screen.
 - **An open file**: the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
 
 ### Comfort
@@ -72,7 +74,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
-| Screenplay | Fountain import, scene numbers, focus mode, act templates in the step outline (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
+| Screenplay | Act templates and target lengths in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
 | Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |
