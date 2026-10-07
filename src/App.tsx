@@ -10,6 +10,7 @@ import { Sequencier } from "./components/Sequencier";
 import { Home } from "./components/Home";
 import { useT } from "./i18n";
 import { storage } from "./storage";
+import { forgetMediaUrls } from "./components/useMediaUrl";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 
@@ -29,6 +30,11 @@ export function App() {
   useEffect(() => {
     start();
   }, [start]);
+
+  // De retour à l'accueil : les images lues appartenaient au projet qu'on quitte.
+  useEffect(() => {
+    if (screen === "home") forgetMediaUrls();
+  }, [screen]);
 
   // Sauvegarde automatique : chaque modification relance le délai,
   // on enregistre quand l'auteur marque une pause.

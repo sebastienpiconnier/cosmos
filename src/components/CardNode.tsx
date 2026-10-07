@@ -4,7 +4,7 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Handle, Position, useConnection, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -14,15 +14,19 @@ import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { SuggestionMenu } from "./SuggestionMenu";
+import { useMediaUrl } from "./useMediaUrl";
+import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Menu ouvert par "/" (avec la plage de texte à effacer) ou par l'étiquette du type. */
 type MenuState = { via: "slash"; from: number; to: number; query: string } | { via: "label"; query: "" };
 
-function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
+function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
   const deleteCard = useCosmos((s) => s.deleteCard);
+  const pickCardImage = useCosmos((s) => s.pickCardImage);
+  const imageUrl = useMediaUrl(data.image);
   const { t, types, kind } = useVocab();
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
   const slugline = kind === "scenario" && data.type === "scene";
@@ -151,7 +155,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [data.title, slugline]);
+    // La largeur compte : un titre sur deux lignes peut tenir sur une seule dans une carte élargie.
+  }, [data.title, slugline, width]);
 
   // Pendant qu'on tire un fil, toute la carte devient une cible de dépôt.
   const connection = useConnection();
@@ -187,6 +192,33 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
 
       {isDropTarget && <Handle id="drop" type="target" position={Position.Top} className="card-dropzone" />}
 
+      {/* Largeur : on tire le bord droit (ou Alt + flèches). La hauteur suit le contenu. */}
+      {selected && (
+        <NodeResizeControl
+          position="right"
+          variant={ResizeControlVariant.Line}
+          resizeDirection="horizontal"
+          minWidth={CARD_MIN_WIDTH}
+          maxWidth={CARD_MAX_WIDTH}
+          className="card-resize"
+        />
+      )}
+
+      {imageUrl && (
+        <div className="card-image">
+          <img src={imageUrl} alt={data.title ? fmt(t.card.imageAlt, { title: data.title }) : t.card.imageAltUntitled} draggable={false} />
+          <button
+            type="button"
+            className="card-image-remove nodrag"
+            aria-label={t.card.removeImage}
+            title={t.card.removeImage}
+            onClick={() => updateCard(id, { image: undefined })}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="card-handle">
         <button
           type="button"
@@ -201,6 +233,19 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
         >
           <span className="card-dot" />
           {types[data.type].label}
+        </button>
+        <button
+          type="button"
+          className="card-delete card-image-add nodrag"
+          aria-label={data.image ? t.card.changeImage : t.card.addImage}
+          title={data.image ? t.card.changeImage : t.card.addImage}
+          onClick={() => pickCardImage(id)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+            <circle cx="9" cy="10" r="1.6" />
+            <path d="M5 17l4.5-4.5 3.5 3.5 2.5-2.5L20 17" />
+          </svg>
         </button>
         <button
           type="button"

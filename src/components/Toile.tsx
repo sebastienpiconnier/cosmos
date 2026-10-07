@@ -21,6 +21,7 @@ import type { CardData } from "../types";
 import { useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
+import { imageExtension } from "../media";
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
@@ -67,6 +68,19 @@ export function Toile() {
     addCard({ x: pos.x - 20, y: pos.y - 20 }); // la carte prend le focus elle-même
   };
 
+  // Image déposée : sur une carte, elle devient son image ; sur le canevas, une nouvelle carte la porte.
+  const onDrop = async (e: React.DragEvent) => {
+    const file = [...e.dataTransfer.files].find((f) => imageExtension(f.name));
+    if (!file) return;
+    e.preventDefault();
+    const cardId = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
+    const pos = screenToFlowPosition({ x: e.clientX - 20, y: e.clientY - 20 });
+    const image = { name: file.name, data: new Uint8Array(await file.arrayBuffer()) };
+    const { setCardImage, addImageCard } = useCosmos.getState();
+    if (cardId) await setCardImage(cardId, image);
+    else await addImageCard(pos, image);
+  };
+
   const isPane = (target: EventTarget | null) =>
     target instanceof HTMLElement && target.classList.contains("react-flow__pane");
 
@@ -96,9 +110,18 @@ export function Toile() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      // Alt + flèche droite ou gauche : élargir ou rétrécir les cartes sélectionnées.
+      if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+        const { nodes: all, resizeCard } = useCosmos.getState();
+        const chosen = all.filter((n) => n.selected);
+        if (chosen.length === 0) return;
+        e.preventDefault();
+        for (const n of chosen) resizeCard(n.id, e.key === "ArrowRight" ? 40 : -40);
+        return;
+      }
+      if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       e.preventDefault();
       if (key === "n") createInCenterRef.current();
       else createFrameRef.current();
@@ -182,7 +205,17 @@ export function Toile() {
   };
 
   return (
-    <div className="toile" ref={wrapper} onDoubleClick={onDoubleClick}>
+    <div
+      className="toile"
+      ref={wrapper}
+      onDoubleClick={onDoubleClick}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      }}
+      onDrop={onDrop}
+    >
       <ReactFlow
         nodes={allNodes}
         edges={edges}

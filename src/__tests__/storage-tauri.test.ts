@@ -8,6 +8,7 @@ const fsPlugin = vi.hoisted(() => ({
   exists: vi.fn(async () => true),
   mkdir: vi.fn(async () => {}),
   readDir: vi.fn(async () => []),
+  readFile: vi.fn(async () => new Uint8Array([1, 2, 3])),
   readTextFile: vi.fn(async () => "{}"),
   remove: vi.fn(async () => {}),
   writeFile: vi.fn(async () => {}),
@@ -54,6 +55,27 @@ describe("écrire un projet", () => {
     expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cosmos.json", "{}");
     expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md", "texte");
     expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\cartes\\b.md");
+  });
+
+  it("une image va dans medias/ ; elle se relit, et un fichier absent ne casse rien", async () => {
+    dialog.open.mockResolvedValue("D:\\Projet");
+    await tauriStorage.pickFolder();
+    await tauriStorage.writeMedia("abc.png", new Uint8Array([1, 2, 3]));
+    expect(fsPlugin.mkdir).toHaveBeenCalledWith("D:\\Projet\\medias", { recursive: true });
+    expect(fsPlugin.writeFile).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png", new Uint8Array([1, 2, 3]));
+
+    expect(await tauriStorage.mediaUrl("abc.png")).toMatch(/^blob:/);
+    expect(fsPlugin.readFile).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png");
+    fsPlugin.exists.mockResolvedValueOnce(false);
+    expect(await tauriStorage.mediaUrl("absent.png")).toBeNull();
+  });
+
+  it("choisir une image : seulement les formats d'image", async () => {
+    dialog.open.mockResolvedValue("C:\\Photos\\phare.JPG");
+    expect(await tauriStorage.pickImage("Images")).toEqual({ name: "phare.JPG", data: new Uint8Array([1, 2, 3]) });
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.objectContaining({ filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "gif"] }] }),
+    );
   });
 
   it("l'ancien dossier mémorisé rejoint la liste des projets", async () => {

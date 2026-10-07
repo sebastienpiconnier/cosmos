@@ -5,10 +5,11 @@
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir, readFile, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
-import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
+import { CARDS_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
+import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
@@ -91,6 +92,26 @@ export const tauriStorage: Storage = {
     const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions }] });
     if (typeof path !== "string") return null;
     return { name: baseName(path), text: await readTextFile(path) };
+  },
+
+  async writeMedia(name, data) {
+    const dir = await projectFolder();
+    if (!dir) throw new Error("Aucun dossier projet choisi");
+    const media = await join(dir, MEDIA_DIR);
+    await mkdir(media, { recursive: true });
+    await writeFile(await join(media, name), data);
+  },
+  async mediaUrl(name) {
+    const dir = await projectFolder();
+    if (!dir) return null;
+    const path = await join(dir, MEDIA_DIR, name);
+    if (!(await exists(path))) return null;
+    return URL.createObjectURL(new Blob([(await readFile(path)) as BlobPart], { type: mimeOf(name) }));
+  },
+  async pickImage(label) {
+    const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions: IMAGE_EXTENSIONS }] });
+    if (typeof path !== "string") return null;
+    return { name: baseName(path), data: await readFile(path) };
   },
 
   async readAll() {

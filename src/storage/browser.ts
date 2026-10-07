@@ -3,6 +3,7 @@
 
 import type { Storage } from "./index";
 import type { FileMap } from "./paths";
+import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { byRecency, dropRecent, readRecents, touchRecent, type ProjectEntry } from "./recents";
 
 /** Premier projet du navigateur, d'avant l'écran d'accueil : sa clé n'a pas changé. */
@@ -10,6 +11,16 @@ const LEGACY_ID = "demo";
 const keyOf = (id: string) => (id === LEGACY_ID ? "cosmos:projet-demo" : `cosmos:projet:${id}`);
 
 let current = LEGACY_ID;
+
+/** Images du projet courant : { nom: adresse data: }, dans une clé à part des fichiers texte. */
+const mediaKey = () => `cosmos:medias:${current}`;
+function loadMedia(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(mediaKey()) ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
 
 function load(): FileMap {
   try {
@@ -56,6 +67,29 @@ export const browserStorage: Storage = {
       input.addEventListener("change", async () => {
         const file = input.files?.[0];
         resolve(file ? { name: file.name, text: await file.text() } : null);
+      });
+      input.click();
+    });
+  },
+
+  async writeMedia(name, data) {
+    let binary = "";
+    for (let i = 0; i < data.length; i += 0x8000) binary += String.fromCharCode(...data.subarray(i, i + 0x8000));
+    // Peut dépasser le quota du navigateur pour une grande image : l'erreur remonte, la carte reste sans image.
+    localStorage.setItem(mediaKey(), JSON.stringify({ ...loadMedia(), [name]: `data:${mimeOf(name)};base64,${btoa(binary)}` }));
+  },
+  async mediaUrl(name) {
+    return loadMedia()[name] ?? null;
+  },
+  pickImage() {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = IMAGE_EXTENSIONS.map((ext) => `.${ext}`).join(",");
+      input.addEventListener("cancel", () => resolve(null));
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        resolve(file ? { name: file.name, data: new Uint8Array(await file.arrayBuffer()) } : null);
       });
       input.click();
     });

@@ -28,6 +28,8 @@ export interface CardData {
   title: string;
   /** Corps en HTML (format de travail de TipTap). Converti en Markdown à la sauvegarde. */
   html: string;
+  /** Image de la carte : nom d'un fichier du dossier medias/ du projet. */
+  image?: string;
   [key: string]: unknown; // requis par React Flow pour data
 }
 

@@ -26,6 +26,7 @@ Toute fonction doit respecter ces règles :
 6. **On détecte des capacités, pas des systèmes** : `isTouch()`, `storage.canPickFolder` (voir `src/platform.ts`). `isMobileOS()` seulement quand c'est inévitable (stockage).
 7. **Mobile** : pas de sélecteur de dossier, chaque projet a son dossier dans l'espace privé de l'app (`$APPDATA/projets/<id>/`). Pas de dialogue natif de dossier à appeler.
 8. Toute nouvelle permission Tauri va dans `src-tauri/capabilities/default.json` et doit fonctionner sur toutes les cibles.
+9. **Glisser-déposer** : ne fonctionne pas au doigt et pas partout. Toute action par dépôt (image, ordre des scènes) a aussi un bouton.
 
 Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
 
@@ -113,6 +114,7 @@ src/
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
+  media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
   settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
@@ -128,6 +130,7 @@ src/
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     FrameNode.tsx       Cadre de regroupement : titre, redimensionnement, suppression
+    useMediaUrl.ts      Adresse affichable d'une image de medias/ (hook)
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
     Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
@@ -175,6 +178,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 MonRoman/
   cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif)
   cartes/<id>.md       une carte par fichier
+  medias/<nom>.jpg     images des cartes (copiées dans le projet)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
 
@@ -183,6 +187,7 @@ MonRoman/
 id: k3x9a7bq2m
 type: personnage
 title: "Inès Morvan"
+image: k3x9a7bq2m.jpg
 ---
 Gardienne remplaçante. Ne supporte pas le **silence**.
 ```
@@ -217,6 +222,10 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément (avec la carte de son décor et le fil « se passe à », pour un en-tête standard), un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
 - **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
+- **Images des cartes** : le fichier est copié dans `medias/` sous un nom neuf (`storage.writeMedia`), la carte ne garde que ce nom (`image:` dans son en-tête, facultatif). Un nom lu sur disque passe par `isMediaName` : jamais de chemin, jamais de « .. », sinon un `.md` piégé ferait lire un autre fichier. Les images ne sont pas dans la `FileMap` : l'enregistrement ne les touche pas.
+- **Les fichiers de medias/ ne sont jamais supprimés par l'app** : retirer une image d'une carte doit pouvoir s'annuler. Les orphelins restent dans le dossier.
+- **Dépôt de fichiers dans Tauri** : `dragDropEnabled` est à `false` dans `tauri.conf.json`. Sinon la fenêtre native intercepte le dépôt et l'événement `drop` du canevas n'arrive jamais (Windows surtout).
+- **Largeur d'une carte** : elle vit dans `style.width`. Quand React Flow envoie un redimensionnement, le store ne retient que la largeur et retire `width`/`height` du nœud : la hauteur suit toujours le contenu.
 - **Cadres de regroupement** : ils vivent dans `frames`, à part de `nodes` (toutes les vues lisent `nodes` comme la liste des cartes). `Toile` les passe à React Flow avant les cartes. Une carte n'est pas rattachée à un cadre : c'est sa position qui compte, et le store déplace avec le cadre les cartes dont le centre est dedans. Pas de `parentId` React Flow, qui rendrait les positions des cartes relatives et changerait le format.
 - **Intérieur d'un cadre** : le nœud est en `pointer-events: none`, seuls l'en-tête et les poignées répondent. Sinon le double-clic et le clic droit ne créeraient plus de carte dans un cadre.
 - **Redimensionner un cadre par le haut ou la gauche** change aussi sa position : `onNodesChange` ne déplace pas les cartes quand le même lot contient un changement de dimensions.
@@ -253,7 +262,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 ## Feuille de route
 
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
-2. Canevas : (fait) annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C) ; (reste) images (glisser-déposer, copiées dans `medias/`), redimensionnement des cartes
+2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)

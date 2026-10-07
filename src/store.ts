@@ -20,6 +20,7 @@ import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
+import { clampCardWidth, imageExtension } from "./media";
 import {
   appendScene,
   headingTitles,
@@ -140,12 +141,21 @@ interface CosmosState {
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (c: Connection) => void;
 
-  addCard: (pos: { x: number; y: number }, type?: CardType) => string;
+  /** `height` : hauteur à réserver quand on la connaît d'avance (carte qui va recevoir une image). */
+  addCard: (pos: { x: number; y: number }, type?: CardType, height?: number) => string;
   /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
   linkCards: (source: string, target: string, label: string) => void;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
+  /** Élargit ou rétrécit une carte (clavier) ; la hauteur suit le contenu. */
+  resizeCard: (id: string, delta: number) => void;
+  /** Copie l'image dans medias/ et la pose sur la carte. Rend faux si ce n'est pas une image ou si la copie échoue. */
+  setCardImage: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
+  /** Image déposée sur le canevas : une nouvelle carte la porte. */
+  addImageCard: (pos: { x: number; y: number }, file: { name: string; data: Uint8Array }) => Promise<string | null>;
+  /** Bouton de la carte : l'auteur choisit un fichier image. */
+  pickCardImage: (id: string) => Promise<void>;
   deleteCard: (id: string) => void;
   renameLink: (id: string, label: string) => void;
 
@@ -163,6 +173,9 @@ export interface Snapshot {
   edges: Edge[];
   screenplay: Screenplay | null;
 }
+
+/** Hauteur réservée pour l'image d'une carte créée par dépôt (voir .card-image dans styles.css). */
+const IMAGE_ROOM = 220;
 
 const HISTORY_LIMIT = 100;
 /** Deux gestes de même nature rapprochés (lettres d'un titre, déplacement) ne font qu'une étape. */
@@ -583,7 +596,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
       // Sélection et mesure ne modifient pas le projet, et n'entrent pas dans l'historique.
       const removed = cardChanges.filter((c) => c.type === "remove").map((c) => c.id);
-      const resized = frameChanges.some((c) => c.type === "dimensions" && c.resizing !== undefined);
+      const widened = new Map<string, number>();
+      for (const c of cardChanges) {
+        if (c.type === "dimensions" && c.resizing !== undefined && c.dimensions) widened.set(c.id, c.dimensions.width);
+      }
+      const resized = widened.size > 0 || frameChanges.some((c) => c.type === "dimensions" && c.resizing !== undefined);
       const changed =
         resized || changes.some((c) => c.type === "position" || c.type === "remove") || cardChanges.some((c) => c.type === "dimensions");
       if (changes.some((c) => c.type === "remove")) record();
@@ -614,8 +631,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
       let { screenplay } = get();
       // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, son lien avec le scénario est défait.
       if (screenplay) for (const id of removed) screenplay = releaseCard(screenplay, id);
+      let nextNodes = applyNodeChanges(cardChanges, nodes);
+      // Carte élargie par son bord : seule la largeur est retenue, la hauteur suit toujours le contenu.
+      if (widened.size > 0) {
+        nextNodes = nextNodes.map((n) => {
+          const width = widened.get(n.id);
+          if (width === undefined) return n;
+          const { width: _w, height: _h, ...rest } = n;
+          return { ...rest, style: { ...n.style, width: clampCardWidth(width) } };
+        });
+      }
       set({
-        nodes: applyNodeChanges(cardChanges, nodes),
+        nodes: nextNodes,
         frames: frameChanges.length > 0 ? applyNodeChanges(frameChanges, get().frames) : get().frames,
         screenplay,
       });
@@ -634,11 +661,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
 
-    addCard: (pos, type = "idee") => {
+    addCard: (pos, type = "idee", height = CARD_SIZE.height) => {
       record();
       const card: CardData = { id: newId(), type, title: "", html: "" };
       // À l'endroit demandé s'il est libre, sinon juste à côté : deux cartes ne se chevauchent pas.
-      const spot = freeSpot(pos, boxes(get().nodes));
+      const spot = freeSpot(pos, boxes(get().nodes), { width: CARD_SIZE.width, height });
       const node = { ...toNode(card, spot.x, spot.y), selected: true };
       set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
       touch();
@@ -664,7 +691,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     updateCard: (id, patch) => {
       // Les lettres d'un titre ou d'un texte tapées d'affilée ne font qu'une étape d'historique.
-      record(`card:${id}:${Object.keys(patch).sort().join(",")}`);
+      // Un changement de type ou d'image est toujours une étape à part.
+      const keys = Object.keys(patch);
+      const typed = keys.length === 1 && (keys[0] === "title" || keys[0] === "html");
+      record(typed ? `card:${id}:${keys[0]}` : "");
       const nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
       let { screenplay } = get();
       const card = nodes.find((n) => n.id === id)?.data;
@@ -679,6 +709,48 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       set({ nodes, screenplay });
       touch();
+    },
+    resizeCard: (id, delta) => {
+      record(`card:${id}:width`);
+      set({
+        nodes: get().nodes.map((n) => {
+          if (n.id !== id) return n;
+          const width = typeof n.style?.width === "number" ? n.style.width : CARD_WIDTH;
+          return { ...n, style: { ...n.style, width: clampCardWidth(width + delta) } };
+        }),
+      });
+      touch();
+    },
+    setCardImage: async (id, file) => {
+      const ext = imageExtension(file.name);
+      if (!ext || !get().nodes.some((n) => n.id === id)) return false;
+      // Un nom neuf dans medias/ : deux images du même nom ne s'écrasent pas, et annuler reste possible.
+      const name = `${newId()}.${ext}`;
+      try {
+        await storage.writeMedia(name, file.data);
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+      get().updateCard(id, { image: name });
+      return true;
+    },
+    addImageCard: async (pos, file) => {
+      if (!imageExtension(file.name)) return null;
+      // La place de l'image est réservée d'avance, pour ne pas recouvrir une voisine une fois l'image affichée.
+      const id = get().addCard(pos, "idee", CARD_SIZE.height + IMAGE_ROOM);
+      set({ pendingFocusId: null });
+      if (await get().setCardImage(id, file)) return id;
+      // La copie a échoué : pas de carte vide laissée derrière.
+      get().undo();
+      return null;
+    },
+    pickCardImage: async (id) => {
+      const file = await storage.pickImage(getT().card.imageFiles).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      if (file) await get().setCardImage(id, file);
     },
     deleteCard: (id) => {
       record();

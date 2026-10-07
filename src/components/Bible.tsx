@@ -8,9 +8,16 @@ import { typeColor, type CardType } from "../types";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
+import { useMediaUrl } from "./useMediaUrl";
 
 // Ordre de la bible : les personnages d'abord, les idées en vrac à la fin.
 const ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
+
+/** Image d'une fiche, en tête (la même que sur sa carte). */
+function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
+  const url = useMediaUrl(name);
+  return url ? <img className="bible-image" src={url} alt={alt} /> : null;
+}
 
 export function Bible() {
   const { t, types, kind } = useVocab();
@@ -117,6 +124,7 @@ export function Bible() {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
           return (
             <article key={card.id} className="bible-entry" style={{ ["--type" as string]: typeColor(shown.type) }}>
+              <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
               <header>
                 <h2>
                   {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}

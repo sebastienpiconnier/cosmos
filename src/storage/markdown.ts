@@ -5,12 +5,14 @@
 // id: k3x9a
 // type: personnage
 // title: "Inès Morvan"
+// image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 
 import { marked } from "marked";
 import TurndownService from "turndown";
 import { CARD_TYPES, type CardData, type CardType } from "../types";
+import { isMediaName } from "../media";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 
@@ -60,6 +62,7 @@ export function cardToFile(card: CardData): string {
     `id: ${card.id}`,
     `type: ${card.type}`,
     `title: ${JSON.stringify(card.title)}`,
+    ...(card.image ? [`image: ${card.image}`] : []),
     "---",
   ].join("\n");
   return `${front}\n${htmlToMarkdown(card.html)}\n`;
@@ -83,5 +86,8 @@ export function fileToCard(text: string): CardData | null {
     /* titre non quoté : on le garde tel quel */
   }
   const type = (CARD_TYPES.includes(fields.type as CardType) ? fields.type : "idee") as CardType;
-  return { id: fields.id, type, title, html: markdownToHtml(m[2]) };
+  const card: CardData = { id: fields.id, type, title, html: markdownToHtml(m[2]) };
+  // Le nom vient du disque : on n'accepte qu'un simple nom de fichier image, jamais un chemin.
+  if (isMediaName(fields.image)) card.image = fields.image;
+  return card;
 }
