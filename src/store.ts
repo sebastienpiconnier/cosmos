@@ -16,7 +16,8 @@ import { nanoid } from "nanoid";
 import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
 import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap } from "./storage";
 import type { Screenplay } from "./screenplay/model";
-import { isPaper, type Paper } from "./screenplay/layout";
+import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
+import { useSettings } from "./settings";
 import { headingTitles, initialScreenplay, renameHeading, unlinkCard, type SceneCard } from "./screenplay/link";
 import { getT } from "./i18n";
 
@@ -32,6 +33,8 @@ interface CosmosState {
   setKind: (kind: ProjectKind) => void;
   /** Format de page du scénario (estimation des pages, puis PDF). */
   paper: Paper;
+  /** Faux tant que le format n'a pas été fixé (projet roman) : il n'est alors pas écrit dans cosmos.json. */
+  paperChosen: boolean;
   setPaper: (paper: Paper) => void;
   nodes: CardNode[];
   edges: Edge[];
@@ -88,8 +91,9 @@ function fromProject(p: Project) {
   });
   const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating" }));
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
-  const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : "letter";
-  return { title: p.meta.title, kind, paper, nodes, edges };
+  const paperChosen = isPaper(p.meta.paper);
+  const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
+  return { title: p.meta.title, kind, paper, paperChosen, nodes, edges };
 }
 
 /** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
@@ -120,20 +124,24 @@ function openProject(p: Project) {
   const screenplay =
     p.screenplay ?? (base.kind === "scenario" ? initialScreenplay(base.title, sceneCards(base.nodes)) : null);
   const nodes = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
+  // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
+  // la pagination ne change pas d'un appareil à l'autre.
+  const paperChosen = base.paperChosen || base.kind === "scenario";
   return {
-    state: { ...base, nodes, screenplay, savedScreenplay: p.screenplay },
-    dirty: screenplay !== p.screenplay || nodes !== base.nodes,
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay },
+    dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen,
   };
 }
 
-function toProject(s: Pick<CosmosState, "title" | "kind" | "paper" | "nodes" | "edges" | "screenplay">): Project {
+function toProject(
+  s: Pick<CosmosState, "title" | "kind" | "paper" | "paperChosen" | "nodes" | "edges" | "screenplay">,
+): Project {
   return {
     meta: {
       version: 1,
       title: s.title,
       kind: s.kind,
-      // Le format par défaut ne s'écrit pas : cosmos.json reste identique pour qui n'y touche pas.
-      ...(s.paper !== "letter" ? { paper: s.paper } : {}),
+      ...(s.paperChosen ? { paper: s.paper } : {}),
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -186,15 +194,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
     title: "",
     kind: "roman",
     setKind: (kind) => {
-      const { screenplay, title, nodes } = get();
+      const { screenplay, title, nodes, paperChosen } = get();
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
       if (kind === "scenario" && !screenplay) set({ kind, screenplay: initialScreenplay(title, sceneCards(nodes)) });
       else set({ kind });
+      // Et un format de page : A4 si l'interface est en français, US Letter sinon.
+      if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
     },
     paper: "letter",
+    paperChosen: false,
     setPaper: (paper) => {
-      set({ paper });
+      set({ paper, paperChosen: true });
       touch();
     },
     nodes: [],

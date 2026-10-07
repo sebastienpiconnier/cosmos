@@ -60,7 +60,7 @@ Notes de la phase 5 :
 - Valeurs de référence des tests : la fixture française fait 29 lignes, soit une page ; répétée 150 fois, entre 82 et 86 pages en Letter.
 - Letter : 60 caractères d'action et 55 lignes par page. A4 : 57 caractères et 59 lignes (valeur posée à la main, à caler sur le PDF en phase 6).
 - Règles de bas de page : un en-tête de scène n'est jamais en dernière ligne, et un personnage n'est pas séparé de sa première ligne de réplique (ajout par rapport au plan).
-- `cosmos.json` gagne le champ facultatif `paper`, écrit seulement pour A4. Letter reste le défaut, quelle que soit la langue.
+- `cosmos.json` gagne le champ facultatif `paper`. Il est fixé quand le projet devient un scénario (ou à l’ouverture d’un scénario qui n’en a pas) : **A4 si l’interface est en français, US Letter sinon**. Il ne suit plus la langue ensuite, pour que la pagination soit la même sur tous les appareils. Un roman n’a pas ce champ.
 - Séquencier : les sections (`# Acte II`) sont des blocs fixes ; une scène qui en franchit une change d'acte. Ce qui précède le premier bloc reste en tête. Déplacement à la souris (glisser) ou par les boutons Monter et Descendre (doigt, clavier).
 - Affichage : durée et pages dans la barre du haut, « Page 3 sur 6 » sous la feuille, page de début dans la liste des scènes. Dans le séquencier, la durée d'une scène n'est affichée qu'à partir d'une demi-page.
 - Les gabarits par actes et les durées cibles de la maquette du séquencier viendront avec l'étape 4 de la feuille de route.

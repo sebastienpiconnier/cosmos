@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { useCosmos } from "../store";
+import { useSettings } from "../settings";
 import { META_FILE, SCREENPLAY_FILE, cardPath, storage, type FileMap } from "../storage";
 import { serialize } from "../screenplay/serialize";
 
@@ -55,7 +56,7 @@ function scenarioProject(fountain: string | null): FileMap {
 
 beforeEach(() => {
   localStorage.clear();
-  useCosmos.setState({ loaded: false, lastFiles: {}, screenplay: null, savedScreenplay: null, nodes: [], edges: [] });
+  useCosmos.setState({ loaded: false, lastFiles: {}, screenplay: null, savedScreenplay: null, nodes: [], edges: [], paperChosen: false });
 });
 
 describe("projet roman", () => {
@@ -85,10 +86,9 @@ describe("projet roman", () => {
     );
   });
 
-  it("format de page : Letter par défaut (non écrit), A4 enregistré et relu", async () => {
+  it("format de page : rien d'écrit pour un roman, le choix est enregistré et relu", async () => {
     await state().load();
     await state().save();
-    expect(state().paper).toBe("letter");
     expect(JSON.parse(disk()[META_FILE])).not.toHaveProperty("paper");
 
     state().setPaper("a4");
@@ -96,9 +96,37 @@ describe("projet roman", () => {
     await state().save();
     expect(JSON.parse(disk()[META_FILE]).paper).toBe("a4");
 
-    useCosmos.setState({ paper: "letter" });
+    useCosmos.setState({ paper: "letter", paperChosen: false });
     await state().load();
     expect(state().paper).toBe("a4");
+  });
+
+  it("passer en scénario fixe le format : A4 en français, US Letter en anglais", async () => {
+    for (const [lang, paper] of [["fr", "a4"], ["en", "letter"]] as const) {
+      localStorage.clear();
+      useSettings.setState({ lang });
+      await state().load();
+      state().setKind("scenario");
+      await state().save();
+      expect(JSON.parse(disk()[META_FILE]).paper, lang).toBe(paper);
+
+      // Le format ne suit plus la langue ensuite : même pagination sur tous les appareils.
+      useSettings.setState({ lang: lang === "fr" ? "en" : "fr" });
+      await state().load();
+      expect(state().paper, lang).toBe(paper);
+    }
+    useSettings.setState({ lang: "en" });
+  });
+
+  it("scénario existant sans format : fixé à l'ouverture, puis enregistré", async () => {
+    useSettings.setState({ lang: "fr" });
+    putProject(scenarioProject("INT. PHARE - NUIT [[cosmos:lanterne]]\n"));
+    await state().load();
+    expect(state().paper).toBe("a4");
+    expect(state().status).toBe("modifie");
+    await state().save();
+    expect(JSON.parse(disk()[META_FILE]).paper).toBe("a4");
+    useSettings.setState({ lang: "en" });
   });
 
   it("revenir en roman garde le fichier", async () => {
