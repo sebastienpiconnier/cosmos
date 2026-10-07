@@ -16,6 +16,15 @@ export const fr = {
     leaveUnsaved: "Revenir aux projets sans enregistrer",
   },
 
+  search: {
+    button: "Rechercher une carte",
+    hint: "Rechercher (Ctrl ou Cmd + F)",
+    placeholder: "Un nom, un mot…",
+    results: "Cartes trouvées",
+    prompt: "Cherche dans les titres et le texte des cartes.",
+    empty: "Aucune carte ne correspond.",
+  },
+
   // Écran d'accueil : choisir le projet sur lequel travailler.
   home: {
     title: "Tes projets",
@@ -106,6 +115,10 @@ export const fr = {
   toile: {
     addCard: "Nouvelle carte",
     addCardHint: "Raccourci : touche N",
+    undo: "Annuler",
+    redo: "Rétablir",
+    undoHint: "Annuler (Ctrl ou Cmd + Z)",
+    redoHint: "Rétablir (Ctrl ou Cmd + Maj + Z)",
     hintMouse: "Double-clic ou clic droit pour écrire",
     hintTouch: "Appui long pour écrire",
     hintLink: "Tire un fil depuis un bord",

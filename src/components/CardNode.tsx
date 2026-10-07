@@ -109,6 +109,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     onSelectionUpdate: ({ editor: ed }) => detectSlash(ed),
   });
 
+  // Le texte a changé sans passer par cet éditeur (annuler, rétablir) : il se remet à jour.
+  // Pendant la frappe, les deux sont égaux et rien ne se passe.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || data.html === editor.getHTML()) return;
+    if (data.html === "" && editor.isEmpty) return;
+    editor.commands.setContent(data.html, { emitUpdate: false });
+  }, [data.html, editor]);
+
   // Changement de langue : on met à jour ce que TipTap a figé à la création.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;

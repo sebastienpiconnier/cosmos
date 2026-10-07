@@ -15,6 +15,15 @@ export const en: Messages = {
     leaveUnsaved: "Back to projects without saving",
   },
 
+  search: {
+    button: "Search for a card",
+    hint: "Search (Ctrl or Cmd + F)",
+    placeholder: "A name, a word…",
+    results: "Cards found",
+    prompt: "Searches card titles and text.",
+    empty: "No card matches.",
+  },
+
   // Home screen: choose the project to work on.
   home: {
     title: "Your projects",
@@ -105,6 +114,10 @@ export const en: Messages = {
   toile: {
     addCard: "New card",
     addCardHint: "Shortcut: N key",
+    undo: "Undo",
+    redo: "Redo",
+    undoHint: "Undo (Ctrl or Cmd + Z)",
+    redoHint: "Redo (Ctrl or Cmd + Shift + Z)",
     hintMouse: "Double-click or right-click to write",
     hintTouch: "Long-press to write",
     hintLink: "Drag a thread from an edge",

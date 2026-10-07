@@ -35,8 +35,10 @@ interface LabelEditor {
 }
 
 export function Toile() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
     useCosmos();
+  const canUndo = useCosmos((s) => s.past.length > 0);
+  const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView } = useReactFlow();
   const wrapper = useRef<HTMLDivElement>(null);
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
@@ -248,6 +250,21 @@ export function Toile() {
         </svg>
         {t.toile.addCard}
       </button>
+
+      <div className="history-buttons">
+        <button type="button" className="icon-button" disabled={!canUndo} aria-label={t.toile.undo} title={t.toile.undoHint} onClick={undo}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 14L4 9l5-5" />
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+          </svg>
+        </button>
+        <button type="button" className="icon-button" disabled={!canRedo} aria-label={t.toile.redo} title={t.toile.redoHint} onClick={redo}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 14l5-5-5-5" />
+            <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+          </svg>
+        </button>
+      </div>
 
       <div className="toile-hint">
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}

@@ -63,7 +63,7 @@ export function Sequencier() {
     if (way) refocus.current = { index: to, way };
     const moved = blocks(elements)[to];
     setAnnounce(fmt(sq.moved, { title: moved.text || sp.untitledScene, n: moved.number ?? 0 }));
-    setScreenplay({ ...screenplay, elements });
+    setScreenplay({ ...screenplay, elements }, true);
   };
 
   const scenes = list.filter((b) => b.kind === "scene").length;

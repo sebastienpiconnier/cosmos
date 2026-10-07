@@ -59,8 +59,19 @@ interface CosmosState {
   screenplay: Screenplay | null;
   /** Le scénario tel qu'il est sur disque : tant qu'il n'a pas changé, le fichier n'est pas réécrit. */
   savedScreenplay: Screenplay | null;
-  /** Remplace le scénario (éditeur). Les titres des cartes liées suivent leurs en-têtes. */
-  setScreenplay: (screenplay: Screenplay) => void;
+  /**
+   * Remplace le scénario. Les titres des cartes liées suivent leurs en-têtes.
+   * `undoable` : le changement entre dans l'historique (séquencier). Sinon il vient de l'éditeur, qui a
+   * son propre historique : celui du canevas est alors vidé, pour qu'annuler une carte n'efface jamais du texte.
+   */
+  setScreenplay: (screenplay: Screenplay, undoable?: boolean) => void;
+  /** Historique d'annulation : états précédents et états annulés (cartes, fils, scénario). */
+  past: Snapshot[];
+  future: Snapshot[];
+  undo: () => void;
+  redo: () => void;
+  /** Montre une carte sur le canevas (résultat de recherche) : vue Canevas, carte centrée et sélectionnée. */
+  revealCard: (id: string) => void;
   view: View;
   focusId: string | null;
   /** Carte qui vient d'être créée : son éditeur prend le focus dès qu'il est prêt. */
@@ -112,6 +123,17 @@ interface CosmosState {
   openFolder: () => Promise<void>;
   save: () => Promise<void>;
 }
+
+/** Ce qu'une annulation restaure. Les réglages du projet (titre, type, format) n'en font pas partie. */
+export interface Snapshot {
+  nodes: CardNode[];
+  edges: Edge[];
+  screenplay: Screenplay | null;
+}
+
+const HISTORY_LIMIT = 100;
+/** Deux gestes de même nature rapprochés (lettres d'un titre, déplacement) ne font qu'une étape. */
+const HISTORY_MERGE_MS = 800;
 
 const newId = () => nanoid(10);
 
@@ -178,7 +200,8 @@ function openProject(p: Project) {
   // la pagination ne change pas d'un appareil à l'autre.
   const paperChosen = base.paperChosen || base.kind === "scenario";
   return {
-    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay },
+    // Un projet qu'on ouvre repart d'un historique vide.
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
     dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen,
   };
 }
@@ -240,6 +263,41 @@ function demoProject(): Project {
 
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
+
+  // Historique : chaque action qui change les cartes, les fils ou leur lien avec le scénario
+  // appelle record() AVANT de modifier l'état.
+  let lastTag = "";
+  let lastAt = 0;
+  const record = (tag = "") => {
+    const now = Date.now();
+    const merge = tag !== "" && tag === lastTag && now - lastAt < HISTORY_MERGE_MS;
+    lastTag = tag;
+    lastAt = now;
+    if (merge) return;
+    const { nodes, edges, screenplay, past } = get();
+    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, edges, screenplay }], future: [] });
+  };
+  const forgetHistory = () => {
+    lastTag = "";
+    if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
+  };
+  const restore = (from: "past" | "future") => {
+    const { past, future, nodes, edges, screenplay } = get();
+    const stack = from === "past" ? past : future;
+    const target = stack[stack.length - 1];
+    if (!target) return;
+    lastTag = "";
+    const here: Snapshot = { nodes, edges, screenplay };
+    set({
+      past: from === "past" ? past.slice(0, -1) : [...past, here],
+      future: from === "past" ? [...future, here] : future.slice(0, -1),
+      nodes: target.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+      edges: target.edges,
+      screenplay: target.screenplay,
+      pendingFocusId: null,
+    });
+    touch();
+  };
   /** Adopte un projet lu sur disque. Rend faux si ces fichiers ne forment pas un projet. */
   const openFiles = (files: FileMap): boolean => {
     const project = deserialize(files);
@@ -268,6 +326,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const key = screenplay && Object.keys(screenplay.titlePage).find((k) => k.trim().toLowerCase() === "title");
       // La page de titre suit tant qu'elle portait le titre du projet ; un titre écrit à la main n'est pas touché.
       if (screenplay && key && title.trim() && screenplay.titlePage[key].trim() === previous.trim()) {
+        forgetHistory(); // la page de titre change hors historique
         set({ title, screenplay: { ...screenplay, titlePage: { ...screenplay.titlePage, [key]: title.trim() } } });
       } else {
         set({ title });
@@ -275,6 +334,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     setKind: (kind) => {
+      // Le type de projet peut créer le scénario : l'historique d'avant ne vaut plus.
+      forgetHistory();
       const { screenplay, title, nodes, paperChosen } = get();
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
       if (kind === "scenario" && !screenplay) set({ kind, screenplay: initialScreenplay(title, sceneCards(nodes)) });
@@ -300,9 +361,19 @@ export const useCosmos = create<CosmosState>((set, get) => {
     edges: [],
     screenplay: null,
     savedScreenplay: null,
-    setScreenplay: (screenplay) => {
+    setScreenplay: (screenplay, undoable = false) => {
+      if (undoable) record();
+      else forgetHistory();
       set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay) });
       touch();
+    },
+    past: [],
+    future: [],
+    undo: () => restore("past"),
+    redo: () => restore("future"),
+    revealCard: (id) => {
+      if (!get().nodes.some((n) => n.id === id)) return;
+      set({ view: "toile", focusId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })) });
     },
     view: "toile",
     focusId: null,
@@ -421,15 +492,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
     lastFiles: {},
 
     onNodesChange: (changes) => {
-      set({ nodes: applyNodeChanges(changes, get().nodes) });
-      // Sélection et mesure ne modifient pas le projet.
+      // Sélection et mesure ne modifient pas le projet, et n'entrent pas dans l'historique.
+      const removed = changes.filter((c) => c.type === "remove").map((c) => c.id);
+      if (removed.length > 0) record();
+      else if (changes.some((c) => c.type === "position")) record("move");
+      let { screenplay } = get();
+      // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, son lien avec le scénario est défait.
+      if (screenplay) for (const id of removed) screenplay = releaseCard(screenplay, id);
+      set({ nodes: applyNodeChanges(changes, get().nodes), screenplay });
       if (changes.some((c) => c.type === "position" || c.type === "remove" || c.type === "dimensions")) touch();
     },
     onEdgesChange: (changes) => {
+      if (changes.some((c) => c.type === "remove")) record();
       set({ edges: applyEdgeChanges(changes, get().edges) });
       if (changes.some((c) => c.type === "remove")) touch();
     },
     onConnect: (c) => {
+      record();
       // Les fils sont "flottants" : on ignore les points de connexion utilisés pour les tirer.
       const edge = { source: c.source, target: c.target, sourceHandle: null, targetHandle: null };
       set({ edges: addEdge({ ...edge, id: newId(), label: "", type: "floating" }, get().edges) });
@@ -437,6 +516,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     addCard: (pos, type = "idee") => {
+      record();
       const card: CardData = { id: newId(), type, title: "", html: "" };
       // À l'endroit demandé s'il est libre, sinon juste à côté : deux cartes ne se chevauchent pas.
       const spot = freeSpot(pos, boxes(get().nodes));
@@ -446,6 +526,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return card.id;
     },
     addTitledCard: (type, title) => {
+      record();
       const card: CardData = { id: newId(), type, title, html: "" };
       const spot = firstFreeCell(boxes(get().nodes));
       set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
@@ -457,11 +538,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
         (e) => (e.source === source && e.target === target) || (e.source === target && e.target === source),
       );
       if (linked || source === target) return;
+      record();
       const edge = { source, target, sourceHandle: null, targetHandle: null };
       set({ edges: addEdge({ ...edge, id: newId(), label, type: "floating" }, get().edges) });
       touch();
     },
     updateCard: (id, patch) => {
+      // Les lettres d'un titre ou d'un texte tapées d'affilée ne font qu'une étape d'historique.
+      record(`card:${id}:${Object.keys(patch).sort().join(",")}`);
       const nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
       let { screenplay } = get();
       const card = nodes.find((n) => n.id === id)?.data;
@@ -478,6 +562,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     deleteCard: (id) => {
+      record();
       const { screenplay } = get();
       set({
         nodes: get().nodes.filter((n) => n.id !== id),
@@ -488,6 +573,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     renameLink: (id, label) => {
+      record(`link:${id}`);
       set({ edges: get().edges.map((e) => (e.id === id ? { ...e, label } : e)) });
       touch();
     },

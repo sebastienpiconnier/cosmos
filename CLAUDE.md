@@ -109,9 +109,10 @@ Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/wor
 ```
 src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
-  store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde
+  store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde, historique d'annulation
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
+  search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
@@ -127,6 +128,7 @@ src/
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
+    Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
     ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
@@ -214,6 +216,10 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément (avec la carte de son décor et le fil « se passe à », pour un en-tête standard), un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
 - **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
+- **Annuler et rétablir** : l'historique vit dans le store (`past`, `future`) et ne contient que les cartes, les fils et le scénario. Toute action qui les modifie appelle `record()` AVANT de changer l'état ; deux gestes de même étiquette à moins de 800 ms (lettres d'un titre, déplacement) ne font qu'une étape. Une nouvelle action du store sans `record()` serait impossible à annuler.
+- **Annuler n'efface jamais de texte du scénario** : un `setScreenplay` venu de l'éditeur vide l'historique du canevas (l'éditeur a le sien). Seul le séquencier passe `undoable`. Même chose pour `setKind` et pour un titre de projet qui touche la page de titre.
+- **Annuler dans un champ** : Cmd/Ctrl+Z est laissé au champ ou à l'éditeur qui a le focus. Le raccourci global ne répond qu'en dehors.
+- **Texte d'une carte après une annulation** : `CardNode` recharge son éditeur quand `data.html` diffère de ce qu'il contient. Pendant la frappe les deux sont égaux, donc rien ne se passe.
 - **Barre du haut stable** : le statut d'enregistrement empile tous ses libellés (un seul visible) pour garder la même largeur, et la durée d'un scénario est affichée même à zéro. Rien ne doit se décaler pendant un enregistrement.
 - **Titre du projet** : il se modifie dans la barre du haut (`setTitle`). La page de titre du scénario suit seulement si elle portait l'ancien titre.
 - **Éditeur de scénario, source de vérité** : le document TipTap n'est qu'une lecture. `ScreenplayView` le reconvertit en `Screenplay` 250 ms après la dernière frappe (et tout de suite en quittant la vue ou sur Cmd/Ctrl+S) ; il ne recharge l'éditeur que si le scénario du store change sans lui (`synced`).
@@ -243,7 +249,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 ## Feuille de route
 
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
-2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
+2. Canevas : (fait) annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N ; (reste) images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)

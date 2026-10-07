@@ -48,13 +48,22 @@ export function App() {
     };
   }, []);
 
-  // Cmd/Ctrl + S : sauvegarde immédiate.
+  // Cmd/Ctrl + S : sauvegarde immédiate. Cmd/Ctrl + Z, Maj + Z ou Y : annuler, rétablir.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      if (!(e.metaKey || e.ctrlKey) || useCosmos.getState().screen !== "project") return;
+      const key = e.key.toLowerCase();
+      if (key === "s") {
         e.preventDefault();
-        if (useCosmos.getState().screen === "project") save();
+        save();
+        return;
       }
+      // Annuler / rétablir : dans un champ ou un éditeur, c'est leur propre historique qui répond.
+      if (key !== "z" && key !== "y") return;
+      if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true']")) return;
+      e.preventDefault();
+      if (key === "y" || e.shiftKey) useCosmos.getState().redo();
+      else useCosmos.getState().undo();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
