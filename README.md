@@ -35,6 +35,13 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Recherche** : la loupe de la barre du haut, ou `Ctrl`/`Cmd`+`F`, retrouve une carte par son titre ou son texte et la montre sur le canevas.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
 
+### Le plan (roman)
+
+- **Quatre gabarits** : libre, trois actes, Save the Cat, voyage du héros. Chaque case rappelle en une ligne ce qu'on y attend.
+- **Ranger les scènes** : glisse une scène dans une case, déplace-la avec les flèches ou choisis sa case dans un menu. Les scènes du canevas qui n'ont pas encore leur place attendent dans « À placer ».
+- **Écrire depuis le plan** : une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés.
+- **Changer d'avis** : passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
+
 ### La Bible
 
 Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas.
@@ -89,7 +96,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |
 
-Les vues Plan et Manuscrit (roman) sont visibles dans l'app mais pas encore construites.
+La vue Manuscrit (roman) est visible dans l'app mais pas encore construite.
 
 ## Plateformes
 

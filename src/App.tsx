@@ -7,6 +7,7 @@ import { Bible } from "./components/Bible";
 import { Bientot } from "./components/Bientot";
 import { ScreenplayView } from "./components/ScreenplayView";
 import { Sequencier } from "./components/Sequencier";
+import { Plan } from "./components/Plan";
 import { Home } from "./components/Home";
 import { useT } from "./i18n";
 import { storage } from "./storage";
@@ -99,7 +100,7 @@ export function App() {
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}
-          {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Bientot view="plan" />)}
+          {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Plan />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}
           {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Bientot view="manuscrit" />)}
         </main>

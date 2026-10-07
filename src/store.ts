@@ -22,6 +22,7 @@ import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
 import { removeMentions, renameMentions } from "./mentions";
+import { EMPTY_PLAN, isEmptyPlan, placeScene, prunePlan, readPlan, setTemplate, stepScene, type Plan, type PlanTemplate } from "./plan";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -68,6 +69,15 @@ interface CosmosState {
   title: string;
   kind: ProjectKind;
   setKind: (kind: ProjectKind) => void;
+  /** Plan d'un roman : gabarit choisi et scènes rangées dans ses cases (voir plan.ts). */
+  plan: Plan;
+  setPlanTemplate: (template: PlanTemplate) => void;
+  /** Range une scène dans une case du plan (à la fin, ou à la position donnée) ; `beat` null la sort du plan. */
+  placeInPlan: (id: string, beat: string | null, index?: number) => void;
+  /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
+  stepInPlan: (id: string, way: "up" | "down") => boolean;
+  /** Crée une carte Scène et la range dans cette case du plan. */
+  addPlanScene: (title: string, beat: string) => string;
   /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
   setTitle: (title: string) => void;
   /** Format de page du scénario (estimation des pages, puis PDF). */
@@ -179,6 +189,7 @@ export interface Snapshot {
   frames: FrameNode[];
   edges: Edge[];
   screenplay: Screenplay | null;
+  plan: Plan;
 }
 
 /** Hauteur réservée pour l'image d'une carte créée par dépôt (voir .card-image dans styles.css). */
@@ -215,7 +226,7 @@ function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? "") }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan) };
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -234,6 +245,9 @@ function sceneCards(nodes: CardNode[]): SceneCard[] {
     .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x)
     .map((n) => ({ id: n.id, title: n.data.title }));
 }
+
+/** Cartes Scène dans l'ordre par défaut du plan (celui du canevas), pour les fonctions de plan.ts. */
+export const planScenes = (nodes: CardNode[]): string[] => sceneCards(nodes).map((s) => s.id);
 
 /** Premier scénario d'un projet : la page de titre porte aussi l'auteur connu de l'appareil. */
 function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
@@ -278,9 +292,11 @@ function openProject(p: Project) {
 function toProject(
   s: Pick<
     CosmosState,
-    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay"
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan"
   >,
 ): Project {
+  // Le plan écrit ne cite que des cartes qui existent encore.
+  const plan = prunePlan(s.plan, new Set(s.nodes.map((n) => n.id)));
   return {
     meta: {
       version: 1,
@@ -303,6 +319,7 @@ function toProject(
             }),
           }
         : {}),
+      ...(isEmptyPlan(plan) ? {} : { plan }),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
@@ -354,20 +371,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
     lastTag = tag;
     lastAt = now;
     if (merge) return;
-    const { nodes, frames, edges, screenplay, past } = get();
-    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay }], future: [] });
+    const { nodes, frames, edges, screenplay, plan, past } = get();
+    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan }], future: [] });
   };
   const forgetHistory = () => {
     lastTag = "";
     if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
   };
   const restore = (from: "past" | "future") => {
-    const { past, future, nodes, frames, edges, screenplay } = get();
+    const { past, future, nodes, frames, edges, screenplay, plan } = get();
     const stack = from === "past" ? past : future;
     const target = stack[stack.length - 1];
     if (!target) return;
     lastTag = "";
-    const here: Snapshot = { nodes, frames, edges, screenplay };
+    const here: Snapshot = { nodes, frames, edges, screenplay, plan };
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
@@ -375,6 +392,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       frames: target.frames.map((f) => (f.selected ? { ...f, selected: false } : f)),
       edges: target.edges,
       screenplay: target.screenplay,
+      plan: target.plan,
       pendingFocusId: null,
     });
     touch();
@@ -424,6 +442,38 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
+    },
+    plan: EMPTY_PLAN,
+    setPlanTemplate: (template) => {
+      const plan = setTemplate(get().plan, template);
+      if (plan === get().plan) return;
+      record();
+      set({ plan });
+      touch();
+    },
+    placeInPlan: (id, beat, index) => {
+      const plan = placeScene(get().plan, planScenes(get().nodes), id, beat, index);
+      if (plan === get().plan) return;
+      record();
+      set({ plan });
+      touch();
+    },
+    stepInPlan: (id, way) => {
+      const plan = stepScene(get().plan, planScenes(get().nodes), id, way);
+      if (plan === get().plan) return false;
+      record();
+      set({ plan });
+      touch();
+      return true;
+    },
+    addPlanScene: (title, beat) => {
+      record();
+      const card: CardData = { id: newId(), type: "scene", title, html: "" };
+      const spot = firstFreeCell(boxes(get().nodes));
+      const nodes = [...get().nodes, toNode(card, spot.x, spot.y)];
+      set({ nodes, plan: placeScene(get().plan, planScenes(nodes), card.id, beat) });
+      touch();
+      return card.id;
     },
     paper: "letter",
     paperChosen: false,

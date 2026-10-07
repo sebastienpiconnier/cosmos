@@ -3,6 +3,7 @@
 
 import type { Screenplay } from "./screenplay/model";
 import type { Paper } from "./screenplay/layout";
+import type { Plan } from "./plan";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
@@ -73,6 +74,8 @@ export interface ProjectMeta {
   links: Link[];
   /** Cadres de regroupement. Absent : aucun. Les cartes n'y sont pas rattachées : c'est leur position qui compte. */
   frames?: Frame[];
+  /** Plan d'un roman : gabarit et scènes rangées dans ses cases. Absent : plan libre, rien de rangé. */
+  plan?: Plan;
   viewport?: { x: number; y: number; zoom: number };
 }
 

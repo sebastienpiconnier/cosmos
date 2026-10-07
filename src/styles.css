@@ -545,6 +545,27 @@ button { font: inherit; color: inherit; }
 .sq-speakers button.chip:hover { text-decoration: underline; }
 .chip.is-plain { background: var(--ground); color: var(--ink-2); }
 
+/* ---------- Plan d'un roman : gabarit et cases où ranger les scènes ---------- */
+.plan-template { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.plan-template select, .plan-to select { min-height: 44px; max-width: 100%; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.plan-beat { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--ground); }
+.plan-beat.is-over { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.plan-beat.is-unplaced { border-style: dashed; }
+.plan-beat h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+.plan-beat-hint, .plan-beat-empty { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.plan-count { margin-left: 8px; font: 13px var(--font-ui); color: var(--ink-2); }
+.plan-scene { flex-wrap: wrap; }
+.plan-scene .sq-body { flex-basis: 160px; }
+.plan-scene .bible-title { min-height: 44px; font-weight: 600; font-size: 15px; }
+.plan-scene .icon-button { width: 44px; height: 44px; flex-shrink: 0; }
+.plan-to { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.plan-add { display: flex; gap: 8px; }
+.plan-add input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; }
+.plan-add input::placeholder { color: var(--placeholder); }
+.plan-add input:focus-visible { border-style: solid; background: var(--surface); }
+.plan-add button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.plan-add button:disabled { opacity: 0.45; cursor: default; }
+
 /* Synopsis d'une scène, modifiable sur place (séquencier et volet des scènes) */
 .synopsis-show { display: block; width: 100%; margin-top: 2px; padding: 4px 6px; margin-left: -6px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: 14px/1.45 var(--font-text); text-align: left; cursor: text; overflow-wrap: anywhere; }
 .synopsis-show:hover { border-color: var(--line); }

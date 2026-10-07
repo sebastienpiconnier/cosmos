@@ -114,6 +114,7 @@ src/
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
+  plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
   settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
@@ -140,10 +141,11 @@ src/
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
+    Plan.tsx            Vue Plan d'un roman : gabarit au choix, cases où ranger les scènes, scènes à placer
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : synopsis, personnages, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
-    Bientot.tsx         Vues Plan et Manuscrit (roman), pas encore construites
+    Bientot.tsx         Vue Manuscrit d'un roman, pas encore construite
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
     model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
     rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
@@ -182,7 +184,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif)
+  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, facultatif)
   cartes/<id>.md       une carte par fichier
   medias/<nom>.jpg     images des cartes (copiées dans le projet)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
@@ -231,6 +233,10 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément (avec la carte de son décor et le fil « se passe à », pour un en-tête standard), un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
 - **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
+- **Plan d'un roman** : `plan` dans `cosmos.json` vaut `{ template, beats }`, où `beats` associe une clé de case à la liste ordonnée des identifiants de cartes Scène. Les clés de case (`a_setup`, `c_opening`, `h_call`…) et de gabarit (`libre`, `troisActes`, `saveTheCat`, `voyageHeros`) sont écrites dans le fichier : ne jamais les renommer ni les traduire. Elles sont propres à chaque gabarit, donc changer de gabarit ne perd aucun rangement.
+- **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
+- **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
+- **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
 - **Mentions `@`** : en mémoire `<span data-mention="<id>">@Titre</span>`, sur disque `[@Titre](cosmos:<id>)`. `mentionHtml` (mentions.ts) et `MentionNode.renderHTML` doivent produire exactement la même forme : le store relit ce HTML par expression régulière quand une carte est renommée (la mention suit) ou supprimée (elle redevient du texte). `sanitizeHtml` ne crée une mention que pour un identifiant vérifié et n'en garde que le texte.
 - **Fil d'une mention** : il est tiré une fois, au moment où l'on choisit la carte (`linkCards`), pas déduit du texte. Effacer la mention ne retire donc pas le fil, que l'auteur a peut-être étiqueté.
 - **Menu des mentions** : « Créer … » n'est jamais présélectionné (`mentionActive` vaut -1), sinon Entrée créerait une carte au lieu d'aller à la ligne. Échap ferme le menu jusqu'au prochain `@`. Un `@` collé à un mot (adresse de courriel) n'ouvre rien. Maison plutôt que l'extension Mention de TipTap, qui apporterait son propre menu.
@@ -283,8 +289,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
-4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
-5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
+4. (fait, sauf la chronologie) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case. Reste : chronologie par intrigue
+5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan (`planOrder` dans plan.ts), panneau « Dans cette scène » (personnages détectés)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)

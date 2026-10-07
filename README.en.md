@@ -35,6 +35,13 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Search**: the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
 - **Minimap and zoom** to find your way as the canvas grows.
 
+### The outline (novel)
+
+- **Four templates**: free, three acts, Save the Cat, hero’s journey. Each slot reminds you in one line what belongs there.
+- **Placing scenes**: drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
+- **Writing from the outline**: a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
+- **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
+
 ### The Bible
 
 A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas.
@@ -89,7 +96,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |
 
-The Outline and Manuscript (novel) views are visible in the app but not built yet.
+The Manuscript (novel) view is visible in the app but not built yet.
 
 ## Platforms
 
