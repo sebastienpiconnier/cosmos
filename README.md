@@ -44,7 +44,7 @@ Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertiss
 
 Chaque projet est un dossier : `cosmos.json` (positions et liens) et `cartes/*.md` (une carte par fichier Markdown). Ils restent lisibles dans n'importe quel éditeur.
 
-Pour retrouver un projet sur plusieurs ordinateurs, il suffit de placer son dossier dans iCloud Drive, Dropbox ou OneDrive (éviter d'ouvrir le même projet sur deux machines en même temps).
+Pour retrouver un **projet d'écriture** (le dossier ouvert dans Cosmos, pas le code de l'app) sur plusieurs ordinateurs, il suffit de placer ce dossier dans iCloud Drive, Dropbox ou OneDrive (éviter de l'ouvrir sur deux machines en même temps). Le **code** de Cosmos, lui, ne va jamais dans OneDrive ni iCloud : il passe par GitHub.
 
 Par défaut, l'app peut lire et écrire dans le dossier personnel et Documents. Pour un projet sur un disque externe, ajouter le chemin dans `src-tauri/capabilities/default.json` (permission `fs:scope`).
 
