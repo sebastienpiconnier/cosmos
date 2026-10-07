@@ -37,6 +37,18 @@ A table of contents and reference sheets generated automatically from your cards
 
 A project is a novel or a screenplay, and you can switch at any time. The canvas and the files stay the same, only the vocabulary adapts: Place becomes Location, the Outline becomes the Step outline, the Manuscript becomes the Screenplay, and Scene cards take the shape of a scene heading (`INT. LIGHTHOUSE - NIGHT`) in Courier Prime.
 
+### The screenplay editor
+
+For a screenplay project, the Screenplay view is an editor in standard film format:
+
+![The screenplay editor (French interface): scene list, standard-format page and “In this scene” panel](docs/images/scenario-fr.png)
+
+- **Six elements**: scene heading, action, character, parenthetical, dialogue, transition, with the standard indents.
+- **All from the keyboard**: `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
+- **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
+- **Linked to the canvas**: each scene heading is linked to its Scene card. Renaming one renames the other, and cards with no text wait under “Scenes to write”.
+- **An open file**: the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
+
 ### Comfort
 
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
@@ -55,14 +67,14 @@ A project is a novel or a screenplay, and you can switch at any time. The canvas
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
-| Screenplay | Standard-format editor in [Fountain](https://fountain.io), page and minute counter, PDF, Fountain and FDX exports (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
+| Screenplay | Character and location completion, page and minute counter, step outline, PDF, Fountain and FDX exports (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
 | Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |
 
-The Outline and Manuscript views are visible in the app but not built yet.
+The Outline and Manuscript (novel) views are visible in the app but not built yet.
 
 ## Platforms
 
@@ -100,7 +112,7 @@ On first launch, a small sample project is shown. In the desktop app, “Save”
 
 ## Files
 
-Each project is a folder: `cosmos.json` (title, positions and links) and `cartes/*.md` (one card per Markdown file). They stay readable in any editor. File and folder names are the same in every language.
+Each project is a folder: `cosmos.json` (title, positions and links), `cartes/*.md` (one card per Markdown file) and, for a screenplay, `scenario.fountain`. They stay readable in any editor. File and folder names are the same in every language.
 
 ```markdown
 ---

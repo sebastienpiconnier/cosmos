@@ -1,0 +1,93 @@
+// Ce qui se décide pendant la frappe :
+// - « int. », « ext. », « int./ext. », « i/e » en début d'action → en-tête de scène ;
+// - « ( » au début d'un dialogue vide → didascalie ;
+// - en-têtes, personnages et transitions passent en majuscules à mesure qu'on les écrit.
+// Chaque détection est une seule étape d'historique : Ctrl/Cmd+Z l'annule.
+
+import { Extension, InputRule } from "@tiptap/react";
+import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
+import type { EditorView } from "@tiptap/pm/view";
+
+const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
+
+export interface AutodetectOptions {
+  /** Langue courante, pour les majuscules accentuées (É, À, Ç). */
+  locale: () => string;
+}
+
+export const Autodetect = Extension.create<AutodetectOptions>({
+  name: "screenplayAutodetect",
+  addOptions: () => ({ locale: () => "fr" }),
+
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /^(?:int\.?\/ext\.?|int\.|ext\.|est\.|i\/e)\s$/i,
+        handler: ({ state, range, match }) => {
+          const { tr, schema } = state;
+          // Seulement si le préfixe (espace tapée comprise) est tout ce que contient l'action.
+          const $from = tr.doc.resolve(range.from);
+          if ($from.parent.type.name !== "action" || $from.parent.content.size !== range.to - range.from) return null;
+          tr.insertText(match[0].toUpperCase(), range.from, range.to);
+          tr.setBlockType(range.from, range.from, schema.nodes.sceneHeading);
+        },
+      }),
+      new InputRule({
+        find: /^\($/,
+        handler: ({ state, range }) => {
+          const { tr, schema } = state;
+          // La parenthèse tapée est déjà dans la transaction : elle doit être tout le dialogue.
+          const $from = tr.doc.resolve(range.from);
+          if ($from.parent.type.name !== "dialogue" || $from.parent.content.size !== range.to - range.from) return null;
+          const pos = $from.before(1);
+          tr.replaceWith(pos, pos + $from.parent.nodeSize, schema.nodes.parenthetical.create(null, schema.text("()")));
+          tr.setSelection(TextSelection.create(tr.doc, pos + 2));
+        },
+      }),
+    ];
+  },
+
+  addProseMirrorPlugins() {
+    const locale = this.options.locale;
+    let view: EditorView | null = null;
+    return [
+      new Plugin({
+        key: new PluginKey("screenplayAutodetect"),
+        view(editorView) {
+          view = editorView;
+          return {};
+        },
+        props: {
+          // Taper « ) » devant la parenthèse fermante d'une didascalie : on passe par-dessus.
+          handleTextInput(editorView, from, to, text) {
+            const { $from } = editorView.state.selection;
+            if (text !== ")" || from !== to || $from.parent.type.name !== "parenthetical") return false;
+            if (editorView.state.doc.textBetween(from, Math.min(from + 1, $from.end())) !== ")") return false;
+            editorView.dispatch(editorView.state.tr.setSelection(TextSelection.create(editorView.state.doc, from + 1)));
+            return true;
+          },
+        },
+        appendTransaction(transactions, _old, state) {
+          // Ni au chargement d'un fichier, ni en annulant, ni pendant une saisie composée (accents, IME).
+          if (!transactions.some((tr) => tr.docChanged)) return null;
+          if (transactions.some((tr) => tr.getMeta("preventUpdate") || tr.getMeta("history$"))) return null;
+          if (view?.composing) return null;
+
+          // Seul l'élément en cours d'écriture change : un texte venu d'ailleurs n'est pas réécrit.
+          const { $from, anchor, head } = state.selection;
+          if ($from.depth !== 1 || !UPPERCASE.has($from.parent.type.name)) return null;
+          const text = $from.parent.textContent;
+          const upper = text.toLocaleUpperCase(locale());
+          if (upper === text) return null;
+
+          const start = $from.start(1);
+          const tr = state.tr.insertText(upper, start, start + text.length);
+          const keep = upper.length === text.length;
+          return tr.setSelection(
+            keep ? TextSelection.create(tr.doc, anchor, head) : TextSelection.create(tr.doc, start + upper.length),
+          );
+        },
+      }),
+    ];
+  },
+});

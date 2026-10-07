@@ -99,7 +99,7 @@ export const en: Messages = {
     label: "Project type",
     roman: "Novel",
     scenario: "Screenplay",
-    hint: "Adapts the vocabulary and, soon, the writing editor. You can change it anytime.",
+    hint: "Adapts the vocabulary and the writing editor. You can change it anytime.",
   },
 
   scenario: {
@@ -116,6 +116,61 @@ export const en: Messages = {
       manuscritBody:
         "A standard-format editor: scene headings, action, character, dialogue, parenthetical and transition, with Tab and Enter to move between them. About one page per minute.",
     },
+  },
+
+  // Screenplay editor (Screenplay view of a screenplay project).
+  screenplay: {
+    editorAria: "Screenplay text",
+    barAria: "Element type",
+    elements: {
+      sceneHeading: "Scene heading",
+      action: "Action",
+      character: "Character",
+      parenthetical: "Parenthetical",
+      dialogue: "Dialogue",
+      transition: "Transition",
+    },
+    placeholders: {
+      sceneHeading: "INT. LOCATION - TIME",
+      action: "Action…",
+      character: "CHARACTER",
+      parenthetical: "(parenthetical)",
+      dialogue: "Dialogue…",
+      transition: "CUT TO:",
+    },
+    // Fountain elements kept as they are, not editable here.
+    preserved: {
+      centered: "Centered text",
+      pageBreak: "Page break",
+      section: "Section",
+      synopsis: "Synopsis",
+      note: "Note",
+      boneyard: "Set-aside text",
+    },
+    keyTab: "Tab",
+    keyEnter: "Enter",
+    keyEscape: "Esc",
+    hintTab: "changes",
+    hintEnter: "next",
+    hintEscape: "leave",
+    scenesTitle: "Scenes",
+    scenesAria: "Scenes of the screenplay",
+    scenesEmpty: "No scene yet. Start a line with “int.” or “ext.”.",
+    goToScene: "Go to scene",
+    untitledScene: "Untitled scene",
+    toWriteTitle: "Scenes to write",
+    toWrite: "to write",
+    writeScene: "Write the scene “{title}”",
+    inSceneTitle: "In this scene",
+    noScene: "Put the cursor in a scene to see its card, location and characters.",
+    noCard: "This scene has no card on the canvas yet.",
+    createCard: "Create the card",
+    locationScenesOne: "{n} scene in this location",
+    locationScenesMany: "{n} scenes in this location",
+    characters: "Characters",
+    noCharacters: "Nobody speaks yet.",
+    linesOne: "{n} line",
+    linesMany: "{n} lines",
   },
 
   demo: {

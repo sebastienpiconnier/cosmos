@@ -5,6 +5,7 @@ import { TopBar } from "./components/TopBar";
 import { Toile } from "./components/Toile";
 import { Bible } from "./components/Bible";
 import { Bientot } from "./components/Bientot";
+import { ScreenplayView } from "./components/ScreenplayView";
 import { useT } from "./i18n";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
@@ -12,6 +13,7 @@ const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 export function App() {
   const t = useT();
   const view = useCosmos((s) => s.view);
+  const kind = useCosmos((s) => s.kind);
   const loaded = useCosmos((s) => s.loaded);
   const load = useCosmos((s) => s.load);
   const save = useCosmos((s) => s.save);
@@ -59,7 +61,9 @@ export function App() {
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}
-          {(view === "plan" || view === "manuscrit") && <Bientot view={view} />}
+          {view === "plan" && <Bientot view="plan" />}
+          {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}
+          {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Bientot view="manuscrit" />)}
         </main>
       </div>
     </ReactFlowProvider>

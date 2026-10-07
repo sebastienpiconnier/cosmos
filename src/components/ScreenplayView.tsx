@@ -1,0 +1,377 @@
+// Vue Scénario d'un projet scénario : liste des scènes, feuille au format cinéma, panneau
+// « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
+// une lecture, reconvertie en modèle un court instant après chaque modification.
+
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
+import type { Node as PMNode } from "@tiptap/pm/model";
+import { useCosmos } from "../store";
+import { useSettings } from "../settings";
+import { fmt, getT } from "../i18n";
+import { useVocab } from "../vocab";
+import { isTouch } from "../platform";
+import { EDITABLE_TYPES } from "../screenplay/model";
+import { cardsWithoutScene, type SceneCard } from "../screenplay/link";
+import { headingParts, listScenes, sceneAt, sceneCharacters, scenesInLocation, type Scene } from "../screenplay/scenes";
+import {
+  currentElement,
+  fromDoc,
+  screenplayExtensions,
+  setElementType,
+  toDoc,
+  type EditableType,
+} from "../screenplay/editor";
+
+const EMIT_DELAY = 250; // ms après la dernière frappe, avant de reconvertir le document en modèle
+
+/** Position, dans le document, du nœud de premier niveau d'index donné. */
+function posOf(doc: PMNode, index: number): number {
+  let pos = 0;
+  for (let i = 0; i < index && i < doc.childCount; i++) pos += doc.child(i).nodeSize;
+  return pos;
+}
+
+export function ScreenplayView() {
+  const { t, types } = useVocab();
+  const sp = t.screenplay;
+  const lang = useSettings((s) => s.lang);
+  const screenplay = useCosmos((s) => s.screenplay);
+  const nodes = useCosmos((s) => s.nodes);
+  const setView = useCosmos((s) => s.setView);
+
+  const barRef = useRef<HTMLDivElement>(null);
+  const [current, setCurrent] = useState<{ index: number; type: EditableType | null }>({ index: 0, type: null });
+
+  // Dernier modèle échangé avec le store : s'il change sans nous (autre dossier ouvert), on recharge.
+  const synced = useRef(screenplay);
+  // Document modifié mais pas encore reconverti.
+  const pending = useRef<PMNode | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const emit = useCallback(() => {
+    clearTimeout(timer.current);
+    const doc = pending.current;
+    if (!doc) return;
+    pending.current = null;
+    const next = fromDoc(doc.toJSON(), synced.current?.titlePage ?? {});
+    synced.current = next;
+    useCosmos.getState().setScreenplay(next);
+  }, []);
+
+  const track = (ed: Editor) => {
+    const index = ed.state.selection.$from.index(0);
+    const type = currentElement(ed.state)?.type ?? null;
+    setCurrent((prev) => (prev.index === index && prev.type === type ? prev : { index, type }));
+  };
+
+  const extensions = useMemo(
+    () =>
+      screenplayExtensions({
+        locale: () => useSettings.getState().lang,
+        placeholder: (type) => getT().screenplay.placeholders[type],
+        // Tab est pris par l'éditeur : Échap rend la main au clavier, sur la barre d'éléments.
+        onEscape: () =>
+          (
+            barRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]') ??
+            barRef.current?.querySelector<HTMLButtonElement>("button")
+          )?.focus(),
+      }),
+    [],
+  );
+
+  const editor = useEditor({
+    extensions,
+    content: screenplay ? toDoc(screenplay) : undefined,
+    immediatelyRender: true,
+    editorProps: {
+      attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": getT().screenplay.editorAria },
+    },
+    onCreate: ({ editor: ed }) => track(ed),
+    onSelectionUpdate: ({ editor: ed }) => track(ed),
+    onUpdate: ({ editor: ed }) => {
+      pending.current = ed.state.doc;
+      clearTimeout(timer.current);
+      timer.current = setTimeout(emit, EMIT_DELAY);
+      track(ed);
+    },
+  });
+
+  // En quittant la vue, et avant Cmd/Ctrl+S, ce qui attend part tout de suite dans le store.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") emit();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      emit();
+    };
+  }, [emit]);
+
+  // Le scénario a été remplacé ailleurs (ouverture d'un autre dossier) : on recharge l'éditeur.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !screenplay || screenplay === synced.current) return;
+    synced.current = screenplay;
+    pending.current = null;
+    clearTimeout(timer.current);
+    editor.commands.setContent(toDoc(screenplay), { emitUpdate: false });
+  }, [editor, screenplay]);
+
+  // Changement de langue : ce que TipTap a figé à la création (libellé, textes indicatifs).
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.setOptions({
+      editorProps: {
+        ...editor.options.editorProps,
+        attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": sp.editorAria },
+      },
+    });
+    editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang));
+  }, [lang, editor, sp.editorAria]);
+
+  // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport || !isTouch()) return;
+    const place = () => {
+      const hidden = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      rootRef.current?.style.setProperty("--sp-keyboard", `${Math.round(hidden)}px`);
+    };
+    place();
+    viewport.addEventListener("resize", place);
+    viewport.addEventListener("scroll", place);
+    return () => {
+      viewport.removeEventListener("resize", place);
+      viewport.removeEventListener("scroll", place);
+    };
+  }, []);
+
+  const elements = useMemo(() => screenplay?.elements ?? [], [screenplay]);
+  const scenes = useMemo(() => listScenes(elements), [elements]);
+  const sceneCards = useMemo<SceneCard[]>(
+    () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
+    [nodes],
+  );
+  const toWrite = useMemo(
+    () => (screenplay ? cardsWithoutScene(screenplay, sceneCards) : []),
+    [screenplay, sceneCards],
+  );
+  const scene = sceneAt(scenes, current.index);
+
+  if (!editor || !screenplay) return null;
+
+  const plural = (n: number, one: string, many: string) =>
+    fmt(new Intl.PluralRules(lang).select(n) === "one" ? one : many, { n });
+
+  const goTo = (index: number) => {
+    emit();
+    const pos = posOf(editor.state.doc, index);
+    editor.chain().focus().setTextSelection(pos + 1).run();
+    const dom = editor.view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
+  };
+
+  /** Une carte Scène sans texte : on ouvre sa scène à la fin du scénario. */
+  const writeScene = (card: SceneCard) => {
+    const { state, view } = editor;
+    const { schema, doc } = state;
+    const title = card.title.trim();
+    const heading = schema.nodes.sceneHeading.create({ cardId: card.id }, title ? schema.text(title) : null);
+    // Document encore vierge : la scène prend la place de la ligne vide.
+    const blank = doc.childCount === 1 && doc.firstChild!.content.size === 0;
+    const at = blank ? 0 : doc.content.size;
+    const tr = blank
+      ? state.tr.replaceWith(0, doc.content.size, [heading, schema.nodes.action.create()])
+      : state.tr.insert(at, [heading, schema.nodes.action.create()]);
+    // Titre déjà là : on écrit l'action. Sinon on commence par l'en-tête.
+    tr.setSelection(TextSelection.create(tr.doc, title ? at + heading.nodeSize + 1 : at + 1));
+    view.dispatch(tr.scrollIntoView());
+    view.focus();
+  };
+
+  /** Une scène écrite sans carte : on crée sa carte sur la toile, sous les autres. */
+  const createCard = (target: Scene) => {
+    emit();
+    const { addCard, updateCard, clearPendingFocus } = useCosmos.getState();
+    const lowest = nodes.reduce((y, n) => Math.max(y, n.position.y), -140);
+    const id = addCard({ x: 80, y: lowest + 220 }, "scene");
+    clearPendingFocus();
+    updateCard(id, { title: target.text });
+    const pos = posOf(editor.state.doc, target.index);
+    const node = editor.state.doc.nodeAt(pos);
+    if (node?.type.name === "sceneHeading") {
+      editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, null, { ...node.attrs, cardId: id }));
+      emit();
+    }
+  };
+
+  const card = scene?.cardId ? nodes.find((n) => n.id === scene.cardId && n.data.type === "scene")?.data : undefined;
+  const location = scene ? headingParts(scene.text).location : "";
+  const speakers = scene ? sceneCharacters(elements, scene) : [];
+
+  // Libellés des éléments conservés, lus par le CSS (voir .sp-preserved::before).
+  const labels = Object.fromEntries(
+    Object.entries(sp.preserved).map(([kind, label]) => [`--sp-label-${kind}`, JSON.stringify(label)]),
+  ) as CSSProperties;
+
+  return (
+    <div className="screenplay" ref={rootRef}>
+      <nav className="sp-scenes" aria-label={sp.scenesAria}>
+        <div className="eyebrow">{sp.scenesTitle}</div>
+        {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
+        <ol className="sp-scene-list">
+          {scenes.map((s) => (
+            <li key={s.index}>
+              <button
+                type="button"
+                className={s.index === scene?.index ? "is-current" : ""}
+                aria-current={s.index === scene?.index ? "true" : undefined}
+                onClick={() => goTo(s.index)}
+              >
+                <span className="is-slugline">
+                  {s.number}. {s.text || sp.untitledScene}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        {toWrite.length > 0 && (
+          <>
+            <div className="eyebrow sp-towrite-title">{sp.toWriteTitle}</div>
+            <ul className="sp-scene-list">
+              {toWrite.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    aria-label={fmt(sp.writeScene, { title: c.title || sp.untitledScene })}
+                    onClick={() => writeScene(c)}
+                  >
+                    <span className="is-slugline">{c.title || sp.untitledScene}</span>
+                    <span className="sp-towrite">{sp.toWrite}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </nav>
+
+      <div className="sp-center">
+        {/* Petits écrans : la liste des scènes devient une liste déroulante. */}
+        {scenes.length > 0 && (
+          <select
+            className="sp-scene-select"
+            aria-label={sp.goToScene}
+            value={scene ? String(scene.index) : ""}
+            onChange={(e) => e.target.value !== "" && goTo(Number(e.target.value))}
+          >
+            {!scene && <option value="">{sp.goToScene}</option>}
+            {scenes.map((s) => (
+              <option key={s.index} value={s.index}>
+                {s.number}. {s.text || sp.untitledScene}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <div className="sp-bar" role="toolbar" aria-label={sp.barAria} ref={barRef}>
+          {EDITABLE_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={current.type === type}
+              // Le focus reste dans le texte, à la souris comme au doigt.
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                editor.view.focus();
+                setElementType(type)(editor.state, editor.view.dispatch);
+              }}
+            >
+              {sp.elements[type]}
+            </button>
+          ))}
+          <span className="sp-bar-hint">
+            <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
+            {sp.hintEscape}
+          </span>
+        </div>
+        <div className="sr-only" aria-live="polite">
+          {current.type ? sp.elements[current.type] : ""}
+        </div>
+
+        <div className="sp-scroll">
+          <div className="sp-page" style={labels} lang={lang}>
+            <EditorContent editor={editor} />
+          </div>
+        </div>
+      </div>
+
+      <aside className="sp-side" aria-label={sp.inSceneTitle}>
+        <div className="eyebrow">{sp.inSceneTitle}</div>
+        {!scene ? (
+          <p className="sp-empty">{sp.noScene}</p>
+        ) : (
+          <>
+            <section className="sp-box">
+              <div className="eyebrow" style={{ color: "var(--type-scene)" }}>
+                {types.scene.label}
+              </div>
+              <div className="is-slugline sp-box-title">{scene.text || sp.untitledScene}</div>
+              {card ? (
+                <>
+                  {card.html && (
+                    // HTML produit par TipTap ou nettoyé au chargement (voir sanitizeHtml).
+                    <div className="sp-card-body" dangerouslySetInnerHTML={{ __html: card.html }} />
+                  )}
+                  <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
+                    {t.bible.seeOnCanvas}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="sp-empty">{sp.noCard}</p>
+                  <button type="button" className="ghost-button" onClick={() => createCard(scene)}>
+                    {sp.createCard}
+                  </button>
+                </>
+              )}
+            </section>
+
+            {location && (
+              <section className="sp-box">
+                <div className="eyebrow" style={{ color: "var(--type-lieu)" }}>
+                  {types.lieu.label}
+                </div>
+                <div className="is-slugline sp-box-title">{location}</div>
+                <p className="sp-detail">
+                  {plural(scenesInLocation(scenes, location, lang), sp.locationScenesOne, sp.locationScenesMany)}
+                </p>
+              </section>
+            )}
+
+            <section className="sp-box">
+              <div className="eyebrow" style={{ color: "var(--type-personnage)" }}>
+                {sp.characters}
+              </div>
+              {speakers.length === 0 ? (
+                <p className="sp-empty">{sp.noCharacters}</p>
+              ) : (
+                <ul className="sp-speakers">
+                  {speakers.map((c) => (
+                    <li key={c.name}>
+                      <span>{c.name}</span>
+                      <span className="sp-detail">{plural(c.lines, sp.linesOne, sp.linesMany)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+      </aside>
+    </div>
+  );
+}

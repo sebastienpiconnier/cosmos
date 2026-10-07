@@ -100,7 +100,7 @@ export const fr = {
     label: "Type de projet",
     roman: "Roman",
     scenario: "Scénario",
-    hint: "Adapte le vocabulaire et, bientôt, l’éditeur d’écriture. Modifiable à tout moment.",
+    hint: "Adapte le vocabulaire et l’éditeur d’écriture. Modifiable à tout moment.",
   },
 
   // Vocabulaire propre aux scénarios : remplace celui du roman quand le projet est un scénario.
@@ -118,6 +118,61 @@ export const fr = {
       manuscritBody:
         "Un éditeur au format standard : en-têtes de scène, action, personnage, dialogue, didascalie et transition, avec Tab et Entrée pour passer de l’un à l’autre. Environ une page par minute.",
     },
+  },
+
+  // Éditeur de scénario (vue Scénario d'un projet scénario).
+  screenplay: {
+    editorAria: "Texte du scénario",
+    barAria: "Type de l’élément",
+    elements: {
+      sceneHeading: "En-tête de scène",
+      action: "Action",
+      character: "Personnage",
+      parenthetical: "Didascalie",
+      dialogue: "Dialogue",
+      transition: "Transition",
+    },
+    placeholders: {
+      sceneHeading: "INT. DÉCOR - MOMENT",
+      action: "Action…",
+      character: "PERSONNAGE",
+      parenthetical: "(didascalie)",
+      dialogue: "Réplique…",
+      transition: "COUPE À :",
+    },
+    // Éléments Fountain conservés tels quels, non modifiables ici.
+    preserved: {
+      centered: "Texte centré",
+      pageBreak: "Saut de page",
+      section: "Section",
+      synopsis: "Synopsis",
+      note: "Note",
+      boneyard: "Texte mis de côté",
+    },
+    keyTab: "Tab",
+    keyEnter: "Entrée",
+    keyEscape: "Échap",
+    hintTab: "change",
+    hintEnter: "suivant",
+    hintEscape: "sortir",
+    scenesTitle: "Scènes",
+    scenesAria: "Scènes du scénario",
+    scenesEmpty: "Pas encore de scène. Commence une ligne par « int. » ou « ext. ».",
+    goToScene: "Aller à la scène",
+    untitledScene: "Scène sans titre",
+    toWriteTitle: "Scènes à écrire",
+    toWrite: "à écrire",
+    writeScene: "Écrire la scène « {title} »",
+    inSceneTitle: "Dans cette scène",
+    noScene: "Place le curseur dans une scène pour voir sa carte, son décor et ses personnages.",
+    noCard: "Cette scène n’a pas encore de carte sur la toile.",
+    createCard: "Créer la carte",
+    locationScenesOne: "{n} scène dans ce décor",
+    locationScenesMany: "{n} scènes dans ce décor",
+    characters: "Personnages",
+    noCharacters: "Personne ne parle encore.",
+    linesOne: "{n} réplique",
+    linesMany: "{n} répliques",
   },
 
   // Projet d'exemple du premier lancement (devient le contenu de l'auteur ensuite).

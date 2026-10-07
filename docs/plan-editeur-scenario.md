@@ -11,13 +11,13 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [x] Phase 0 : outillage de tests
 - [x] Phase 1 : modèle, parseur, sérialiseur
 - [x] Phase 2 : stockage et lien avec les cartes
-- [ ] Phase 3 : l'éditeur
+- [x] Phase 3 : l'éditeur
 - [ ] Phase 4 : complétion
 - [ ] Phase 5 : pages, minutes, séquencier minimal
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0, 1 et 2 faites. Prochaine étape : phase 3 (l'éditeur).
+Dernière session : 7 octobre 2026, phases 0 à 3 faites. Prochaine étape : phase 4 (complétion).
 
 Notes de la phase 1 :
 
@@ -34,6 +34,16 @@ Notes de la phase 2 :
 - Un fichier Fountain que l'auteur n'a pas modifié dans Cosmos n'est jamais réécrit (pas de normalisation silencieuse d'un fichier venu d'ailleurs).
 - Choix faits : une carte Scène sans titre ne reçoit pas d'en-tête à la création du fichier ; vider le titre d'une carte ne touche pas à son en-tête ; une carte qui change de type perd son lien ; si deux en-têtes citent la même carte, le premier compte.
 - Tests du store dans `src/__tests__/store-scenario.test.ts` (environnement `happy-dom`). Pas encore testé à la main dans l'app Tauri.
+
+Notes de la phase 3 :
+
+- `src/screenplay/editor/` (`nodes.ts`, `convert.ts`, `keymap.ts`, `autodetect.ts`, `index.ts`), `src/screenplay/scenes.ts` (scènes, personnages, décors) et `src/components/ScreenplayView.tsx`.
+- Vérifié : tests sur un vrai éditeur TipTap (`editor.test.ts`, dont une scène complète écrite au clavier seul), puis dans Edge piloté par script (français, anglais, clair, sombre, largeur téléphone, rechargement).
+- Reste à faire à la main : ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain, et essayer l'éditeur dans l'app Tauri et sur un vrai téléphone (clavier virtuel).
+- Reporté à la phase 5 : le numéro de page estimé dans la liste des scènes (il dépend de `layout.ts`).
+- Ajouts par rapport au plan : **Échap** sort de l'éditeur vers la barre d'éléments (Tab ne le permet plus) ; **Maj+Entrée** va à la ligne dans une action ou un dialogue ; sur petit écran la liste des scènes devient une liste déroulante.
+- Majuscules : en-têtes, personnages et transitions passent en majuscules pendant qu'on les écrit. Un texte déjà présent dans le fichier n'est pas réécrit, il est seulement affiché en majuscules.
+- Un en-tête qui change de type (Tab) perd son lien avec la carte et son numéro de scène.
 
 ---
 

@@ -37,6 +37,18 @@ Un sommaire et des fiches générés automatiquement à partir des cartes, class
 
 Un projet est un roman ou un scénario, et tu peux basculer à tout moment. La toile et les fichiers restent les mêmes, seul le vocabulaire s'adapte : le Lieu devient Décor, le Plan devient Séquencier, le Manuscrit devient Scénario, et les cartes Scène prennent la forme d'un en-tête de scène (`INT. PHARE - NUIT`) en Courier Prime.
 
+### L'éditeur de scénario
+
+Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
+
+![L'éditeur de scénario : liste des scènes, feuille au format standard et panneau « Dans cette scène »](docs/images/scenario-fr.png)
+
+- **Six éléments** : en-tête de scène, action, personnage, didascalie, dialogue, transition, avec les retraits standard.
+- **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
+- **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
+- **Relié à la toile** : chaque en-tête de scène est lié à sa carte Scène. Renommer l'un renomme l'autre, et les cartes sans texte attendent dans « Scènes à écrire ».
+- **Un fichier ouvert** : le texte est enregistré dans `scenario.fountain`, au format [Fountain](https://fountain.io), lisible par les autres logiciels de scénario.
+
 ### Confort
 
 - **Sauvegarde automatique** dans des fichiers Markdown, ou `Cmd+S` / `Ctrl+S`.
@@ -55,14 +67,14 @@ Un projet est un roman ou un scénario, et tu peux basculer à tout moment. La t
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
-| Scénario | Éditeur au format standard en [Fountain](https://fountain.io), compteur de pages et de minutes, exports PDF, Fountain et FDX (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
+| Scénario | Complétion des personnages et des décors, compteur de pages et de minutes, séquencier, exports PDF, Fountain et FDX (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
 | Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Export | Bible et manuscrit en PDF, docx, epub |
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |
 
-Les vues Plan et Manuscrit sont visibles dans l'app mais pas encore construites.
+Les vues Plan et Manuscrit (roman) sont visibles dans l'app mais pas encore construites.
 
 ## Plateformes
 
@@ -100,7 +112,7 @@ Au premier lancement, un petit projet d'exemple s'affiche. Dans l'app desktop, �
 
 ## Fichiers
 
-Chaque projet est un dossier : `cosmos.json` (titre, positions et liens) et `cartes/*.md` (une carte par fichier Markdown). Ils restent lisibles dans n'importe quel éditeur.
+Chaque projet est un dossier : `cosmos.json` (titre, positions et liens), `cartes/*.md` (une carte par fichier Markdown) et, pour un scénario, `scenario.fountain`. Ils restent lisibles dans n'importe quel éditeur.
 
 ```markdown
 ---

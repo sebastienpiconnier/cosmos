@@ -7,7 +7,9 @@ const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 const READY: Record<View, boolean> = { toile: true, plan: false, bible: true, manuscrit: false };
 
 export function TopBar() {
-  const { t, views } = useVocab();
+  const { t, views, kind } = useVocab();
+  // L'éditeur de scénario existe ; le manuscrit en prose pas encore.
+  const ready = (v: View) => READY[v] || (v === "manuscrit" && kind === "scenario");
   const { view, setView, status, save, openFolder } = useCosmos();
 
   const location =
@@ -36,7 +38,7 @@ export function TopBar() {
             type="button"
             className={view === v ? "is-current" : ""}
             aria-current={view === v ? "page" : undefined}
-            title={READY[v] ? undefined : t.views.soon}
+            title={ready(v) ? undefined : t.views.soon}
             onClick={() => setView(v)}
           >
             {views[v]}
