@@ -42,6 +42,27 @@ export function unlinkCard(screenplay: Screenplay, cardId: string): Screenplay {
   return { ...screenplay, elements };
 }
 
+/** Une carte Scène qui n'a pas encore de scène : son en-tête s'ajoute à la fin du scénario. */
+export function appendScene(screenplay: Screenplay, card: SceneCard): Screenplay {
+  const text = card.title.trim();
+  if (text === "" || screenplay.elements.some((el) => isLinkedTo(el, card.id))) return screenplay;
+  return { ...screenplay, elements: [...screenplay.elements, { type: "sceneHeading", text, cardId: card.id }] };
+}
+
+/**
+ * La carte disparaît (supprimée, ou changée de type). Si sa scène n'a encore aucun texte, l'en-tête
+ * part avec elle ; sinon seule la note de lien est retirée, le texte de la scène reste.
+ */
+export function releaseCard(screenplay: Screenplay, cardId: string): Screenplay {
+  const index = screenplay.elements.findIndex((el) => isLinkedTo(el, cardId));
+  if (index === -1) return screenplay;
+  let end = index + 1;
+  while (end < screenplay.elements.length && !["sceneHeading", "section"].includes(screenplay.elements[end].type)) end++;
+  const written = screenplay.elements.slice(index + 1, end).some((el) => el.type === "pageBreak" || el.text.trim() !== "");
+  if (written) return unlinkCard(screenplay, cardId);
+  return { ...screenplay, elements: [...screenplay.elements.slice(0, index), ...screenplay.elements.slice(end)] };
+}
+
 /** Scènes « libres » : en-têtes sans note, ou dont la carte n'existe plus. `index` = position dans `elements`. */
 export function scenesWithoutCard(
   screenplay: Screenplay,

@@ -11,6 +11,7 @@ export const en: Messages = {
     saveFailed: "Saving failed. Your latest changes are not on disk yet.",
     saveFailedFolder: "Saving failed: the app couldn’t write to the project folder. If it is on another drive or in OneDrive, go back to your projects and reopen it with “Open folder…” to grant access again.",
     retry: "Try again",
+    projectTitle: "Project title",
     leaveUnsaved: "Back to projects without saving",
   },
 
@@ -59,7 +60,7 @@ export const en: Messages = {
 
   status: {
     enregistre: "Saved",
-    modifie: "Unsaved changes",
+    modifie: "Not saved",
     enregistrement: "Saving…",
     erreur: "Save failed",
   },

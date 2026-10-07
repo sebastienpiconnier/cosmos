@@ -14,7 +14,8 @@ import torture from "./fixtures/torture.fountain?raw";
 const onEscape = vi.fn();
 let editor: Editor;
 
-function open(source: string | ScreenplayElement[] = []): Editor {
+/** Par défaut : une action vide, pour jouer la frappe. `open([])` ouvre un scénario vraiment vide. */
+function open(source: string | ScreenplayElement[] = [{ type: "action", text: "" }]): Editor {
   const screenplay: Screenplay = typeof source === "string" ? parse(source) : { titlePage: {}, elements: source };
   editor = new Editor({
     element: document.createElement("div"),
@@ -61,10 +62,12 @@ describe("conversion", () => {
     });
   }
 
-  it("scénario vide : une action à remplir", () => {
-    open();
-    expect(shape()).toEqual(["action: "]);
+  it("scénario vide : un en-tête de scène à remplir, rien à écrire sur disque", () => {
+    open([]);
+    expect(shape()).toEqual(["sceneHeading: "]);
     expect(serialize(model())).toBe("");
+    type("ext. port - jour");
+    expect(shape()).toEqual(["sceneHeading: EXT. PORT - JOUR"]);
   });
 
   it("ouvrir un fichier ne met rien en majuscules", () => {
@@ -75,7 +78,7 @@ describe("conversion", () => {
 
 describe("écrire une scène au clavier seul", () => {
   it("en-tête, action, personnage, didascalie, dialogue, transition, puis la scène suivante", () => {
-    open();
+    open([]);
     type("int. phare, lanterne - nuit");
     press("Enter");
     type("La lampe est froide.");

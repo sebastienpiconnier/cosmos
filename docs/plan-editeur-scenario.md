@@ -84,6 +84,11 @@ Notes de la phase 7 :
 - **Mode focus** : bouton dans la barre d'éléments et Ctrl ou Cmd + Maj + F. La barre du haut, la liste des scènes et le panneau de droite s'effacent.
 - Vérifié par tests et dans Edge piloté par script (import par le vrai sélecteur de fichier, numéros, focus).
 
+Retours après essai dans l'exe (7 octobre 2026) :
+
+- Une carte Scène créée sur le canevas entre maintenant tout de suite dans le scénario (fin du texte) : « Scènes à écrire » ne garde que les cartes sans titre. C'est un changement par rapport au § 2.2.
+- Un scénario vide s'ouvre sur un en-tête de scène, plus sur une action.
+
 Vérifications à faire à la main (aucune n'a pu l'être ici) :
 
 - ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain ;

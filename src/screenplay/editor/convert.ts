@@ -8,8 +8,8 @@ import { PRESERVED, isEditableType, type PreservedKind } from "./nodes";
 
 export function toDoc(screenplay: Screenplay): JSONContent {
   const content = screenplay.elements.map(toNode);
-  // Un document ne peut pas être vide : on commence par une action à remplir.
-  return { type: "doc", content: content.length > 0 ? content : [{ type: "action" }] };
+  // Un document ne peut pas être vide : un scénario commence par un en-tête de scène à remplir.
+  return { type: "doc", content: content.length > 0 ? content : [{ type: "sceneHeading" }] };
 }
 
 function toNode(el: ScreenplayElement): JSONContent {

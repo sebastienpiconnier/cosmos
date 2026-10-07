@@ -12,6 +12,7 @@ export const fr = {
     saveFailed: "L’enregistrement a échoué. Tes dernières modifications ne sont pas encore sur le disque.",
     saveFailedFolder: "L’enregistrement a échoué : l’app n’a pas pu écrire dans le dossier du projet. S’il est sur un autre disque ou dans OneDrive, reviens aux projets et rouvre-le avec « Ouvrir un dossier… » pour redonner l’accès.",
     retry: "Réessayer",
+    projectTitle: "Titre du projet",
     leaveUnsaved: "Revenir aux projets sans enregistrer",
   },
 
@@ -60,7 +61,7 @@ export const fr = {
 
   status: {
     enregistre: "Enregistré",
-    modifie: "Modifications non enregistrées",
+    modifie: "Non enregistré",
     enregistrement: "Enregistrement…",
     erreur: "Erreur d’enregistrement",
   },

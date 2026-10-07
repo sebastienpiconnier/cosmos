@@ -19,7 +19,14 @@ import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
-import { headingTitles, initialScreenplay, renameHeading, unlinkCard, type SceneCard } from "./screenplay/link";
+import {
+  appendScene,
+  headingTitles,
+  initialScreenplay,
+  releaseCard,
+  renameHeading,
+  type SceneCard,
+} from "./screenplay/link";
 import { getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
@@ -32,6 +39,8 @@ interface CosmosState {
   title: string;
   kind: ProjectKind;
   setKind: (kind: ProjectKind) => void;
+  /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
+  setTitle: (title: string) => void;
   /** Format de page du scénario (estimation des pages, puis PDF). */
   paper: Paper;
   /** Faux tant que le format n'a pas été fixé (projet roman) : il n'est alors pas écrit dans cosmos.json. */
@@ -244,6 +253,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
   return {
     title: "",
     kind: "roman",
+    setTitle: (title) => {
+      const { title: previous, screenplay } = get();
+      const key = screenplay && Object.keys(screenplay.titlePage).find((k) => k.trim().toLowerCase() === "title");
+      // La page de titre suit tant qu'elle portait le titre du projet ; un titre écrit à la main n'est pas touché.
+      if (screenplay && key && title.trim() && screenplay.titlePage[key].trim() === previous.trim()) {
+        set({ title, screenplay: { ...screenplay, titlePage: { ...screenplay.titlePage, [key]: title.trim() } } });
+      } else {
+        set({ title });
+      }
+      touch();
+    },
     setKind: (kind) => {
       const { screenplay, title, nodes, paperChosen } = get();
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
@@ -434,8 +454,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       let { screenplay } = get();
       const card = nodes.find((n) => n.id === id)?.data;
       if (screenplay && card) {
-        // Une carte qui n'est plus une Scène perd son lien ; sinon son en-tête suit son titre.
-        if (card.type !== "scene") screenplay = unlinkCard(screenplay, id);
+        const linked = headingTitles(screenplay).has(id);
+        // Une carte qui n'est plus une Scène quitte le scénario (son texte, s'il y en a, y reste).
+        if (card.type !== "scene") screenplay = releaseCard(screenplay, id);
+        // Scénario : une carte Scène qui reçoit un titre y entre aussitôt, à la suite des autres.
+        else if (!linked && get().kind === "scenario") screenplay = appendScene(screenplay, { id, title: card.title });
+        // Sinon son en-tête suit son titre.
         else if (typeof patch.title === "string") screenplay = renameHeading(screenplay, id, patch.title);
       }
       set({ nodes, screenplay });
@@ -446,8 +470,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({
         nodes: get().nodes.filter((n) => n.id !== id),
         edges: get().edges.filter((e) => e.source !== id && e.target !== id),
-        // Le texte de la scène reste dans le scénario : seule la note de lien est retirée.
-        screenplay: screenplay && unlinkCard(screenplay, id),
+        // Le texte de la scène reste dans le scénario ; un en-tête encore sans texte part avec sa carte.
+        screenplay: screenplay && releaseCard(screenplay, id),
       });
       touch();
     },
