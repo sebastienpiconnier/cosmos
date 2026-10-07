@@ -193,6 +193,29 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand la toile est très dézoomée (menu hors du zoom de React Flow)
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
+## Changer de machine (PC Windows ↔ Mac)
+
+Le projet se développe sur plusieurs machines. **Git est le seul lien** entre elles : ne jamais synchroniser le dossier du code par OneDrive ou iCloud (`node_modules` et `src-tauri/target` sont propres à chaque système).
+
+**Début de session** (à rappeler à l'auteur s'il ne l'a pas fait) :
+
+1. `git pull`
+2. `npm install` si `package-lock.json` a changé depuis la dernière session sur cette machine
+3. Relire ce fichier et le plan en cours (`docs/plan-*.md`), puis résumer en trois lignes : phase en cours, ce qui est fait, prochaine étape
+
+**Fin de session** :
+
+1. `npm run build` et `npm test` au vert
+2. Mettre à jour le plan en cours : cocher ce qui est fait (`- [x]`), noter en une ligne ce qui reste ou ce qui bloque
+3. Commit, puis `git push`. Le dire explicitement à l'auteur : du travail non poussé reste bloqué sur la machine
+
+**Pièges multiplateformes** :
+
+- Fins de ligne : `.gitattributes` impose LF partout. Ne pas le retirer ; tout code qui lit un fichier normalise quand même `\r\n` en `\n` (fichiers venus d'autres logiciels).
+- Chemins : toujours `join()` côté Tauri, jamais de `/` ou `\` écrits à la main.
+- Scripts npm : uniquement des commandes qui marchent dans PowerShell et dans zsh (pas de `rm -rf`, `export VAR=`, `&&` enchaîné à des commandes Unix). Pour un besoin plus complexe, un petit script Node dans `scripts/`.
+- L'historique de conversation de Claude Code reste sur la machine où il a eu lieu : la mémoire du projet, c'est ce fichier, le plan et l'historique Git.
+
 ## Méthode de travail attendue
 
 - Avant de coder une étape de la feuille de route, proposer un court plan (fichiers touchés, impact sur le format de projet).

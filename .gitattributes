@@ -1,0 +1,11 @@
+# Fins de ligne identiques sur Windows, macOS et Linux (indispensable pour
+# travailler sur plusieurs machines et pour les tests Fountain).
+* text=auto eol=lf
+
+# Fichiers binaires : jamais convertis
+*.png binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.woff binary
+*.woff2 binary

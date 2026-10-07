@@ -48,6 +48,11 @@ Pour retrouver un projet sur plusieurs ordinateurs, il suffit de placer son doss
 
 Par défaut, l'app peut lire et écrire dans le dossier personnel et Documents. Pour un projet sur un disque externe, ajouter le chemin dans `src-tauri/capabilities/default.json` (permission `fs:scope`).
 
+## Travailler sur plusieurs ordinateurs
+
+- **Le code** passe par GitHub : `git push` en fin de session, `git pull` (puis `npm install` si besoin) en début de session sur l'autre machine. Ne pas mettre le dossier du code dans OneDrive ou iCloud.
+- **Les projets d'écriture** (dossiers ouverts dans Cosmos) peuvent vivre dans OneDrive ou iCloud Drive, accessibles depuis le PC comme le Mac. Ne pas ouvrir le même projet sur deux machines en même temps.
+
 ## Pour développer
 
 Voir `CLAUDE.md` : architecture, conventions et feuille de route, prévu pour travailler avec Claude Code.
