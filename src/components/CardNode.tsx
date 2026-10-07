@@ -2,6 +2,7 @@
 // et corps éditable avec TipTap. Le menu « Transformer en… » s'ouvre de deux façons :
 // en tapant "/" en début de ligne (clavier) ou en touchant l'étiquette du type
 // (souris, doigt, et sans clavier physique sur mobile).
+// « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
@@ -16,11 +17,22 @@ import { useSettings } from "../settings";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
 import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
+import { MentionNode } from "./MentionNode";
+import { canCreateMention, mentionCandidates, mentionQuery, type MentionCandidate } from "../mentions";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Menu ouvert par "/" (avec la plage de texte à effacer) ou par l'étiquette du type. */
 type MenuState = { via: "slash"; from: number; to: number; query: string } | { via: "label"; query: "" };
+
+/** Mention en cours de frappe : plage à remplacer, cartes proposées, et offre de créer la carte. */
+interface MentionState {
+  from: number;
+  to: number;
+  query: string;
+  candidates: MentionCandidate[];
+  create: boolean;
+}
 
 function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
@@ -47,9 +59,16 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     [slash, types],
   );
 
+  const [mention, setMention] = useState<MentionState | null>(null);
+  // -1 : rien de présélectionné (Entrée garde son rôle tant qu'on ne propose que de créer une carte).
+  const [mentionActive, setMentionActive] = useState(-1);
+  // Position du « @ » d'un menu fermé par Échap : il ne se rouvre pas à la lettre suivante.
+  const dismissed = useRef(-1);
+  const mentionCount = mention ? mention.candidates.length + (mention.create ? 1 : 0) : 0;
+
   // Refs pour que les gestionnaires TipTap (créés une seule fois) voient l'état courant.
-  const stateRef = useRef({ slash, options, active });
-  stateRef.current = { slash, options, active };
+  const stateRef = useRef({ slash, options, active, mention, mentionActive, mentionCount });
+  stateRef.current = { slash, options, active, mention, mentionActive, mentionCount };
 
   const pick = (type: CardType) => {
     const s = stateRef.current.slash;
@@ -59,6 +78,49 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   };
   const pickRef = useRef(pick);
   pickRef.current = pick;
+
+  /** Remplace « @… » par la mention de la carte choisie (ou d'une carte créée à l'instant) et tire le fil. */
+  const pickMention = (index: number) => {
+    const m = stateRef.current.mention;
+    if (!m || !editor || index < 0) return;
+    const store = useCosmos.getState();
+    const found = m.candidates[index];
+    const title = found ? found.title : m.query.trim();
+    const target = found ? found.id : store.addTitledCard("idee", title);
+    setMention(null);
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: m.from, to: m.to }, [{ type: "mention", attrs: { id: target, label: title } }, { type: "text", text: " " }])
+      .run();
+    store.linkCards(id, target, "");
+  };
+  const pickMentionRef = useRef(pickMention);
+  pickMentionRef.current = pickMention;
+
+  const detectMention = (ed: Editor) => {
+    const { $from, empty } = ed.state.selection;
+    const found = empty && $from.parent.isTextblock ? mentionQuery($from.parent.textBetween(0, $from.parentOffset, undefined, "\ufffc")) : null;
+    const from = found ? $from.pos - found.length : -1;
+    if (!found || from === dismissed.current) {
+      if (!found) dismissed.current = -1;
+      if (stateRef.current.mention) setMention(null);
+      return;
+    }
+    const cards = useCosmos.getState().nodes.map((n) => n.data);
+    const candidates = mentionCandidates(cards, found.query, id, useSettings.getState().lang);
+    const create = canCreateMention(cards, found.query);
+    if (!candidates.length && !create) {
+      if (stateRef.current.mention) setMention(null);
+      return;
+    }
+    if (!stateRef.current.mention) {
+      const rect = cardRef.current?.getBoundingClientRect();
+      if (rect) setMenuUp(rect.bottom > window.innerHeight * 0.6);
+    }
+    setMention({ from, to: $from.pos, query: found.query, candidates, create });
+    setMentionActive(candidates.length ? 0 : -1);
+  };
 
   const detectSlash = (ed: Editor) => {
     const { $from, empty } = ed.state.selection;
@@ -79,13 +141,33 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
       Placeholder.configure({ placeholder: () => getT().card.bodyPlaceholder }),
+      MentionNode,
     ],
     content: data.html,
     immediatelyRender: true,
     editorProps: {
       attributes: { class: "card-editor", "aria-label": getT().card.bodyAria },
       handleKeyDown: (_view, event) => {
-        const { slash: s, options: opts, active: a } = stateRef.current;
+        const { slash: s, options: opts, active: a, mention: m, mentionActive: ma, mentionCount: count } = stateRef.current;
+        if (m && count) {
+          if (event.key === "ArrowDown") {
+            setMentionActive((ma + 1) % count);
+            return true;
+          }
+          if (event.key === "ArrowUp") {
+            setMentionActive((ma - 1 + count) % count);
+            return true;
+          }
+          if ((event.key === "Enter" || event.key === "Tab") && ma >= 0) {
+            pickMentionRef.current(ma);
+            return true;
+          }
+          if (event.key === "Escape") {
+            dismissed.current = m.from;
+            setMention(null);
+            return true;
+          }
+        }
         if (!s || !opts.length) return false;
         if (event.key === "ArrowDown") {
           setActive((a + 1) % opts.length);
@@ -109,8 +191,13 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     onUpdate: ({ editor: ed }) => {
       updateCard(id, { html: ed.getHTML() });
       detectSlash(ed);
+      detectMention(ed);
     },
-    onSelectionUpdate: ({ editor: ed }) => detectSlash(ed),
+    onSelectionUpdate: ({ editor: ed }) => {
+      detectSlash(ed);
+      detectMention(ed);
+    },
+    onBlur: () => setMention(null),
   });
 
   // Le texte a changé sans passer par cet éditeur (annuler, rétablir) : il se remet à jour.
@@ -278,6 +365,21 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       <div className="nodrag nowheel nopan">
         <EditorContent editor={editor} />
       </div>
+
+      {mention && mentionCount > 0 && !slash && (
+        <SuggestionMenu
+          title={t.card.mentionTitle}
+          className={menuUp ? "opens-up" : ""}
+          items={[
+            ...mention.candidates.map((c) => ({ key: c.id, label: c.title, hint: types[c.type].label, color: typeColor(c.type) })),
+            ...(mention.create
+              ? [{ key: "+", label: fmt(t.card.mentionCreate, { title: mention.query.trim() }), hint: t.card.mentionCreateHint, color: typeColor("idee") }]
+              : []),
+          ]}
+          active={mentionActive}
+          onPick={pickMention}
+        />
+      )}
 
       {slash && options.length > 0 && (
         <SuggestionMenu

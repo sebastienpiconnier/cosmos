@@ -104,7 +104,7 @@ export const en: Messages = {
   },
 
   card: {
-    bodyPlaceholder: "Write… ( / to transform the card )",
+    bodyPlaceholder: "Write… ( / to transform the card, @ to mention another )",
     titleAria: "Card title",
     bodyAria: "Card content",
     delete: "Delete card",
@@ -116,6 +116,9 @@ export const en: Messages = {
     imageFiles: "Images",
     changeType: "Type: {type}. Change type",
     menuTitle: "Turn into…",
+    mentionTitle: "Mention a card",
+    mentionCreate: "Create “{title}”",
+    mentionCreateHint: "new card",
   },
 
   toile: {

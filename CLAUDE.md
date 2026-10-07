@@ -114,6 +114,7 @@ src/
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
+  mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
   settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
@@ -129,6 +130,7 @@ src/
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
+    MentionNode.ts      Nœud TipTap d'une mention (insécable, porte l'identifiant de la carte citée)
     FrameNode.tsx       Cadre de regroupement : titre, redimensionnement, suppression
     useMediaUrl.ts      Adresse affichable d'une image de medias/ (hook)
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
@@ -194,7 +196,10 @@ title: "Inès Morvan"
 image: k3x9a7bq2m.jpg
 ---
 Gardienne remplaçante. Ne supporte pas le **silence**.
+Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 ```
+
+Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
 Types possibles : `idee`, `personnage`, `lieu`, `scene`, `theme`, `question`. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
 
@@ -226,6 +231,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Cartes créées par le scénario** : `adoptNew` ne regarde que les nœuds sans l'attribut `known` (écrits dans la session). Tout ce qui vient du modèle le porte (`toDoc`) : sinon une carte supprimée exprès reviendrait à la frappe suivante, et ouvrir un fichier venu d'ailleurs créerait des dizaines de cartes. Un en-tête n'est adopté qu'une fois suivi d'un autre élément (avec la carte de son décor et le fil « se passe à », pour un en-tête standard), un personnage qu'une fois suivi de sa réplique, pour ne pas créer de carte à chaque lettre.
 - **Placement des cartes** : `addCard` et `addTitledCard` passent toujours par `placement.ts`. Ne jamais poser une carte à une position fixe.
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
+- **Mentions `@`** : en mémoire `<span data-mention="<id>">@Titre</span>`, sur disque `[@Titre](cosmos:<id>)`. `mentionHtml` (mentions.ts) et `MentionNode.renderHTML` doivent produire exactement la même forme : le store relit ce HTML par expression régulière quand une carte est renommée (la mention suit) ou supprimée (elle redevient du texte). `sanitizeHtml` ne crée une mention que pour un identifiant vérifié et n'en garde que le texte.
+- **Fil d'une mention** : il est tiré une fois, au moment où l'on choisit la carte (`linkCards`), pas déduit du texte. Effacer la mention ne retire donc pas le fil, que l'auteur a peut-être étiqueté.
+- **Menu des mentions** : « Créer … » n'est jamais présélectionné (`mentionActive` vaut -1), sinon Entrée créerait une carte au lieu d'aller à la ligne. Échap ferme le menu jusqu'au prochain `@`. Un `@` collé à un mot (adresse de courriel) n'ouvre rien. Maison plutôt que l'extension Mention de TipTap, qui apporterait son propre menu.
 - **Images des cartes** : le fichier est copié dans `medias/` sous un nom neuf (`storage.writeMedia`), la carte ne garde que ce nom (`image:` dans son en-tête, facultatif). Un nom lu sur disque passe par `isMediaName` : jamais de chemin, jamais de « .. », sinon un `.md` piégé ferait lire un autre fichier. Les images ne sont pas dans la `FileMap` : l'enregistrement ne les touche pas.
 - **Les fichiers de medias/ ne sont jamais supprimés par l'app** : retirer une image d'une carte doit pouvoir s'annuler. Les orphelins restent dans le dossier.
 - **Dépôt de fichiers dans Tauri** : `dragDropEnabled` est à `false` dans `tauri.conf.json`. Sinon la fenêtre native intercepte le dépôt et l'événement `drop` du canevas n'arrive jamais (Windows surtout).
@@ -274,7 +282,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
-3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
+3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`

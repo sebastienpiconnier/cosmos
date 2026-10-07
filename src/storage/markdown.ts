@@ -8,13 +8,20 @@
 // image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
+// Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
 
 import { marked } from "marked";
 import TurndownService from "turndown";
 import { CARD_TYPES, type CardData, type CardType } from "../types";
 import { isMediaName } from "../media";
+import { MENTION_SCHEME, mentionTarget } from "../mentions";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
+// Une mention s'écrit comme un lien Markdown vers la carte citée.
+turndown.addRule("mention", {
+  filter: (node) => node.nodeName === "SPAN" && !!node.getAttribute("data-mention"),
+  replacement: (content, node) => `[${content}](${MENTION_SCHEME}${(node as HTMLElement).getAttribute("data-mention")})`,
+});
 
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
@@ -39,6 +46,15 @@ export function sanitizeHtml(html: string): string {
     for (const child of Array.from(el.children)) {
       if (["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "TEMPLATE"].includes(child.tagName)) {
         child.remove();
+        continue;
+      }
+      // Lien vers une carte : il devient une mention (seul attribut gardé : un identifiant vérifié).
+      const mention = child.tagName === "A" ? mentionTarget(child.getAttribute("href")) : null;
+      if (mention) {
+        const span = doc.createElement("span");
+        span.setAttribute("data-mention", mention);
+        span.textContent = child.textContent;
+        child.replaceWith(span);
         continue;
       }
       clean(child); // descendants d'abord, puis l'élément lui-même

@@ -27,6 +27,7 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Cartes libres** : double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche `N`, et tu écris directement. Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Six types de carte** : Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Fils étiquetés** : tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche.
+- **Mentions** : tape `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si tu renommes la carte, et tu peux créer la carte citée sans quitter ta phrase.
 - **Images** : dépose une image sur une carte ou sur le canevas, ou utilise le bouton image de la carte. Elle est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **Largeur des cartes** : tire le bord droit d'une carte sélectionnée, ou `Alt`+`→` et `Alt`+`←`.
 - **Cadres** : un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche `C` ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes.

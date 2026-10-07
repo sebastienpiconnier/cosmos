@@ -21,6 +21,7 @@ import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
+import { removeMentions, renameMentions } from "./mentions";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -188,6 +189,9 @@ const HISTORY_LIMIT = 100;
 const HISTORY_MERGE_MS = 800;
 
 const newId = () => nanoid(10);
+
+/** Même carte si son texte ne change pas (les mentions ne touchent que les cartes concernées). */
+const withHtml = (node: CardNode, html: string): CardNode => (html === node.data.html ? node : { ...node, data: { ...node.data, html } });
 
 const toNode = (card: CardData, x: number, y: number, width = CARD_WIDTH): CardNode => ({
   id: card.id,
@@ -729,7 +733,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const keys = Object.keys(patch);
       const typed = keys.length === 1 && (keys[0] === "title" || keys[0] === "html");
       record(typed ? `card:${id}:${keys[0]}` : "");
-      const nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
+      let nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
+      // Les mentions de cette carte, dans les autres, suivent son nouveau titre.
+      const { title } = patch;
+      if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
       let { screenplay } = get();
       const card = nodes.find((n) => n.id === id)?.data;
       if (screenplay && card) {
@@ -790,7 +797,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       const { screenplay } = get();
       set({
-        nodes: get().nodes.filter((n) => n.id !== id),
+        // Ses mentions dans les autres cartes redeviennent du texte : le nom reste écrit.
+        nodes: get().nodes.filter((n) => n.id !== id).map((n) => withHtml(n, removeMentions(n.data.html, id))),
         edges: get().edges.filter((e) => e.source !== id && e.target !== id),
         // Le texte de la scène reste dans le scénario ; un en-tête encore sans texte part avec sa carte.
         screenplay: screenplay && releaseCard(screenplay, id),

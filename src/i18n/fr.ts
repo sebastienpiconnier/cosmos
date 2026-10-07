@@ -105,7 +105,7 @@ export const fr = {
   },
 
   card: {
-    bodyPlaceholder: "Écris… ( / pour transformer la carte )",
+    bodyPlaceholder: "Écris… ( / pour transformer la carte, @ pour en citer une autre )",
     titleAria: "Titre de la carte",
     bodyAria: "Contenu de la carte",
     delete: "Supprimer la carte",
@@ -117,6 +117,9 @@ export const fr = {
     imageFiles: "Images",
     changeType: "Type : {type}. Changer le type",
     menuTitle: "Transformer en…",
+    mentionTitle: "Citer une carte",
+    mentionCreate: "Créer « {title} »",
+    mentionCreateHint: "nouvelle carte",
   },
 
   toile: {
