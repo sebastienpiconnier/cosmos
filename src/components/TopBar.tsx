@@ -2,6 +2,7 @@ import { useCosmos, type View } from "../store";
 import { storage } from "../storage";
 import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
+import { ExportMenu } from "./ExportMenu";
 import { fmt } from "../i18n";
 import { useSettings } from "../settings";
 import { minutesFor, usePagination } from "./usePagination";
@@ -72,6 +73,7 @@ export function TopBar() {
         <button type="button" className="ghost-button" onClick={save}>
           {t.actions.save}
         </button>
+        {kind === "scenario" && pagination && <ExportMenu />}
         <Settings />
       </div>
     </header>

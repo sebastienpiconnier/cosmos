@@ -164,7 +164,11 @@ export function ScreenplayView() {
       if (transaction.docChanged) refreshRef.current(ed);
       else if (transaction.selectionSet) setMenu(null);
     },
-    onBlur: () => setMenu(null),
+    // En quittant le texte (pour exporter, par exemple), ce qui attend part tout de suite dans le store.
+    onBlur: () => {
+      setMenu(null);
+      emit();
+    },
     onCreate: ({ editor: ed }) => track(ed),
     onSelectionUpdate: ({ editor: ed }) => track(ed),
     onUpdate: ({ editor: ed }) => {

@@ -203,6 +203,19 @@ export const en: Messages = {
     pagesMany: "{n} pages",
     minutes: "≈ {n} min",
     lengthAria: "Estimated running time of the screenplay",
+    // Dialogue split across two PDF pages.
+    more: "(MORE)",
+    contd: "(CONT'D)",
+    export: {
+      button: "Export",
+      menuAria: "Export formats",
+      pdf: "PDF, standard format",
+      fountain: "Fountain",
+      fdx: "Final Draft (FDX)",
+      working: "Exporting…",
+      done: "Export finished.",
+      failed: "The export failed.",
+    },
     sequencer: {
       title: "Step outline",
       listAria: "Scenes in screenplay order",

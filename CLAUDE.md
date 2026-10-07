@@ -84,6 +84,7 @@ Apparence : **Comme le système** (par défaut), **Claire** ou **Sombre**, dans 
 | État | Zustand (`src/store.ts`) |
 | Markdown | `marked` (md → html) et `turndown` (html → md) |
 | Polices | Fontsource, embarquées (l'app marche hors ligne) |
+| PDF | `pdf-lib` et `@pdf-lib/fontkit`, chargés seulement à l'export |
 | Langues | `src/i18n/` maison (fr, en), typé |
 | Thème | Variables CSS clair/sombre, `data-theme` sur `<html>` |
 
@@ -128,6 +129,7 @@ src/
     Bible.tsx           Sommaire auto par type + fiches + liens
     ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
     Sequencier.tsx      Vue Plan d'un scénario : scènes dans l'ordre, longueur, réordonnancement
+    ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
     Bientot.tsx         Vues Plan et Manuscrit (roman), pas encore construites
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
@@ -140,6 +142,7 @@ src/
     layout.ts           Gabarit de page (Letter, A4) : source unique pour le compteur et le futur PDF
     paginate.ts         Estimation des pages par comptage de lignes
     sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
+    export/             Exports : typeset.ts (composition en pages), pdf.ts, fdx.ts, index.ts (chargés à la demande)
     editor/             Éditeur TipTap : un nœud bloc par élément
       nodes.ts          Schéma (six éléments éditables + « preserved » pour le reste)
       convert.ts        Screenplay ↔ document ProseMirror (un élément = un nœud de premier niveau)
@@ -153,6 +156,7 @@ src/
     markdown.ts         Carte ↔ fichier .md (frontmatter), nettoyage HTML
     browser.ts          Dossier simulé dans localStorage
     tauri.ts            Vrai dossier sur disque (choisi sur ordinateur, privé sur mobile)
+  assets/fonts/         Courier Prime en TTF pour le PDF (licence OFL jointe)
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 .github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
 ```
@@ -201,6 +205,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Éléments conservés** (note, section, texte mis de côté…) : leurs libellés viennent de variables CSS `--sp-label-*` posées par React, pour suivre la langue sans redessiner les nœuds.
 - **Complétion du scénario** : le menu ne présélectionne une suggestion que si elle complète le texte tapé (`active` vaut -1 sinon), pour qu'Entrée continue de passer à l'élément suivant sur un nom déjà complet. Ses touches sont prises dans `editorProps.handleKeyDown`, avant le clavier de l'éditeur.
 - **Séquencier, glisser-déposer** : l'index de la scène glissée vit dans une ref, pas seulement dans l'état React. Le dépôt peut arriver avant le rendu suivant et lirait sinon une valeur périmée.
+- **Export PDF** : `pdf.ts` et les polices (importées en `?inline`) ne doivent être atteints que par `import()` dynamique depuis `export/index.ts`, jamais par un import statique, sinon ils entrent dans le paquet de démarrage. La pagination se décide dans `typeset.ts` (pur, testé), pas dans `pdf.ts`.
+- **Exports, enregistrement** : toujours `storage.saveAs()` (dialogue du système dans Tauri, téléchargement dans le navigateur). `ScreenplayView` envoie ce qui attend dans le store dès que l'éditeur perd le focus, pour que l'export voie la dernière frappe.
 - **Page de titre Fountain** : une clé ne commence pas par un marqueur et ne contient pas de note, sinon un en-tête forcé en première ligne (`.PHARE [[cosmos:id]]`) est pris pour une page de titre.
 
 ## Conventions
@@ -215,7 +221,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 5 du plan)
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 6 du plan)
 2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue

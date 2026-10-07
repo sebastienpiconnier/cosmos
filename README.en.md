@@ -50,6 +50,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Linked to the canvas**: each scene heading is linked to its Scene card. Renaming one renames the other, and cards with no text wait under “Scenes to write”.
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
 - **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
+- **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **An open file**: the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
 
 ### Comfort
@@ -70,7 +71,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
-| Screenplay | PDF, Fountain and FDX exports, Fountain import, act templates in the step outline (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
+| Screenplay | Fountain import, scene numbers, focus mode, act templates in the step outline (in progress, see [the plan](docs/plan-editeur-scenario.md), in French) |
 | Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |
@@ -140,5 +141,7 @@ npm test        # tests (Vitest)
 ```
 
 **Releasing a version**: `git tag v0.1.0 && git push --tags`. GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish.
+
+The PDF embeds the Courier Prime font (SIL OFL licence, see [OFL.txt](src/assets/fonts/OFL.txt)).
 
 Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in French), written for working with Claude Code.

@@ -14,30 +14,31 @@ export interface Pagination {
   linesPerPage: number;
 }
 
-/** Lignes d'un texte coupé aux mots sur une largeur donnée (un mot trop long est coupé). */
-export function wrappedLines(text: string, width: number): number {
-  let count = 0;
+/** Un texte coupé aux mots sur une largeur donnée (un mot trop long est coupé). Sert aussi au PDF. */
+export function wrap(text: string, width: number): string[] {
+  const out: string[] = [];
   for (const line of text.split("\n")) {
-    let used = 0;
-    let lines = 1;
+    let current = "";
     for (const word of line.split(/\s+/)) {
       if (word === "") continue;
-      let length = word.length;
-      if (used > 0 && used + 1 + length <= width) {
-        used += 1 + length;
+      if (current !== "" && current.length + 1 + word.length <= width) {
+        current += ` ${word}`;
         continue;
       }
-      if (used > 0) lines++;
-      while (length > width) {
-        lines++;
-        length -= width;
+      if (current !== "") out.push(current);
+      let rest = word;
+      while (rest.length > width) {
+        out.push(rest.slice(0, width));
+        rest = rest.slice(width);
       }
-      used = length;
+      current = rest;
     }
-    count += lines;
+    out.push(current);
   }
-  return count;
+  return out;
 }
+
+export const wrappedLines = (text: string, width: number): number => wrap(text, width).length;
 
 const IN_DIALOGUE = new Set(["character", "parenthetical", "dialogue"]);
 

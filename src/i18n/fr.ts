@@ -205,6 +205,19 @@ export const fr = {
     pagesMany: "{n} pages",
     minutes: "≈ {n} min",
     lengthAria: "Durée estimée du scénario",
+    // Réplique coupée entre deux pages du PDF.
+    more: "(À SUIVRE)",
+    contd: "(SUITE)",
+    export: {
+      button: "Exporter",
+      menuAria: "Formats d’export",
+      pdf: "PDF, format standard",
+      fountain: "Fountain",
+      fdx: "Final Draft (FDX)",
+      working: "Export en cours…",
+      done: "Export terminé.",
+      failed: "L’export a échoué.",
+    },
     sequencer: {
       title: "Séquencier",
       listAria: "Scènes dans l’ordre du scénario",

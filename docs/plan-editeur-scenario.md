@@ -14,10 +14,10 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [x] Phase 3 : l'éditeur
 - [x] Phase 4 : complétion
 - [x] Phase 5 : pages, minutes, séquencier minimal
-- [ ] Phase 6 : exports
+- [x] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0 à 5 faites. Prochaine étape : phase 6 (exports).
+Dernière session : 7 octobre 2026, phases 0 à 6 faites. Prochaine étape : phase 7 (finitions).
 
 Notes de la phase 1 :
 
@@ -64,6 +64,18 @@ Notes de la phase 5 :
 - Séquencier : les sections (`# Acte II`) sont des blocs fixes ; une scène qui en franchit une change d'acte. Ce qui précède le premier bloc reste en tête. Déplacement à la souris (glisser) ou par les boutons Monter et Descendre (doigt, clavier).
 - Affichage : durée et pages dans la barre du haut, « Page 3 sur 6 » sous la feuille, page de début dans la liste des scènes. Dans le séquencier, la durée d'une scène n'est affichée qu'à partir d'une demi-page.
 - Les gabarits par actes et les durées cibles de la maquette du séquencier viendront avec l'étape 4 de la feuille de route.
+
+Notes de la phase 6 :
+
+- `src/screenplay/export/` : `typeset.ts` (composition en pages, fonction pure), `pdf.ts`, `fdx.ts`, `index.ts` ; `src/components/ExportMenu.tsx` ; `saveAs()` dans les deux stockages.
+- Dépendances : `pdf-lib` 1.17.1 et `@pdf-lib/fontkit` 1.1.1 (MIT). Polices : Courier Prime Regular et Bold en TTF, prises dans le dépôt `google/fonts`, avec `OFL.txt` à côté (`src/assets/fonts/`).
+- Le PDF et ses polices sont dans un morceau chargé à la demande (import dynamique) : rien ne pèse sur le démarrage.
+- Vérifié : tests (composition, PDF relu par pdf-lib, FDX relu comme XML), un PDF rendu en image et regardé, et les trois téléchargements depuis l'app dans Edge.
+- Reste à faire à la main : ouvrir le FDX dans Final Draft ou Fade In, et essayer « Enregistrer sous » dans l'app Tauri (permissions `dialog:allow-save` et `fs:allow-write-file` ajoutées, non essayées).
+- Écart estimation / PDF sur un long métrage (150 fois la fixture) : 82 pages estimées pour 84 réelles en Letter (2,4 %), 75 pour 75 en A4. L'écart vient des répliques coupées. Sous le seuil de 5 % du plan, donc `linesPerPage` n'a pas été retouché.
+- Coupe des répliques : « (À SUIVRE) » en bas de page et « NOM (SUITE) » en haut de la suivante en français, « (MORE) » et « (CONT'D) » en anglais.
+- Limites du PDF : l'emphase Fountain (`*italique*`, `**gras**`, `_souligné_`) est imprimée telle quelle, le dialogue double est imprimé l'un sous l'autre, et le PDF n'est pas balisé pour l'accessibilité (pdf-lib ne le permet pas).
+- Les notes `[[…]]` et le texte mis de côté ne sont exportés ni en PDF ni en FDX ; l'export Fountain garde tout, liens `[[cosmos:id]]` compris.
 
 ---
 

@@ -32,4 +32,16 @@ export const browserStorage: Storage = {
       console.warn("Sauvegarde navigateur impossible", err);
     }
   },
+  async saveAs(file) {
+    // Pas d'accès au disque dans un navigateur : le fichier est téléchargé.
+    const url = URL.createObjectURL(new Blob([file.data as BlobPart], { type: file.mime }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  },
 };

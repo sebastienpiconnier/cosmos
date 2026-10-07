@@ -29,6 +29,19 @@ export interface Storage {
   readAll(): Promise<FileMap | null>;
   /** Écrit les fichiers donnés et supprime ceux listés dans `removed`. */
   write(files: FileMap, removed: string[]): Promise<void>;
+  /**
+   * Export : l'auteur choisit où enregistrer (ordinateur, mobile) ou le fichier est téléchargé (navigateur).
+   * `label` décrit le format dans le dialogue. Renvoie false si l'auteur annule.
+   */
+  saveAs(file: SavedFile, label: string): Promise<boolean>;
+}
+
+/** Fichier produit par un export. */
+export interface SavedFile {
+  name: string;
+  extension: string;
+  mime: string;
+  data: Uint8Array;
 }
 
 export { isTauri };

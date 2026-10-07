@@ -118,6 +118,9 @@ button { font: inherit; color: inherit; }
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop);
 }
 .settings-panel label { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.export-panel { width: 220px; }
+.export-panel .ghost-button { text-align: left; }
+.export-error { position: absolute; right: 0; top: calc(100% + 8px); white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--danger); }
 .settings-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
 .settings-sep { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .settings-panel select {

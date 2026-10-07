@@ -4,8 +4,8 @@
 //   dans l'espace privé de l'app. La synchronisation entre appareils viendra plus tard.
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
-import { open } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { exists, mkdir, readDir, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
 import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
@@ -78,5 +78,13 @@ export const tauriStorage: Storage = {
       const full = await join(dir, ...path.split("/"));
       if (await exists(full)) await remove(full);
     }
+  },
+
+  async saveAs(file, label) {
+    // Dialogue « Enregistrer sous » du système : le chemin choisi est autorisé en écriture par Tauri.
+    const path = await save({ defaultPath: file.name, filters: [{ name: label, extensions: [file.extension] }] });
+    if (!path) return false;
+    await writeFile(path, file.data);
+    return true;
   },
 };
