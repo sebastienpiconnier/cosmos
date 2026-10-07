@@ -44,7 +44,7 @@ Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absen
 
 1. **Ne jamais dupliquer un composant par type de projet** : on lit le vocabulaire avec `useVocab()` (`src/vocab.ts`), qui fusionne `t.scenario` par-dessus le vocabulaire roman.
 2. Les **clés internes ne changent pas** (`lieu` reste `lieu` même affiché « Décor ») : basculer de type ne touche à aucun fichier de carte.
-3. **Éditeur de scénario (à venir)** : texte stocké en **Fountain** (`scenario/<scene-id>.fountain`), format texte ouvert lisible par Final Draft, Highland, WriterSolo, Fade In, Trelby. Éléments : en-tête de scène, action, personnage, didascalie (parenthétique), dialogue, transition. **Tab** change le type d'élément, **Entrée** passe à l'élément suivant logique (personnage → dialogue → action). Complétion des noms de personnages et de décors depuis la Bible.
+3. **Éditeur de scénario (à venir, plan détaillé dans `docs/plan-editeur-scenario.md`)** : texte stocké dans **un seul fichier `scenario.fountain`** (Fountain, format texte ouvert lisible par Highland, Fade In, WriterSolo, Slugline, Trelby…). Chaque en-tête de scène est relié à sa carte par une note Fountain `[[cosmos:<id>]]`, ignorée par les autres logiciels. Éléments : en-tête de scène, action, personnage, didascalie (parenthétique), dialogue, transition. **Tab** change le type d'élément, **Entrée** passe à l'élément suivant logique (personnage → dialogue → action). Complétion des noms de personnages et de décors depuis la Bible.
 4. **Export scénario** : PDF au format standard (Courier 12, marges normalisées, une page ≈ une minute), Fountain, FDX (Final Draft).
 5. La **Bible d'un scénario** ajoute le nombre de scènes par décor et par personnage (utile au dépouillement) ; plus tard : accessoires, costumes, jour/nuit.
 
@@ -140,6 +140,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 MonRoman/
   cosmos.json          titre, type (roman | scenario), positions des cartes, fils (avec étiquettes)
   cartes/<id>.md       une carte par fichier
+  scenario.fountain    texte du scénario (projets scénario, à venir)
 ```
 
 ```markdown
@@ -185,7 +186,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
-5 bis. **Scénario** : éditeur au format standard en Fountain (voir « Romans et scénarios »), compteur de pages et de minutes, export PDF standard, Fountain et FDX
+5 bis. **Scénario** : éditeur au format standard en Fountain, compteur de pages et de minutes, exports PDF standard, Fountain et FDX. **Plan détaillé en 8 phases : `docs/plan-editeur-scenario.md`** (« Attaque la phase N du plan »)
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)

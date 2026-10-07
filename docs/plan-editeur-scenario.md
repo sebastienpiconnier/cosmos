@@ -1,0 +1,283 @@
+# Plan : éditeur de scénario (Fountain)
+
+Étape 5 bis de la feuille de route (voir `CLAUDE.md`). Ce document est le plan de travail à suivre phase par phase. Chaque phase se termine par `npm run build` et `npm test` au vert, un commit, et un court compte rendu.
+
+Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-editeur-scenario.md` ». Avant de coder, relire la phase, proposer la liste des fichiers touchés, puis avancer.
+
+---
+
+## 1. Ce qu'on construit
+
+Quand le projet est un **scénario** (`kind: "scenario"`), la vue **Scénario** (ex-Manuscrit) devient un éditeur au format cinéma :
+
+- six éléments : **en-tête de scène**, **action**, **personnage**, **didascalie** (parenthétique), **dialogue**, **transition** ;
+- mise en page standard à l'écran (Courier Prime, retraits normalisés) ;
+- **Tab** change le type de l'élément courant, **Entrée** crée l'élément suivant logique ;
+- complétion des personnages et des décors depuis la Bible ;
+- compteur de **pages** et de **minutes** (une page ≈ une minute) ;
+- chaque en-tête de scène est relié à sa carte Scène sur la toile ;
+- exports **Fountain**, **PDF** au format standard et **FDX** (Final Draft).
+
+Hors périmètre de ce plan : collaboration temps réel, révisions colorées (pages bleues, roses…), numérotation de tournage verrouillée, dépouillement complet. Ils sont listés en fin de document.
+
+## 2. Décisions de conception
+
+### 2.1 Un seul fichier `scenario.fountain`
+
+Le texte du scénario vit dans **un seul fichier** à la racine du projet :
+
+```
+MonFilm/
+  cosmos.json
+  cartes/*.md
+  scenario.fountain      ← nouveau
+```
+
+Raison : un fichier Fountain unique s'ouvre tel quel dans Highland, Fade In, WriterSolo, Slugline, Trelby, Beat… C'est la promesse « l'auteur possède ses textes ». Un fichier par scène casserait cette promesse.
+
+Cela remplace la mention `scenario/<scene-id>.fountain` de `CLAUDE.md` (mise à jour en même temps que ce plan).
+
+### 2.2 Lien scène ↔ carte par une note Fountain
+
+Chaque en-tête de scène relié à une carte porte une **note Fountain** (ignorée par les autres logiciels) :
+
+```fountain
+INT. PHARE, LANTERNE - NUIT [[cosmos:k3x9a7bq2m]]
+
+La lampe est froide. Sur la console, un cahier relié de cuir, ouvert.
+```
+
+- `[[cosmos:<id>]]` = identifiant de la carte `scene` correspondante.
+- Une scène sans note est une scène « libre » : l'app propose de créer sa carte.
+- Une carte Scène sans scène dans le fichier apparaît dans le panneau « Scènes à écrire ».
+- Le titre de la carte et le texte de l'en-tête sont synchronisés dans les deux sens (l'en-tête fait foi s'ils divergent au chargement).
+
+### 2.3 Modèle en mémoire
+
+Le fichier est converti en une **liste d'éléments**, pas en arbre :
+
+```ts
+// src/screenplay/model.ts
+export type ElementType =
+  | "sceneHeading" | "action" | "character" | "parenthetical"
+  | "dialogue" | "transition" | "centered" | "pageBreak"
+  | "section" | "synopsis" | "note" | "boneyard";
+
+export interface ScreenplayElement {
+  type: ElementType;
+  text: string;            // sans les marqueurs Fountain (pas de "." forcé, pas de "@")
+  cardId?: string;         // sceneHeading : carte liée ([[cosmos:id]])
+  dual?: boolean;          // character : dialogue double (^)
+  forced?: boolean;        // l'élément était forcé dans le source (., @, !, >)
+}
+
+export interface Screenplay {
+  titlePage: Record<string, string>; // Title, Credit, Author, Draft date…
+  elements: ScreenplayElement[];
+}
+```
+
+Les six éléments du § 1 sont les seuls que l'interface propose. Les autres (`centered`, `section`, `note`, `boneyard`…) sont **conservés à l'identique** lors d'un aller-retour, pour ne jamais détruire le travail fait dans un autre logiciel.
+
+### 2.4 Parseur et sérialiseur maison
+
+Fountain est un format ligne à ligne, court à spécifier. On écrit **notre propre parseur et sérialiseur**, petits et testés, plutôt qu'une dépendance :
+
+- on a besoin d'un aller-retour exact (fichier → modèle → fichier identique) que les parseurs orientés « rendu HTML » ne garantissent pas ;
+- le format est stable (spécification sur fountain.io).
+
+Une bibliothèque existante (par exemple `fountain-js`) peut servir de **référence dans les tests** pour comparer la classification des lignes. Vérifier sa licence avant de l'ajouter en `devDependencies`.
+
+Règles Fountain à couvrir (résumé, la spec fait foi) :
+
+| Élément | Détection | Forçage |
+|---|---|---|
+| En-tête de scène | ligne précédée d'une ligne vide, commençant par `INT`, `EXT`, `EST`, `INT./EXT`, `INT/EXT`, `I/E` suivi de `.` ou espace | `.` en début de ligne |
+| Personnage | ligne en MAJUSCULES, précédée d'une ligne vide, suivie d'une ligne non vide ; extension possible `(V.O.)`, `(O.S.)`, `(CONT'D)` | `@` |
+| Dialogue double | personnage suivi de `^` | |
+| Didascalie | ligne entre parenthèses dans un bloc de dialogue | |
+| Dialogue | lignes qui suivent un personnage ou une didascalie | |
+| Transition | MAJUSCULES finissant par `TO:` entre lignes vides | `>` |
+| Centré | `> texte <` | |
+| Action | tout le reste | `!` |
+| Saut de page | `===` | |
+| Section, synopsis | `#`, `=` | |
+| Note, boneyard | `[[ ]]`, `/* */` | |
+| Page de titre | `Clé: valeur` en tête de fichier | |
+| Numéro de scène | `#12#` en fin d'en-tête | |
+
+Point d'attention pour le **français** : les en-têtes `INT.` et `EXT.` sont détectés nativement. Les variantes françaises non standard (`INTÉRIEUR`, `INT/EXT JOUR`) doivent être **sérialisées avec un `.` de forçage** pour rester lisibles ailleurs. Règle : à l'écriture, tout `sceneHeading` que le parseur ne détecterait pas seul reçoit un `.` initial.
+
+### 2.5 Éditeur : TipTap, un nœud par élément
+
+L'éditeur réutilise TipTap (déjà dans le projet). Un **nœud bloc par type d'élément** :
+
+```
+src/screenplay/editor/
+  nodes.ts         SceneHeading, Action, Character, Parenthetical, Dialogue, Transition (+ Preserved pour le reste)
+  keymap.ts        Tab, Maj+Tab, Entrée, Retour arrière
+  autodetect.ts    règles d'entrée (input rules)
+  autocomplete.ts  suggestions personnages, décors, moments
+  convert.ts       Screenplay ↔ document ProseMirror
+```
+
+- `Preserved` : nœud non éditable (affiché discrètement) pour `note`, `boneyard`, `section`, `synopsis`, `centered`, `pageBreak`.
+- Le document ProseMirror **n'est jamais** la source de vérité sur disque : à chaque modification (avec délai, comme la sauvegarde actuelle), `convert.ts` produit un `Screenplay`, puis `serialize()` produit le texte Fountain.
+
+### 2.6 Clavier (conventions Final Draft, adaptées)
+
+| Élément courant | Entrée | Tab | Maj+Tab |
+|---|---|---|---|
+| En-tête de scène | → Action | → Action | → Transition |
+| Action | → Action (nouveau paragraphe) | → Personnage | → En-tête de scène |
+| Personnage | → Dialogue | → Action | → Action |
+| Didascalie | → Dialogue | → Dialogue | → Dialogue |
+| Dialogue | → Action | → Didascalie | → Personnage |
+| Transition | → En-tête de scène | → En-tête de scène | → Action |
+
+- **Entrée sur un élément vide** : le transforme selon la colonne Tab (permet d'enchaîner au clavier sans souris).
+- **Retour arrière au début d'un élément vide** : le supprime et remonte.
+- Le type courant est annoncé par une **région `aria-live`** (« Dialogue ») et affiché dans la barre d'éléments.
+- Sur mobile : la barre d'éléments se place au-dessus du clavier (API `visualViewport`), cf. maquette `mobile-Scenario`.
+
+### 2.7 Détection automatique à la frappe
+
+Dans un élément Action :
+
+- `int. `, `ext. `, `int./ext. `, `i/e ` en début de ligne → devient En-tête de scène (texte mis en majuscules) ;
+- une ligne entièrement en majuscules finissant par `TO:` ou `:` après validation → Transition ;
+- `(` en tout début d'un élément sous un Personnage → Didascalie.
+
+Toujours annulable par Ctrl/Cmd+Z (une seule étape).
+
+### 2.8 Complétion
+
+Menu discret (même composant que le menu « / » des cartes) :
+
+- **Personnage** : titres des cartes `personnage` (en majuscules) + noms déjà utilisés dans le scénario, triés par fréquence ; extensions proposées après le nom : `(V.O.)`, `(O.S.)` / `(H.C.)`, `(CONT'D)` / `(SUITE)` selon la langue.
+- **En-tête de scène** : préfixes `INT.`, `EXT.`, `INT./EXT.` → décors (cartes `lieu`) → moments.
+- **Moments** (i18n) : fr `JOUR`, `NUIT`, `AUBE`, `CRÉPUSCULE`, `SOIR`, `MATIN`, `PLUS TARD`, `CONTINU` ; en `DAY`, `NIGHT`, `DAWN`, `DUSK`, `EVENING`, `MORNING`, `LATER`, `CONTINUOUS`.
+- Choisir un décor qui n'existe pas encore propose de **créer la carte** (lien bidirectionnel avec la Bible).
+
+### 2.9 Pages et minutes
+
+Estimation par comptage de lignes, sans moteur de mise en page :
+
+- largeur en caractères (Courier 12 pt = 10 caractères par pouce) : action 60, personnage 38 (départ à 3,7 pouces du bord), didascalie 25, dialogue 35, transition alignée à droite ;
+- une ligne vide entre éléments, sauf entre personnage, didascalie et dialogue d'un même bloc ;
+- **55 lignes par page** (constante réglable), un en-tête de scène ne termine jamais une page ;
+- `durée ≈ pages` en minutes, affichée « ≈ 94 min ».
+
+C'est une estimation : l'afficher avec « ≈ ». Le PDF (phase 6) donne la pagination réelle ; ajuster la constante si l'écart dépasse 5 %.
+
+### 2.10 Format papier
+
+Réglage du projet : **US Letter** (défaut des scénarios en anglais) ou **A4** (fréquent en France). Marges de référence (Letter) : gauche 1,5 pouce, droite 1 pouce, haut et bas 1 pouce. Le compteur et le PDF utilisent le même gabarit (`src/screenplay/layout.ts`), une seule source de vérité.
+
+## 3. Phases
+
+### Phase 0 : outillage de tests
+
+- Ajouter **Vitest** (`npm i -D vitest`) et un script `"test": "vitest run"`.
+- Ajouter `npm test` à `ci.yml` (job `front`).
+- Un premier test trivial pour valider la chaîne.
+
+**Fini quand** : `npm test` passe en local et en CI.
+
+### Phase 1 : modèle, parseur, sérialiseur
+
+Fichiers : `src/screenplay/model.ts`, `parse.ts`, `serialize.ts`, `__tests__/`.
+
+- Implémenter les règles du § 2.4, page de titre comprise.
+- Jeux de test dans `src/screenplay/__tests__/fixtures/` :
+  - un court scénario en français (reprendre la scène de la maquette `scenario-Ecriture`) ;
+  - un en anglais ;
+  - un fichier « torture » : dialogue double, notes, boneyard, sections, centré, sauts de page, en-têtes forcés, numéros de scène, accents et apostrophes typographiques.
+- Tests :
+  - classification ligne par ligne attendue ;
+  - **aller-retour** : `serialize(parse(texte)) === texte` sur chaque fichier (à la normalisation des fins de ligne près) ;
+  - en-tête français non standard → sérialisé avec `.`.
+
+**Fini quand** : tous les tests passent, couverture du parseur ≥ 90 %.
+
+### Phase 2 : stockage et lien avec les cartes
+
+Fichiers : `src/storage/paths.ts` (`SCREENPLAY_FILE = "scenario.fountain"`), `index.ts`, `store.ts`, `src/screenplay/link.ts`.
+
+- `serialize`/`deserialize` du projet incluent `scenario.fountain` s'il existe (projet roman : jamais créé).
+- `store.ts` : `screenplay: Screenplay | null`, `setScreenplay()`, sauvegarde automatique comme les cartes (même diff `lastFiles`).
+- `link.ts` :
+  - lecture des notes `[[cosmos:id]]` ;
+  - synchronisation titre de carte ↔ texte d'en-tête (l'en-tête fait foi au chargement) ;
+  - liste « scènes sans carte » et « cartes sans scène ».
+- Passer un projet roman en scénario : si `scenario.fountain` n'existe pas, le créer avec un en-tête par carte Scène (ordre de la toile de haut en bas, en attendant le Séquencier) et une page de titre (`Title:` = titre du projet).
+- Tauri : aucune nouvelle permission (fichier dans le dossier projet déjà autorisé).
+
+**Fini quand** : test d'intégration du stockage navigateur (écrire, relire, comparer) ; supprimer une carte Scène ne supprime **pas** le texte de la scène (la note de lien est simplement retirée).
+
+### Phase 3 : l'éditeur
+
+Fichiers : `src/screenplay/editor/*`, `src/components/ScreenplayView.tsx`, styles dans `styles.css`.
+
+- Vue Scénario : si `kind === "scenario"`, `App.tsx` affiche `ScreenplayView` au lieu de `Bientot`.
+- Mise en page à l'écran : feuille blanche (ou `--surface` en sombre), largeur de page proportionnelle, retraits du § 2.9, police `--font-script`, en-têtes en gras et majuscules, personnages en majuscules.
+- Clavier du § 2.6 et détection du § 2.7.
+- Barre d'éléments (6 boutons, `aria-pressed`), mêmes raccourcis que le clavier ; sur écran tactile, positionnée au-dessus du clavier virtuel.
+- Liste des scènes à gauche (navigation, numéro de page estimé), panneau « Dans cette scène » à droite (carte liée, personnages présents, décor) : reprendre la maquette `scenario-Ecriture`.
+- i18n : tous les libellés dans `fr.ts` / `en.ts` (section `screenplay`).
+- Mode sombre : uniquement des variables CSS (ajouter `--page`, `--page-ink` si besoin).
+
+**Fini quand** :
+- on écrit une scène complète au clavier seul (en-tête, action, personnage, didascalie, dialogue, transition) sans toucher la souris ;
+- recharger la page redonne exactement le même texte ;
+- le fichier `scenario.fountain` produit s'ouvre correctement dans un autre logiciel Fountain (test manuel, noter lequel dans le commit).
+
+### Phase 4 : complétion
+
+Fichiers : `src/screenplay/editor/autocomplete.ts`, réutilisation du menu des cartes (extraire un composant `SuggestionMenu` partagé).
+
+- Règles du § 2.8, navigation clavier (flèches, Entrée, Échap) et au doigt.
+- Création de carte Personnage ou Décor depuis la complétion.
+
+**Fini quand** : taper `HU` sur une ligne Personnage propose `HUGO` ; choisir un décor inconnu crée la carte et le lien.
+
+### Phase 5 : pages, minutes, séquencier minimal
+
+Fichiers : `src/screenplay/layout.ts`, `paginate.ts`, tests.
+
+- Estimation du § 2.9, affichée en pied de page de l'éditeur et dans la barre du haut (« ≈ 94 min »).
+- Réglage Letter / A4 dans « Ce projet » (Réglages).
+- Séquencier minimal (vue Plan en mode scénario) : liste ordonnée des scènes avec en-tête, pages, minutes ; glisser-déposer pour **réordonner les scènes dans le fichier** (déplacement du bloc complet, de son en-tête jusqu'au suivant). Les gabarits par actes viendront avec l'étape 4 générale.
+
+**Fini quand** : tests de pagination sur les fixtures (valeurs attendues documentées) ; réordonner deux scènes dans le séquencier modifie l'ordre dans `scenario.fountain` sans perte.
+
+### Phase 6 : exports
+
+Fichiers : `src/screenplay/export/pdf.ts`, `fdx.ts`, `fountain.ts`, bouton « Exporter » dans la vue.
+
+- **Fountain** : le fichier tel quel (enregistrer sous).
+- **PDF** : `pdf-lib` + `@pdf-lib/fontkit` (licences MIT, à vérifier à l'installation), police **Courier Prime en TTF** embarquée dans `src/assets/fonts/` (licence SIL OFL, joindre le fichier de licence). Fontsource ne fournit que du WOFF/WOFF2 : récupérer le TTF officiel. Page de titre, numéros de page en haut à droite à partir de la page 2, en-têtes jamais en bas de page, `(SUITE)` / `(MORE)` et `(CONT'D)` quand un dialogue est coupé entre deux pages.
+- **FDX** : XML Final Draft (`<FinalDraft DocumentType="Script">`, paragraphes `Scene Heading`, `Action`, `Character`, `Parenthetical`, `Dialogue`, `Transition`). Valider en ouvrant le fichier dans Final Draft ou Fade In.
+- Enregistrement : dialogue « Enregistrer sous » de Tauri (`plugin-dialog` `save()`, ajouter la permission `dialog:allow-save`) ; dans le navigateur, téléchargement d'un `Blob`.
+
+**Fini quand** : les trois exports de la fixture française s'ouvrent sans erreur ; le PDF a le même nombre de pages (± 1) que l'estimation.
+
+### Phase 7 : finitions
+
+- Import d'un `.fountain` existant comme nouveau projet scénario (création automatique des cartes Scène, Personnage, Décor).
+- Numéros de scène (option), verrouillage pour le tournage plus tard.
+- Mode focus (comme le Manuscrit roman).
+- Mise à jour de `CLAUDE.md` (architecture, pièges rencontrés) et du README.
+
+## 4. Pièges à anticiper
+
+- **Majuscules et accents** : `toUpperCase()` avec la locale (`toLocaleUpperCase(lang)`), pour `É`, `À`, `Ç`.
+- **Apostrophes** : conserver `’` dans le texte ; ne pas l'utiliser pour détecter quoi que ce soit.
+- **Un personnage en majuscules suivi d'une ligne vide** n'est pas un personnage en Fountain (c'est de l'action) : le sérialiseur doit forcer `@` si l'éditeur a un Personnage sans dialogue.
+- **Lignes vides significatives** : Fountain distingue les éléments par les lignes vides ; le sérialiseur est responsable de les produire, jamais l'utilisateur.
+- **Fichier modifié ailleurs** (autre logiciel, synchro iCloud) : au retour du focus sur la fenêtre, comparer avec `lastFiles` et proposer de recharger plutôt que d'écraser.
+- **Performance** : un long métrage fait 100 à 120 pages (environ 2 000 éléments). Conversion et sérialisation doivent rester sous 16 ms ; sinon, ne reconvertir que la scène modifiée.
+
+## 5. Plus tard (hors plan)
+
+Révisions colorées et pages verrouillées, dépouillement complet (accessoires, costumes, figuration), rapports (temps de présence par personnage, jour/nuit par décor) sur la base du séquencier de la maquette, collaboration temps réel (Yjs), lecture à voix haute des dialogues.
