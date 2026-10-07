@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
+import { SynopsisField } from "./SynopsisField";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
@@ -17,7 +18,15 @@ import { useVocab } from "../vocab";
 import { isTouch } from "../platform";
 import { EDITABLE_TYPES } from "../screenplay/model";
 import { cardsWithoutScene, type SceneCard } from "../screenplay/link";
-import { headingParts, listScenes, sceneAt, sceneCharacters, scenesInLocation, type Scene } from "../screenplay/scenes";
+import {
+  headingParts,
+  listScenes,
+  sceneAt,
+  sceneCharacters,
+  sceneSynopsis,
+  scenesInLocation,
+  type Scene,
+} from "../screenplay/scenes";
 import {
   currentElement,
   fromDoc,
@@ -300,6 +309,31 @@ export function ScreenplayView() {
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
   };
 
+  /**
+   * Synopsis d'une scène : une ligne « = … » juste sous son en-tête (un texte vide la retire).
+   * Écrit dans l'éditeur, qui est la référence tant que la vue est ouverte.
+   */
+  const saveSynopsis = (index: number, text: string) => {
+    emit();
+    const { state, view } = editor;
+    const heading = state.doc.maybeChild(index);
+    if (heading?.type.name !== "sceneHeading") return;
+    const tr = state.tr;
+    const at = posOf(state.doc, index) + heading.nodeSize;
+    // Les lignes de synopsis déjà là sont remplacées par une seule.
+    let end = at;
+    for (let i = index + 1; i < state.doc.childCount; i++) {
+      const node = state.doc.child(i);
+      if (node.type.name !== "preserved" || node.attrs.kind !== "synopsis") break;
+      end += node.nodeSize;
+    }
+    if (end > at) tr.delete(at, end);
+    if (text) tr.insert(at, state.schema.nodes.preserved.create({ kind: "synopsis", text, depth: null }));
+    if (!tr.docChanged) return;
+    view.dispatch(tr);
+    emit();
+  };
+
   /** Une carte Scène sans texte : on ouvre sa scène à la fin du scénario. */
   const writeScene = (card: SceneCard) => {
     const { state, view } = editor;
@@ -381,6 +415,12 @@ export function ScreenplayView() {
                   <span className="sp-towrite">{fmt(sp.pageShort, { n: pagination.startPage[s.index] })}</span>
                 )}
               </button>
+              {/* Le synopsis s'écrit ici ; il apparaît dans le séquencier. */}
+              <SynopsisField
+                value={sceneSynopsis(elements, s.index)}
+                scene={s.text || sp.untitledScene}
+                onSave={(text) => saveSynopsis(s.index, text)}
+              />
             </li>
           ))}
         </ol>

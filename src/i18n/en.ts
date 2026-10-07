@@ -77,6 +77,7 @@ export const en: Messages = {
   actions: {
     openFolder: "Open folder",
     save: "Save",
+    saveHint: "Save now (Ctrl or Cmd + S). Saving is also automatic.",
   },
 
   location: {
@@ -289,7 +290,19 @@ export const en: Messages = {
       done: "Export finished.",
       failed: "The export failed.",
     },
+    synopsis: {
+      add: "+ Synopsis",
+      addFor: "Add a synopsis to the scene “{title}”",
+      editFor: "Edit the synopsis of the scene “{title}”",
+      field: "Synopsis of the scene “{title}”",
+      placeholder: "What happens in the scene, in one sentence…",
+    },
     sequencer: {
+      modeAria: "Step outline layout",
+      outline: "List",
+      cards: "Index cards",
+      charactersAria: "Characters in the scene",
+      showCharacter: "Show {name}’s card on the canvas",
       title: "Step outline",
       listAria: "Scenes in screenplay order",
       empty: "No scene yet. Write a first scene heading in the Screenplay view.",

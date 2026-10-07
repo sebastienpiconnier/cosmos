@@ -115,7 +115,7 @@ src/
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
-  settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
+  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
     fr.ts               Textes de référence (type Messages)
@@ -135,8 +135,9 @@ src/
     Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
-    ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
-    Sequencier.tsx      Vue Plan d'un scénario : scènes dans l'ordre, longueur, réordonnancement
+    ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
+    SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
+    Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : synopsis, personnages, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
     Bientot.tsx         Vues Plan et Manuscrit (roman), pas encore construites
@@ -244,6 +245,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Séquencier, glisser-déposer** : l'index de la scène glissée vit dans une ref, pas seulement dans l'état React. Le dépôt peut arriver avant le rendu suivant et lirait sinon une valeur périmée.
 - **Export PDF** : `pdf.ts` et les polices (importées en `?inline`) ne doivent être atteints que par `import()` dynamique depuis `export/index.ts`, jamais par un import statique, sinon ils entrent dans le paquet de démarrage. La pagination se décide dans `typeset.ts` (pur, testé), pas dans `pdf.ts`.
 - **Exports, enregistrement** : toujours `storage.saveAs()` (dialogue du système dans Tauri, téléchargement dans le navigateur). `ScreenplayView` envoie ce qui attend dans le store dès que l'éditeur perd le focus, pour que l'export voie la dernière frappe.
+- **Synopsis d'une scène** : c'est le synopsis Fountain, une ligne `= …` juste sous l'en-tête (`sceneSynopsis`, `setSceneSynopsis`). Il vit donc dans `scenario.fountain`, pas dans la carte, et suit sa scène quand on la déplace. Depuis la vue Scénario il s'écrit par une transaction de l'éditeur (`saveSynopsis`), depuis le séquencier par `setScreenplay(…, true)`. Faute de synopsis, le séquencier montre le texte de la carte, en plus discret.
+- **Présentation du séquencier** (liste ou fiches) : réglage de l'appareil (`sequencerMode`), comme la langue. Ce n'est pas une donnée du projet.
 - **Numéros de scène** : c'est un affichage (compteur CSS dans l'éditeur, option de `typeset` et de `buildFdx`), jamais une écriture dans `scenario.fountain`. Seul un numéro déjà présent dans le fichier (`#12A#`) est une donnée.
 - **Import Fountain** : passe par `storage.pickTextFile()` puis `storage.create()`, et refuse un dossier déjà occupé (`importNotice: "taken"`) au lieu d'ouvrir ou d'écraser ce qui s'y trouve.
 - **Mode focus** : `focusMode` vit dans le store parce que `App` doit masquer la barre du haut ; `ScreenplayView` le remet à faux en se démontant.

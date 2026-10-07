@@ -54,7 +54,8 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Complétion** : les personnages et les décors de la Bible se proposent pendant que tu écris, avec les extensions (V.O., H.C.) et les moments (JOUR, NUIT). Un personnage ou un décor inconnu peut devenir une carte en un geste.
 - **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène, et renommer l'un renomme l'autre. Une scène, son décor ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes** : le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence, en format US Letter ou A4.
-- **Séquencier** : la liste des scènes dans l'ordre, avec leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
+- **Séquencier** : les scènes dans l'ordre, en liste ou en fiches, avec leur synopsis, leurs personnages et leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
+- **Synopsis** : une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
 - **Exports** : PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
 - **Import** : un fichier `.fountain` existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
 - **Numéros de scène et mode focus** : numérotation en option dans la marge, et un mode qui ne garde que la feuille à l'écran.

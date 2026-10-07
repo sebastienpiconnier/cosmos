@@ -147,7 +147,8 @@ button { font: inherit; color: inherit; }
 .views button:hover { background: var(--hover); }
 .views button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 
-.actions { display: flex; align-items: center; gap: 8px; }
+/* margin-left: auto : si la barre passe sur deux lignes (fenêtre étroite), les actions restent à droite. */
+.actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .status { display: inline-grid; justify-items: end; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .status > span:not(.sr-only) { grid-area: 1 / 1; visibility: hidden; }
 .status > span.is-current { visibility: visible; }
@@ -345,6 +346,8 @@ button { font: inherit; color: inherit; }
   }
   .sp-bar button { min-height: 44px; padding: 0 14px; }
   .sq-moves button { width: 44px; height: 44px; }
+  .sq-modes button { min-height: 44px; }
+  .synopsis-show { min-height: 36px; }
   .sq-scene { cursor: default; }
   .sp-bar-hint { display: none; }
   .sp-side { padding-bottom: 84px; }
@@ -485,7 +488,8 @@ button { font: inherit; color: inherit; }
 /* ---------- Séquencier (vue Plan d'un scénario) ---------- */
 .sequencer { position: absolute; inset: 0; overflow: auto; padding: 24px; }
 .sq-inner { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-.sq-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+.sq-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.sq-total { margin-left: auto !important; }
 .sq-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 28px; }
 .sq-total { margin: 0; font-size: 14px; color: var(--ink-2); }
 .sq-total strong { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
@@ -499,6 +503,36 @@ button { font: inherit; color: inherit; }
 .sq-title { font-size: 14px; overflow-wrap: anywhere; }
 .sq-desc { margin: 2px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
 .sq-length { flex-shrink: 0; text-align: right; font-size: 13px; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
+/* Sélecteur de présentation : liste ou fiches */
+.sq-modes { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: 12px; }
+.sq-modes button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font-size: 14px; cursor: pointer; }
+.sq-modes button:hover { background: var(--hover); }
+.sq-modes button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+.sq-speakers { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sq-speakers .chip { border: 0; font: inherit; font-size: 12px; }
+.sq-speakers button.chip { cursor: pointer; }
+.sq-speakers button.chip:hover { text-decoration: underline; }
+.chip.is-plain { background: var(--ground); color: var(--ink-2); }
+
+/* Synopsis d'une scène, modifiable sur place (séquencier et volet des scènes) */
+.synopsis-show { display: block; width: 100%; margin-top: 2px; padding: 4px 6px; margin-left: -6px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: 14px/1.45 var(--font-text); text-align: left; cursor: text; overflow-wrap: anywhere; }
+.synopsis-show:hover { border-color: var(--line); }
+.synopsis-show.is-empty { width: auto; color: var(--ink-2); font: 13px var(--font-ui); cursor: pointer; }
+.synopsis-edit { display: block; width: 100%; margin-top: 2px; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: 14px/1.45 var(--font-text); resize: vertical; }
+.synopsis-edit::placeholder { color: var(--placeholder); }
+.sp-scene-list .synopsis-show, .sp-scene-list .synopsis-edit { margin-left: 10px; width: calc(100% - 20px); font-size: 13px; }
+.sp-scene-list .synopsis-show.is-empty { width: auto; min-height: 0; padding: 2px 6px; }
+.sp-scene-list li { display: flex; flex-direction: column; align-items: flex-start; }
+
+/* Présentation en fiches (index cards) */
+.sq-inner.is-cards { max-width: 1240px; }
+.sq-list.is-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; align-items: stretch; }
+.sq-list.is-cards .sq-section { grid-column: 1 / -1; }
+.sq-list.is-cards .sq-scene { flex-direction: column; align-items: stretch; gap: 8px; min-height: 170px; padding: 14px; border-top: 4px solid var(--type-scene); box-shadow: var(--shadow-card); }
+.sq-list.is-cards .sq-body { order: 1; }
+.sq-list.is-cards .sq-moves { order: 3; }
+.sq-list.is-cards .sq-length { order: 2; display: flex; gap: 10px; text-align: left; margin-top: auto; }
+
 .sq-section { margin-top: 10px; padding: 4px; font-family: var(--font-display); font-weight: 500; font-size: 18px; border-radius: 8px; }
 
 @media (max-width: 1000px) {

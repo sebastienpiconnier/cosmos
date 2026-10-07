@@ -85,8 +85,12 @@ export function TopBar() {
         <button type="button" className="ghost-button" title={t.home.backHint} onClick={() => closeProject()}>
           {t.home.projects}
         </button>
-        <button type="button" className="ghost-button" onClick={save}>
-          {t.actions.save}
+        {/* En icône : la barre porte déjà le statut, et l'enregistrement est automatique. */}
+        <button type="button" className="icon-button" aria-label={t.actions.save} title={t.actions.saveHint} onClick={save}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+            <path d="M8 4v5h7V4M8 20v-6h8v6" />
+          </svg>
         </button>
         {kind === "scenario" && pagination && <ExportMenu />}
         <Search />

@@ -1,0 +1,59 @@
+// Synopsis d'une scène : une phrase affichée sous son en-tête, qu'on modifie sur place.
+// Utilisé dans le volet des scènes de la vue Scénario et dans le séquencier.
+
+import { useState } from "react";
+import { fmt, useT } from "../i18n";
+
+interface Props {
+  value: string;
+  /** Titre de la scène, pour les libellés lus par les lecteurs d'écran. */
+  scene: string;
+  onSave: (text: string) => void;
+}
+
+export function SynopsisField({ value, scene, onSave }: Props) {
+  const t = useT().screenplay.synopsis;
+  const [draft, setDraft] = useState<string | null>(null);
+
+  if (draft === null) {
+    return (
+      <button
+        type="button"
+        className={`synopsis-show${value ? "" : " is-empty"}`}
+        aria-label={fmt(value ? t.editFor : t.addFor, { title: scene })}
+        onClick={() => setDraft(value)}
+      >
+        {value || t.add}
+      </button>
+    );
+  }
+
+  const commit = () => {
+    // Un synopsis tient sur une ligne dans le fichier : les retours deviennent des espaces.
+    const text = draft.replace(/\s+/g, " ").trim();
+    setDraft(null);
+    if (text !== value) onSave(text);
+  };
+
+  return (
+    <textarea
+      className="synopsis-edit"
+      autoFocus
+      rows={2}
+      value={draft}
+      placeholder={t.placeholder}
+      aria-label={fmt(t.field, { title: scene })}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          commit();
+        } else if (e.key === "Escape") {
+          e.stopPropagation();
+          setDraft(null);
+        }
+      }}
+    />
+  );
+}

@@ -78,6 +78,7 @@ export const fr = {
   actions: {
     openFolder: "Ouvrir un dossier",
     save: "Enregistrer",
+    saveHint: "Enregistrer maintenant (Ctrl ou Cmd + S). L’enregistrement est aussi automatique.",
   },
 
   location: {
@@ -291,7 +292,19 @@ export const fr = {
       done: "Export terminé.",
       failed: "L’export a échoué.",
     },
+    synopsis: {
+      add: "+ Synopsis",
+      addFor: "Ajouter un synopsis à la scène « {title} »",
+      editFor: "Modifier le synopsis de la scène « {title} »",
+      field: "Synopsis de la scène « {title} »",
+      placeholder: "Ce qui se passe dans la scène, en une phrase…",
+    },
     sequencer: {
+      modeAria: "Présentation du séquencier",
+      outline: "Liste",
+      cards: "Fiches",
+      charactersAria: "Personnages de la scène",
+      showCharacter: "Voir la carte de {name} sur le canevas",
       title: "Séquencier",
       listAria: "Scènes dans l’ordre du scénario",
       empty: "Pas encore de scène. Écris un premier en-tête dans la vue Scénario.",

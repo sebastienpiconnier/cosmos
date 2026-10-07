@@ -89,6 +89,8 @@ Retours après essai dans l'exe (7 octobre 2026) :
 - Une carte Scène créée sur le canevas entre maintenant tout de suite dans le scénario (fin du texte) : « Scènes à écrire » ne garde que les cartes sans titre. C'est un changement par rapport au § 2.2.
 - Un scénario vide s'ouvre sur un en-tête de scène, plus sur une action.
 
+Séquencier, après le plan (7 octobre 2026) : deux présentations au choix (liste ou fiches), les personnages qui parlent dans chaque scène (cliquables s'ils ont une carte), et un synopsis par scène, écrit depuis le volet des scènes de la vue Scénario ou depuis le séquencier. Le synopsis est une ligne Fountain `= …` sous l'en-tête.
+
 Vérifications à faire à la main (aucune n'a pu l'être ici) :
 
 - ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain ;

@@ -34,6 +34,34 @@ export function sceneAt(scenes: Scene[], elementIndex: number): Scene | null {
   return found;
 }
 
+/** Fin des lignes de synopsis (« = … ») qui suivent directement l'en-tête d'index donné. */
+function synopsisEnd(elements: ScreenplayElement[], headingIndex: number): number {
+  let end = headingIndex + 1;
+  while (end < elements.length && elements[end].type === "synopsis") end++;
+  return end;
+}
+
+/** Synopsis d'une scène : ce que disent les lignes « = … » placées juste sous son en-tête. */
+export function sceneSynopsis(elements: ScreenplayElement[], headingIndex: number): string {
+  return elements
+    .slice(headingIndex + 1, synopsisEnd(elements, headingIndex))
+    .map((el) => el.text.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Écrit le synopsis d'une scène (une ligne « = … » sous l'en-tête, lisible par les autres logiciels
+ * Fountain) ; un texte vide le retire. Rend le même tableau si rien ne change.
+ */
+export function setSceneSynopsis(elements: ScreenplayElement[], headingIndex: number, text: string): ScreenplayElement[] {
+  if (elements[headingIndex]?.type !== "sceneHeading") return elements;
+  const next = text.replace(/\s+/g, " ").trim();
+  if (next === sceneSynopsis(elements, headingIndex)) return elements;
+  const lines: ScreenplayElement[] = next ? [{ type: "synopsis", text: next }] : [];
+  return [...elements.slice(0, headingIndex + 1), ...lines, ...elements.slice(synopsisEnd(elements, headingIndex))];
+}
+
 /** Nom sans extension ni marque de dialogue double : « HUGO (V.O.) » → « HUGO ». */
 export function characterName(text: string): string {
   let name = text.trim().replace(/\s*\^$/, "");
@@ -46,7 +74,10 @@ export function characterName(text: string): string {
 }
 
 /** Personnages qui parlent dans la scène, par ordre d'entrée, avec leur nombre de répliques. */
-export function sceneCharacters(elements: ScreenplayElement[], scene: Scene): { name: string; lines: number }[] {
+export function sceneCharacters(
+  elements: ScreenplayElement[],
+  scene: Pick<Scene, "index" | "end">,
+): { name: string; lines: number }[] {
   const lines = new Map<string, number>();
   for (const el of elements.slice(scene.index, scene.end)) {
     if (el.type !== "character") continue;

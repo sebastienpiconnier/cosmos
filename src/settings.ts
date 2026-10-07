@@ -7,6 +7,8 @@ import { isTauri } from "./platform";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
+/** Présentation du séquencier : en liste ou en fiches. */
+export type SequencerMode = "outline" | "cards";
 
 const KEY = "cosmos:reglages";
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
@@ -18,9 +20,11 @@ interface SettingsState {
   theme: Theme;
   setLang: (lang: Lang) => void;
   setThemePref: (pref: ThemePref) => void;
+  sequencerMode: SequencerMode;
+  setSequencerMode: (mode: SequencerMode) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -41,17 +45,19 @@ export const useSettings = create<SettingsState>((set) => ({
   theme: resolve(initialPref),
   setLang: (lang) => set({ lang }),
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
+  sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
+  setSequencerMode: (sequencerMode) => set({ sequencerMode }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

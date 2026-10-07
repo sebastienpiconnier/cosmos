@@ -54,7 +54,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Completion**: characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
 - **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene, its location or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
-- **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
+- **Step outline**: the scenes in order, as a list or as index cards, with their synopsis, characters and length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
+- **Synopsis**: one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
 - **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **Import**: an existing `.fountain` file becomes a project, with its Scene, Character and Location cards already created and linked.
 - **Scene numbers and focus mode**: optional numbering in the margin, and a mode that keeps only the page on screen.
