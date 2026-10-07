@@ -1,0 +1,72 @@
+// Gabarits du séquencier (trois actes, Save the Cat, huit séquences, épisode de série).
+// Dans un scénario, une case de gabarit est une section Fountain (« # Catalyseur ») : l'ordre des scènes
+// reste celui du fichier, et les autres logiciels voient de simples sections. Pour reconnaître les
+// sections posées par un gabarit, chacune porte une note [[cosmos:beat:<clé>]], ignorée ailleurs.
+// Fonctions pures : même objet rendu quand rien ne change.
+
+import type { Screenplay, ScreenplayElement } from "./model";
+import { blocks, moveBlock } from "./sequence";
+import { PLAN_TEMPLATES, type PlanTemplate } from "../plan";
+
+/** Gabarits proposés pour un scénario, dans l'ordre du menu. */
+export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode"] as const satisfies readonly PlanTemplate[];
+export type ScreenplayTemplate = (typeof SCREENPLAY_TEMPLATES)[number];
+export const isScreenplayTemplate = (v: unknown): v is ScreenplayTemplate => SCREENPLAY_TEMPLATES.includes(v as ScreenplayTemplate);
+
+const BEAT_RE = /\s*\[\[cosmos:beat:([a-z0-9_]+)\]\]/;
+
+/** Clé de case portée par une section, sinon null. */
+export const beatOf = (text: string): string | null => BEAT_RE.exec(text)?.[1] ?? null;
+
+/** Texte d'une section sans sa note de gabarit (ce que l'auteur lit). */
+export const sectionLabel = (text: string): string => text.replace(BEAT_RE, "").trim();
+
+const isBeat = (el: ScreenplayElement) => el.type === "section" && beatOf(el.text) !== null;
+
+/** Gabarit en place dans ce scénario, d'après ses sections. */
+export function currentTemplate(elements: ScreenplayElement[]): ScreenplayTemplate | null {
+  for (const el of elements) {
+    const key = el.type === "section" ? beatOf(el.text) : null;
+    if (!key) continue;
+    const found = SCREENPLAY_TEMPLATES.find((t) => (PLAN_TEMPLATES[t] as readonly string[]).includes(key));
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * Pose un gabarit (ou le retire, `template` null). Les sections d'un gabarit précédent sont retirées ;
+ * les sections écrites par l'auteur et tout le texte restent. La première case se place avant la première
+ * scène, les suivantes à la fin : toutes les scènes sont d'abord dans la première case, à l'auteur de les répartir.
+ */
+export function applyTemplate(screenplay: Screenplay, template: ScreenplayTemplate | null, label: (key: string) => string): Screenplay {
+  if (currentTemplate(screenplay.elements) === template) return screenplay;
+  const kept = screenplay.elements.filter((el) => !isBeat(el));
+  if (!template) return { ...screenplay, elements: kept };
+  const sections = PLAN_TEMPLATES[template].map(
+    (key): ScreenplayElement => ({ type: "section", depth: 1, text: `${label(key)} [[cosmos:beat:${key}]]` }),
+  );
+  const first = kept.findIndex((el) => el.type === "sceneHeading" || el.type === "section");
+  const at = first === -1 ? kept.length : first;
+  return { ...screenplay, elements: [...kept.slice(0, at), sections[0], ...kept.slice(at), ...sections.slice(1)] };
+}
+
+/**
+ * Range la scène (bloc `from`) à la fin de la section (bloc `section`) : après la dernière scène
+ * qui précède la section suivante. Même tableau si elle y est déjà la dernière.
+ */
+export function moveToSection(elements: ScreenplayElement[], from: number, section: number): ScreenplayElement[] {
+  const list = blocks(elements);
+  if (list[from]?.kind !== "scene" || list[section]?.kind !== "section") return elements;
+  let last = section;
+  while (last + 1 < list.length && list[last + 1].kind === "scene") last++;
+  if (from === last) return elements;
+  return moveBlock(elements, from, from < last ? last : last + 1);
+}
+
+/** Bloc de la section qui contient ce bloc (la dernière section placée avant lui), ou -1. */
+export function sectionOf(elements: ScreenplayElement[], block: number): number {
+  const list = blocks(elements);
+  for (let i = Math.min(block, list.length - 1); i >= 0; i--) if (list[i].kind === "section") return i;
+  return -1;
+}

@@ -559,6 +559,15 @@ button { font: inherit; color: inherit; }
 .plan-scene .bible-title { min-height: 44px; font-weight: 600; font-size: 15px; }
 .plan-scene .icon-button { width: 44px; height: 44px; flex-shrink: 0; }
 .plan-to { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+/* Plan en fiches : mêmes fiches que le séquencier, à l'intérieur de chaque case. */
+.sq-list.is-cards .plan-scene { flex-wrap: nowrap; min-height: 150px; }
+.sq-list.is-cards .plan-scene .sq-body { flex-basis: auto; }
+.sq-list.is-cards .plan-scene > .icon-button { order: 4; align-self: flex-end; margin-top: -52px; }
+.sq-list.is-cards .plan-to { order: 2; margin-top: auto; flex-wrap: wrap; }
+/* Sections du séquencier : libellé et longueur des scènes qu'elles contiennent. */
+.sq-section { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.sq-section-length { font: 13px var(--font-ui); color: var(--ink-2); }
+.sq-scene .plan-to { flex-shrink: 0; }
 .plan-add { display: flex; gap: 8px; }
 .plan-add input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; }
 .plan-add input::placeholder { color: var(--placeholder); }

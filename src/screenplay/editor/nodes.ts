@@ -2,6 +2,7 @@
 // Le texte d'un élément peut contenir des retours à la ligne (« \n », gardés tels quels).
 
 import { Node, mergeAttributes } from "@tiptap/react";
+import { sectionLabel } from "../template";
 import { EDITABLE_TYPES, type ElementType } from "../model";
 
 export type EditableType = (typeof EDITABLE_TYPES)[number];
@@ -96,6 +97,6 @@ export const Preserved = Node.create({
       contenteditable: "false",
     };
     if (depth) attrs["data-depth"] = String(depth);
-    return ["div", attrs, content.trim()];
+    return ["div", attrs, kind === "section" ? sectionLabel(content) : content.trim()];
   },
 });

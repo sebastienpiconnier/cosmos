@@ -40,7 +40,7 @@ Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absen
 | Vue Manuscrit | Manuscrit (prose) | Scénario (format standard) |
 | Carte `lieu` | Lieu | Décor (location) |
 | Carte `scene` | titre libre | en-tête de scène `INT. PHARE - NUIT`, police Courier Prime |
-| Gabarits du Plan | Save the Cat, trois actes, voyage du héros | trois actes, Save the Cat, huit séquences, épisode de série |
+| Gabarits du Plan | libre, trois actes, Save the Cat, voyage du héros | aucun, trois actes, Save the Cat, huit séquences, épisode de série |
 | Mesure | mots | pages et durée (1 page ≈ 1 minute) |
 
 1. **Ne jamais dupliquer un composant par type de projet** : on lit le vocabulaire avec `useVocab()` (`src/vocab.ts`), qui fusionne `t.scenario` par-dessus le vocabulaire roman.
@@ -141,8 +141,8 @@ src/
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
-    Plan.tsx            Vue Plan d'un roman : gabarit au choix, cases où ranger les scènes, scènes à placer
-    Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : synopsis, personnages, longueur, réordonnancement
+    Plan.tsx            Vue Plan d'un roman, en liste ou en fiches : gabarit au choix, cases où ranger les scènes, scènes à placer
+    Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
     Bientot.tsx         Vue Manuscrit d'un roman, pas encore construite
@@ -156,6 +156,7 @@ src/
     layout.ts           Gabarit de page (Letter, A4) : source unique pour le compteur et le futur PDF
     paginate.ts         Estimation des pages par comptage de lignes
     sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
+    template.ts         Gabarits du séquencier : cases = sections Fountain marquées [[cosmos:beat:<clé>]]
     import.ts           Fichier Fountain → projet scénario (cartes Scène, Personnage, Décor)
     titlePage.ts        Champs de la page de titre (titre, auteur, contact…) ↔ clés du fichier Fountain
     export/             Exports : typeset.ts (composition en pages), pdf.ts, fdx.ts, index.ts (chargés à la demande)
@@ -237,6 +238,9 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
 - **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
 - **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
+- **Gabarits du séquencier** : dans un scénario, une case de gabarit est une section Fountain (`# Catalyseur [[cosmos:beat:c_catalyst]]`), pas une entrée de `cosmos.json` : l'ordre des scènes reste celui du fichier, et les autres logiciels voient de simples sections. La note marque les sections posées par un gabarit (retirées quand on en change) ; celles de l'auteur ne sont jamais touchées. Le libellé affiché vient de la clé (il suit la langue), l'éditeur masque la note (`sectionLabel`). Poser un gabarit met la première case avant la première scène et les autres à la fin.
+- **Deux modèles de plan, exprès** : roman = `plan` dans `cosmos.json` (plan.ts), scénario = sections du fichier Fountain (template.ts). Les clés de case et les libellés sont communs (`PLAN_TEMPLATES`, `t.plan.beats`).
+- **Liste ou fiches** : le Plan et le séquencier partagent le réglage d'appareil `sequencerMode`.
 - **Mentions `@`** : en mémoire `<span data-mention="<id>">@Titre</span>`, sur disque `[@Titre](cosmos:<id>)`. `mentionHtml` (mentions.ts) et `MentionNode.renderHTML` doivent produire exactement la même forme : le store relit ce HTML par expression régulière quand une carte est renommée (la mention suit) ou supprimée (elle redevient du texte). `sanitizeHtml` ne crée une mention que pour un identifiant vérifié et n'en garde que le texte.
 - **Fil d'une mention** : il est tiré une fois, au moment où l'on choisit la carte (`linkCards`), pas déduit du texte. Effacer la mention ne retire donc pas le fil, que l'auteur a peut-être étiqueté.
 - **Menu des mentions** : « Créer … » n'est jamais présélectionné (`mentionActive` vaut -1), sinon Entrée créerait une carte au lieu d'aller à la ligne. Échap ferme le menu jusqu'au prochain `@`. Un `@` collé à un mot (adresse de courriel) n'ouvre rien. Maison plutôt que l'extension Mention de TipTap, qui apporterait son propre menu.

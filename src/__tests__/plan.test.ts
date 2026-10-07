@@ -11,6 +11,7 @@ import {
   EMPTY_PLAN,
   PLAN_TEMPLATES,
   PLAN_TEMPLATE_KEYS,
+  NOVEL_TEMPLATES,
   arrange,
   isEmptyPlan,
   placeScene,
@@ -27,7 +28,7 @@ const three = (beats: Plan["beats"]): Plan => ({ template: "troisActes", beats }
 
 describe("gabarits", () => {
   it("quatre gabarits, des clés de case uniques d'un gabarit à l'autre", () => {
-    expect(PLAN_TEMPLATE_KEYS).toEqual(["libre", "troisActes", "saveTheCat", "voyageHeros"]);
+    expect(NOVEL_TEMPLATES).toEqual(["libre", "troisActes", "saveTheCat", "voyageHeros"]);
     const all = Object.values(PLAN_TEMPLATES).flat();
     expect(new Set(all).size).toBe(all.length);
     expect(PLAN_TEMPLATES.saveTheCat).toHaveLength(15);

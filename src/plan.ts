@@ -7,7 +7,7 @@
 // Les clés des cases sont propres à chaque gabarit : changer de gabarit ne perd donc aucun rangement,
 // celui du gabarit précédent reste dans le fichier et revient si l'on y retourne.
 
-export type PlanTemplate = "libre" | "troisActes" | "saveTheCat" | "voyageHeros";
+export type PlanTemplate = "libre" | "troisActes" | "saveTheCat" | "voyageHeros" | "huitSequences" | "episode";
 
 /** Cases de chaque gabarit, dans l'ordre du récit. Ces clés sont écrites dans le fichier : ne jamais les renommer. */
 export const PLAN_TEMPLATES = {
@@ -21,11 +21,16 @@ export const PLAN_TEMPLATES = {
     "h_ordinary", "h_call", "h_refusal", "h_mentor", "h_threshold", "h_tests",
     "h_approach", "h_ordeal", "h_reward", "h_road", "h_resurrection", "h_return",
   ],
+  // Gabarits de scénario (séquencier, voir screenplay/template.ts).
+  huitSequences: ["q_1", "q_2", "q_3", "q_4", "q_5", "q_6", "q_7", "q_8"],
+  episode: ["e_teaser", "e_act1", "e_act2", "e_act3", "e_act4", "e_tag"],
 } as const satisfies Record<PlanTemplate, readonly string[]>;
 
 export type PlanBeat = (typeof PLAN_TEMPLATES)[PlanTemplate][number];
 
 export const PLAN_TEMPLATE_KEYS = Object.keys(PLAN_TEMPLATES) as PlanTemplate[];
+/** Gabarits proposés pour un roman, dans l'ordre du menu. */
+export const NOVEL_TEMPLATES = ["libre", "troisActes", "saveTheCat", "voyageHeros"] as const satisfies readonly PlanTemplate[];
 export const isPlanTemplate = (v: unknown): v is PlanTemplate => typeof v === "string" && v in PLAN_TEMPLATES;
 
 export interface Plan {

@@ -5,18 +5,24 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
-import { useSettings } from "../settings";
+import { useSettings, type SequencerMode } from "../settings";
 import { fmt, useT } from "../i18n";
-import { PLAN_TEMPLATE_KEYS, arrange, isPlanTemplate, type PlanBeat } from "../plan";
+import { NOVEL_TEMPLATES, arrange, isPlanTemplate, type PlanBeat, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
+const MODES: SequencerMode[] = ["outline", "cards"];
 
 export function Plan() {
   const t = useT();
   const p = t.plan;
   const lang = useSettings((s) => s.lang);
+  // Même réglage d'appareil que le séquencier : liste ou fiches.
+  const mode = useSettings((s) => s.sequencerMode);
+  const setMode = useSettings((s) => s.setSequencerMode);
+  const asCards = mode === "cards";
+  const sq = t.screenplay.sequencer;
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
   const setPlanTemplate = useCosmos((s) => s.setPlanTemplate);
@@ -134,7 +140,7 @@ export function Plan() {
         {beat !== null && (
           <div className="sq-moves">
             <button type="button" className="icon-button" data-move="up" disabled={at <= 0} aria-label={fmt(p.moveUp, { title })} onClick={() => step(id, "up")}>
-              <span aria-hidden="true">↑</span>
+              <span aria-hidden="true">{asCards ? "←" : "↑"}</span>
             </button>
             <button
               type="button"
@@ -144,7 +150,7 @@ export function Plan() {
               aria-label={fmt(p.moveDown, { title })}
               onClick={() => step(id, "down")}
             >
-              <span aria-hidden="true">↓</span>
+              <span aria-hidden="true">{asCards ? "→" : "↓"}</span>
             </button>
           </div>
         )}
@@ -181,19 +187,26 @@ export function Plan() {
 
   return (
     <div className="sequencer" ref={rootRef}>
-      <div className="sq-inner">
+      <div className={`sq-inner${asCards ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{p.title}</h1>
           <label className="plan-template">
             {p.template}
             <select value={plan.template} onChange={(e) => isPlanTemplate(e.target.value) && setPlanTemplate(e.target.value)}>
-              {PLAN_TEMPLATE_KEYS.map((key) => (
+              {(NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])).map((key) => (
                 <option key={key} value={key}>
                   {p.templates[key]}
                 </option>
               ))}
             </select>
           </label>
+          <div className="sq-modes" role="group" aria-label={p.modeAria}>
+            {MODES.map((m) => (
+              <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>
+                {sq[m]}
+              </button>
+            ))}
+          </div>
           {sceneIds.length > 0 && (
             <p className="sq-total">
               <strong>{plural(sceneIds.length)}</strong>
@@ -210,7 +223,7 @@ export function Plan() {
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
             <p className="plan-beat-hint">{p.beats[beat.key as PlanBeat].hint}</p>
-            {beat.ids.length > 0 && <ol className="sq-list">{beat.ids.map((id, i) => scene(id, beat.key, i))}</ol>}
+            {beat.ids.length > 0 && <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{beat.ids.map((id, i) => scene(id, beat.key, i))}</ol>}
             <form
               className="plan-add"
               onSubmit={(e) => {
@@ -238,7 +251,7 @@ export function Plan() {
               {arranged.unplaced.length > 0 && <span className="plan-count">{arranged.unplaced.length}</span>}
             </h2>
             <p className="plan-beat-hint">{arranged.unplaced.length > 0 || sceneIds.length === 0 ? p.unplacedHint : p.unplacedEmpty}</p>
-            {arranged.unplaced.length > 0 && <ol className="sq-list">{arranged.unplaced.map((id, i) => scene(id, null, i))}</ol>}
+            {arranged.unplaced.length > 0 && <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{arranged.unplaced.map((id, i) => scene(id, null, i))}</ol>}
           </section>
         )}
 

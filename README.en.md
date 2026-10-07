@@ -41,6 +41,8 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Placing scenes**: drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
 - **Writing from the outline**: a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
 - **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
+- **List or index cards**: the outline shows as a list or as index cards, like the step outline.
+- **Step outline templates**: three acts, Save the Cat, eight sequences or TV episode. Slots are sections of the Fountain file, readable in other software, each with its running time.
 
 ### The Bible
 

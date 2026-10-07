@@ -15,6 +15,8 @@ import { matchesCharacter } from "../screenplay/editor/autocomplete";
 import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
+import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, sectionLabel } from "../screenplay/template";
+import type { PlanBeat } from "../plan";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
 
@@ -71,6 +73,32 @@ export function Sequencier() {
     setScreenplay({ ...screenplay, elements }, true);
   };
 
+  // Gabarit : ses cases sont des sections du scénario. Une section écrite par l'auteur garde son texte.
+  const template = currentTemplate(screenplay.elements);
+  const labelOf = (text: string) => {
+    const key = beatOf(text);
+    return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
+  };
+  const sections = list.flatMap((b, i) => (b.kind === "section" ? [{ index: i, label: labelOf(b.text) }] : []));
+  // Section de chaque bloc (la dernière placée avant lui), et longueur de chaque section.
+  const owner: number[] = [];
+  const sectionPages = new Map<number, number>();
+  list.forEach((b, i) => {
+    owner[i] = b.kind === "section" ? i : (owner[i - 1] ?? -1);
+    if (b.kind === "scene" && owner[i] >= 0) sectionPages.set(owner[i], (sectionPages.get(owner[i]) ?? 0) + pagesBetween(pagination, b.start, b.end));
+  });
+  const setTemplate = (value: string) =>
+    setScreenplay(applyTemplate(screenplay, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label), true);
+  const moveTo = (from: number, section: number) => {
+    const elements = moveToSection(screenplay.elements, from, section);
+    if (elements === screenplay.elements) return;
+    const title = list[from].text || sp.untitledScene;
+    // Elle arrive en dernier dans sa nouvelle section.
+    const n = owner.filter((o, i) => o === section && list[i].kind === "scene" && i !== from).length + 1;
+    setAnnounce(fmt(t.plan.moved, { title, beat: sections.find((s) => s.index === section)?.label ?? "", n }));
+    setScreenplay({ ...screenplay, elements }, true);
+  };
+
   const scenes = list.filter((b) => b.kind === "scene").length;
   const cards = mode === "cards";
 
@@ -86,6 +114,17 @@ export function Sequencier() {
               </button>
             ))}
           </div>
+          <label className="plan-template">
+            {t.plan.template}
+            <select value={template ?? ""} onChange={(e) => setTemplate(e.target.value)}>
+              <option value="">{t.plan.noTemplate}</option>
+              {SCREENPLAY_TEMPLATES.map((key) => (
+                <option key={key} value={key}>
+                  {t.plan.templates[key]}
+                </option>
+              ))}
+            </select>
+          </label>
           {pagination.pages > 0 && (
             <p className="sq-total">
               <strong>{fmt(sp.minutes, { n: minutesFor(pagination.pages) })}</strong> ·{" "}
@@ -94,6 +133,7 @@ export function Sequencier() {
           )}
         </header>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
+        {template && <p className="sp-empty">{sq.templateHint}</p>}
 
         <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} aria-label={sq.listAria}>
           {list.map((block, i) => {
@@ -115,7 +155,13 @@ export function Sequencier() {
             if (block.kind === "section") {
               return (
                 <li key={`section-${block.start}`} className={`sq-section${dropClass}`} {...drop}>
-                  {block.text}
+                  <span>{labelOf(block.text)}</span>
+                  {(sectionPages.get(i) ?? 0) > 0 && (
+                    <span className="sq-section-length">
+                      {fmt(sp.lengthShort, { n: number.format(sectionPages.get(i)!) })}
+                      {sectionPages.get(i)! >= 0.5 && <> · {fmt(sp.minutes, { n: minutesFor(sectionPages.get(i)!) })}</>}
+                    </span>
+                  )}
                 </li>
               );
             }
@@ -202,6 +248,20 @@ export function Sequencier() {
                     </ul>
                   )}
                 </div>
+                {sections.length > 0 && (
+                  <label className="plan-to">
+                    <span className="sr-only">{fmt(t.plan.moveTo, { title })}</span>
+                    <span aria-hidden="true">{t.plan.moveToShort}</span>
+                    <select value={owner[i]} onChange={(e) => moveTo(i, Number(e.target.value))}>
+                      {owner[i] < 0 && <option value={-1}>{sq.noSection}</option>}
+                      {sections.map((s) => (
+                        <option key={s.index} value={s.index}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <div className="sq-length">
                   <div>{fmt(sp.lengthShort, { n: number.format(pages) })}</div>
                   {/* Sous la demi-page, une durée arrondie à la minute ne voudrait rien dire. */}

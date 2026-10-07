@@ -41,6 +41,8 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Ranger les scènes** : glisse une scène dans une case, déplace-la avec les flèches ou choisis sa case dans un menu. Les scènes du canevas qui n'ont pas encore leur place attendent dans « À placer ».
 - **Écrire depuis le plan** : une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés.
 - **Changer d'avis** : passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
+- **Liste ou fiches** : le plan s'affiche en liste ou en fiches, comme le séquencier.
+- **Gabarits du séquencier** : trois actes, Save the Cat, huit séquences ou épisode de série. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
 
 ### La Bible
 
