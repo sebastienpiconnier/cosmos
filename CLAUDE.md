@@ -94,6 +94,8 @@ npm install
 npm run dev          # navigateur seul, stockage localStorage (démo)
 npm run tauri dev    # app desktop, vrais fichiers sur disque
 npm run build        # tsc --noEmit + vite build (à lancer avant chaque commit)
+npm test             # tests Vitest
+npm run coverage     # tests + couverture (seuil 90 % sur src/screenplay/)
 npm run tauri build  # installeur pour le système courant
 npm run tauri ios init && npm run tauri ios dev          # iOS (sur Mac, avec Xcode)
 npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
@@ -124,6 +126,11 @@ src/
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches + liens
     Bientot.tsx         Vues Plan et Manuscrit, pas encore construites
+  screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
+    model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
+    rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
+    parse.ts            Fountain → modèle
+    serialize.ts        Modèle → Fountain (lignes vides et marqueurs de forçage)
   storage/
     paths.ts            Format du dossier projet
     index.ts            Choix du stockage, serialize / deserialize

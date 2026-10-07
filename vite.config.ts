@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 // Configuration compatible avec Tauri : port fixe, pas d'écran effacé.
@@ -13,4 +13,13 @@ export default defineConfig({
     watch: { ignored: ["**/src-tauri/**"] },
   },
   envPrefix: ["VITE_", "TAURI_ENV_"],
+  test: {
+    // `npm run coverage` : le parseur Fountain doit rester couvert à 90 % au moins.
+    coverage: {
+      include: ["src/screenplay/**/*.ts"],
+      exclude: ["**/__tests__/**"],
+      reporter: ["text"],
+      thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
+    },
+  },
 });

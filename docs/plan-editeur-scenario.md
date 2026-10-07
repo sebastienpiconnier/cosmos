@@ -9,7 +9,7 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 À mettre à jour en fin de session (voir « Changer de machine » dans `CLAUDE.md`).
 
 - [x] Phase 0 : outillage de tests
-- [ ] Phase 1 : modèle, parseur, sérialiseur
+- [x] Phase 1 : modèle, parseur, sérialiseur
 - [ ] Phase 2 : stockage et lien avec les cartes
 - [ ] Phase 3 : l'éditeur
 - [ ] Phase 4 : complétion
@@ -17,7 +17,7 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phase 0 faite (Vitest, `npm test`, étape ajoutée à `ci.yml`). Dépôt publié sur GitHub (branche `main`), CI au vert. Prochaine étape : phase 1.
+Dernière session : 7 octobre 2026, phases 0 et 1 faites. Phase 1 : `src/screenplay/` (`model.ts`, `rules.ts`, `parse.ts`, `serialize.ts`), 47 tests, couverture 99 % (`npm run coverage`, seuil 90 %). Le modèle a gagné `sceneNumber` et `depth` ; les parenthèses d'une didascalie font partie de son texte. Limites connues : plusieurs lignes vides de suite sont ramenées à une seule, et l'écriture est normalisée (`#Acte` devient `# Acte`, `>FIN<` devient `> FIN <`). `fountain-js` n'a pas été ajouté comme référence. Fixture française écrite d'après l'exemple du plan, à aligner sur la maquette `scenario-Ecriture` quand elle sera dans le dépôt. Prochaine étape : phase 2.
 
 ---
 
