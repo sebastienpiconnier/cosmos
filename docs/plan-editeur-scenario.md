@@ -4,6 +4,21 @@
 
 Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-editeur-scenario.md` ». Avant de coder, relire la phase, proposer la liste des fichiers touchés, puis avancer.
 
+## Avancement
+
+À mettre à jour en fin de session (voir « Changer de machine » dans `CLAUDE.md`).
+
+- [ ] Phase 0 : outillage de tests
+- [ ] Phase 1 : modèle, parseur, sérialiseur
+- [ ] Phase 2 : stockage et lien avec les cartes
+- [ ] Phase 3 : l'éditeur
+- [ ] Phase 4 : complétion
+- [ ] Phase 5 : pages, minutes, séquencier minimal
+- [ ] Phase 6 : exports
+- [ ] Phase 7 : finitions
+
+Dernière session : aucune (plan créé le 7 octobre 2026).
+
 ---
 
 ## 1. Ce qu'on construit
