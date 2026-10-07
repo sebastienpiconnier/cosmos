@@ -42,7 +42,12 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Écrire depuis le plan** : une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés.
 - **Changer d'avis** : passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
 - **Liste ou fiches** : le plan s'affiche en liste ou en fiches, comme le séquencier.
-- **Gabarits du séquencier** : trois actes, Save the Cat, huit séquences ou épisode de série. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
+
+### Le manuscrit (roman)
+
+- **Une scène à la fois** : tu écris le texte de chaque scène dans l'ordre du plan, avec le nombre de mots par scène et au total.
+- **Dans cette scène** : les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
+- **Tes fichiers** : chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte.
 
 ### La Bible
 
@@ -67,6 +72,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène, et renommer l'un renomme l'autre. Une scène, son décor ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes** : le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence, en format US Letter ou A4.
 - **Séquencier** : les scènes dans l'ordre, en liste ou en fiches, avec leur synopsis, leurs personnages et leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
+- **Gabarits du séquencier** : trois actes, Save the Cat, huit séquences ou épisode de série. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
 - **Synopsis** : une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
 - **Exports** : PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
 - **Import** : un fichier `.fountain` existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
@@ -91,14 +97,14 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
-| Scénario | Gabarits par actes et durées cibles dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
+| Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
 | Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Export | Bible et manuscrit en PDF, docx, epub |
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |
 
-La vue Manuscrit (roman) est visible dans l'app mais pas encore construite.
+
 
 ## Plateformes
 

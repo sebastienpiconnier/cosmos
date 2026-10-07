@@ -545,6 +545,49 @@ button { font: inherit; color: inherit; }
 .sq-speakers button.chip:hover { text-decoration: underline; }
 .chip.is-plain { background: var(--ground); color: var(--ink-2); }
 
+/* ---------- Manuscrit d'un roman : une scène à la fois ---------- */
+.manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); }
+.ms-main { overflow: auto; padding: 32px 24px 96px; }
+.ms-sheet { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.ms-title { width: 100%; min-height: 48px; padding: 0 8px; margin-left: -8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 700 26px/1.2 var(--font-display); }
+.ms-title:hover { border-color: var(--line); }
+.ms-title:focus-visible { border-color: var(--line-2); }
+.ms-title::placeholder { color: var(--placeholder); }
+.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; color: var(--ink-2); }
+.ms-meta .icon-button { width: 44px; height: 44px; }
+.ms-meta .icon-button:disabled { opacity: 0.35; cursor: default; }
+.ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
+.ms-editor p { margin: 0 0 0.9em; }
+.ms-editor h2, .ms-editor h3 { font-family: var(--font-display); font-weight: 600; margin: 1.2em 0 0.4em; }
+.ms-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
+.ms-words { margin-left: auto; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.ms-scenes button { display: flex; align-items: baseline; gap: 8px; }
+.ms-scenes .ms-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ms-total { margin: 0; font-size: 13px; color: var(--ink-2); }
+.ms-notes { font: 14px/1.5 var(--font-text); color: var(--ink); overflow-wrap: anywhere; }
+.ms-notes p { margin: 0 0 6px; }
+.ms-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ms-chips button.chip { border: 0; font: inherit; font-size: 13px; min-height: 32px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ms-chips button.chip:hover { text-decoration: underline; }
+.manuscript .sp-box > button.chip { border: 0; min-height: 44px; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.manuscript .sp-box > button.chip:hover { text-decoration: underline; }
+.ms-orphan { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.ms-orphan button, .ms-empty button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.ms-empty button:disabled { opacity: 0.45; cursor: default; }
+.ms-empty form { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.ms-empty input { min-height: 44px; min-width: min(280px, 100%); padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.ms-empty input::placeholder { color: var(--placeholder); }
+@media (max-width: 900px) {
+  .manuscript { display: block; overflow: auto; }
+  .manuscript .sp-scenes, .manuscript .sp-side { overflow: visible; border: 0; }
+  .manuscript .sp-scenes { max-height: 30vh; overflow: auto; border-bottom: 1px solid var(--line); }
+  .ms-main { overflow: visible; padding: 20px 16px 32px; }
+  .ms-editor, .ms-editor:focus-visible { min-height: 40vh; font-size: 18px; }
+}
+@media (pointer: coarse) {
+  .ms-chips button.chip { min-height: 44px; padding: 0 14px; }
+}
+
 /* ---------- Plan d'un roman : gabarit et cases où ranger les scènes ---------- */
 .plan-template { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
 .plan-template select, .plan-to select { min-height: 44px; max-width: 100%; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }

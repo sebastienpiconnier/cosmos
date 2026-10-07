@@ -22,6 +22,7 @@ import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
 import { removeMentions, renameMentions } from "./mentions";
+import { isBlank, type Manuscript } from "./manuscript";
 import { EMPTY_PLAN, isEmptyPlan, placeScene, prunePlan, readPlan, setTemplate, stepScene, type Plan, type PlanTemplate } from "./plan";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
@@ -78,6 +79,11 @@ interface CosmosState {
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string) => string;
+  /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte Scène. */
+  manuscript: Manuscript;
+  setManuscriptText: (id: string, html: string) => void;
+  /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
+  restoreScene: (id: string) => void;
   /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
   setTitle: (title: string) => void;
   /** Format de page du scénario (estimation des pages, puis PDF). */
@@ -226,7 +232,7 @@ function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? "") }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {} };
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -292,7 +298,7 @@ function openProject(p: Project) {
 function toProject(
   s: Pick<
     CosmosState,
-    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan"
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript"
   >,
 ): Project {
   // Le plan écrit ne cite que des cartes qui existent encore.
@@ -323,6 +329,7 @@ function toProject(
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
+    manuscript: s.manuscript,
   };
 }
 
@@ -441,6 +448,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       else set({ kind });
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
+      touch();
+    },
+    manuscript: {},
+    setManuscriptText: (id, html) => {
+      const manuscript = { ...get().manuscript };
+      const before = manuscript[id] ?? "";
+      const next = isBlank(html) ? "" : html;
+      if (before === next) return;
+      if (next) manuscript[id] = next;
+      else delete manuscript[id];
+      set({ manuscript });
+      touch();
+    },
+    restoreScene: (id) => {
+      if (get().nodes.some((n) => n.id === id) || !(id in get().manuscript)) return;
+      record();
+      const card: CardData = { id, type: "scene", title: "", html: "" };
+      const spot = firstFreeCell(boxes(get().nodes));
+      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
       touch();
     },
     plan: EMPTY_PLAN,

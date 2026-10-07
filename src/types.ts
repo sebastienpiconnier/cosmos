@@ -85,4 +85,6 @@ export interface Project {
   cards: CardData[];
   /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. */
   screenplay: Screenplay | null;
+  /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte. Absent : rien d'écrit. */
+  manuscript?: Record<string, string>;
 }

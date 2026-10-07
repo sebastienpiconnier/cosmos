@@ -9,10 +9,11 @@
 // Plusieurs projets : le stockage en liste les connus (écran d'accueil) et travaille sur celui qu'on sélectionne.
 
 import type { Project, ProjectMeta } from "../types";
-import { cardToFile, fileToCard } from "./markdown";
+import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdown";
+import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, cardPath, type FileMap } from "./paths";
+import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, cardPath, manuscriptPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
@@ -83,6 +84,11 @@ export function serialize(project: Project): FileMap {
   for (const card of project.cards) files[cardPath(card.id)] = cardToFile(card);
   // Un projet roman n'a pas de scénario : le fichier n'est jamais créé pour lui.
   if (project.screenplay) files[SCREENPLAY_FILE] = serializeScreenplay(project.screenplay);
+  // Manuscrit : un fichier par scène écrite. Une scène sans texte n'a pas de fichier.
+  for (const [id, html] of Object.entries(project.manuscript ?? {})) {
+    const text = htmlToMarkdown(html);
+    if (text) files[manuscriptPath(id)] = `${text}\n`;
+  }
   return files;
 }
 
@@ -95,5 +101,12 @@ export function deserialize(files: FileMap): Project | null {
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null);
   const screenplay = SCREENPLAY_FILE in files ? parseScreenplay(files[SCREENPLAY_FILE]) : null;
-  return { meta, cards, screenplay };
+  const manuscript: Record<string, string> = {};
+  for (const [path, text] of Object.entries(files)) {
+    if (!path.startsWith(`${MANUSCRIPT_DIR}/`) || !path.endsWith(".md")) continue;
+    const id = path.slice(MANUSCRIPT_DIR.length + 1, -3);
+    const html = isCardId(id) ? markdownToHtml(text.replace(/\r\n/g, "\n")).trim() : "";
+    if (html) manuscript[id] = html;
+  }
+  return { meta, cards, screenplay, manuscript };
 }

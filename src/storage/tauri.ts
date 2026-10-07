@@ -8,7 +8,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
-import { CARDS_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
+import { MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
@@ -120,11 +120,13 @@ export const tauriStorage: Storage = {
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
-    const cardsDir = await join(dir, CARDS_DIR);
-    if (await exists(cardsDir)) {
-      for (const entry of await readDir(cardsDir)) {
+    // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers.
+    for (const name of TEXT_DIRS) {
+      const folder = await join(dir, name);
+      if (!(await exists(folder))) continue;
+      for (const entry of await readDir(folder)) {
         if (entry.isFile && entry.name.endsWith(".md")) {
-          files[`${CARDS_DIR}/${entry.name}`] = await readTextFile(await join(cardsDir, entry.name));
+          files[`${name}/${entry.name}`] = await readTextFile(await join(folder, entry.name));
         }
       }
     }
@@ -136,7 +138,10 @@ export const tauriStorage: Storage = {
   async write(files, removed) {
     const dir = await projectFolder();
     if (!dir) throw new Error("Aucun dossier projet choisi");
-    await mkdir(await join(dir, CARDS_DIR), { recursive: true });
+    for (const name of TEXT_DIRS) {
+      // Le dossier du manuscrit n'est créé que s'il y a un texte à y écrire.
+      if (name === TEXT_DIRS[0] || Object.keys(files).some((path) => path.startsWith(`${name}/`))) await mkdir(await join(dir, name), { recursive: true });
+    }
     for (const [path, content] of Object.entries(files)) {
       await writeTextFile(await join(dir, ...path.split("/")), content);
     }

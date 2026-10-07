@@ -42,7 +42,7 @@ export const fr = {
     untitled: "Sans titre",
     youWrite: "Tu écris…",
     novel: "Un roman",
-    novelHint: "Canevas, bible et plan. Le manuscrit en prose arrive bientôt.",
+    novelHint: "Canevas, bible, plan et manuscrit écrit scène par scène.",
     screenplay: "Un scénario",
     screenplayHint: "Séquencier, format cinéma standard, pages et minutes.",
     folderHint: "Tu choisiras ensuite le dossier où enregistrer le projet.",
@@ -65,7 +65,6 @@ export const fr = {
     plan: "Plan",
     bible: "Bible",
     manuscrit: "Manuscrit",
-    soon: "Bientôt",
   },
 
   status: {
@@ -156,16 +155,35 @@ export const fr = {
     emptyBody: "Crée une première fiche ci-dessous, ou des cartes sur le canevas : elles apparaîtront ici, rangées.",
   },
 
-  soon: {
-    planTitle: "Plan, bientôt",
-    planBody:
-      "Les scènes du canevas se glisseront dans un gabarit (Save the Cat, trois actes, voyage du héros) et une chronologie par intrigue.",
-    manuscritTitle: "Manuscrit, bientôt",
-    manuscritBody:
-      "Un éditeur focus par scène, avec en marge les fiches des personnages et lieux détectés dans le texte.",
-  },
 
   dialog: { pickFolder: "Choisir le dossier du projet" },
+
+  // Manuscrit d'un roman : un texte par scène, dans l'ordre du Plan.
+  manuscript: {
+    scenesAria: "Scènes du manuscrit, dans l’ordre du plan",
+    scenesTitle: "Scènes",
+    wordsOne: "{n} mot",
+    wordsMany: "{n} mots",
+    empty: "Pas encore de scène",
+    emptyBody: "Le manuscrit s’écrit scène par scène. Crée une première scène ici, dans le Plan ou sur le canevas.",
+    newScene: "Titre de la première scène…",
+    add: "Créer la scène",
+    untitled: "Scène sans titre",
+    sceneTitle: "Titre de la scène",
+    placeholder: "Écris la scène…",
+    editorAria: "Texte de la scène « {title} »",
+    previous: "Scène précédente",
+    next: "Scène suivante",
+    position: "Scène {n} sur {total}",
+    inScene: "Dans cette scène",
+    nothingDetected: "Les personnages et les lieux cités dans le texte apparaîtront ici.",
+    show: "Voir la carte « {title} » sur le canevas",
+    notes: "Notes de la carte",
+    noNotes: "Cette scène n’a pas de notes sur sa carte.",
+    orphans: "Textes sans carte",
+    orphansHint: "La carte de ces scènes a été supprimée. Leur texte est toujours dans le projet.",
+    restore: "Recréer la carte",
+  },
 
   // Plan d'un roman : gabarits et cases où ranger les scènes.
   plan: {
@@ -268,14 +286,6 @@ export const fr = {
     types: {
       lieu: { label: "Décor", section: "Décors", titlePlaceholder: "Nom du décor" },
       scene: { label: "Scène", section: "Scènes", titlePlaceholder: "INT. PHARE - NUIT" },
-    },
-    soon: {
-      planTitle: "Séquencier, bientôt",
-      planBody:
-        "Les scènes du canevas se rangeront dans un gabarit (trois actes, Save the Cat, huit séquences, épisode de série), avec la durée estimée de chaque acte.",
-      manuscritTitle: "Scénario, bientôt",
-      manuscritBody:
-        "Un éditeur au format standard : en-têtes de scène, action, personnage, dialogue, didascalie et transition, avec Tab et Entrée pour passer de l’un à l’autre. Environ une page par minute.",
     },
   },
 

@@ -7,11 +7,10 @@ import { useCosmos } from "./store";
 import type { ProjectKind } from "./types";
 
 export function vocab(t: Messages, kind: ProjectKind) {
-  if (kind === "roman") return { types: t.types, views: t.views, soon: t.soon };
+  if (kind === "roman") return { types: t.types, views: t.views };
   return {
     types: { ...t.types, ...t.scenario.types },
     views: { ...t.views, ...t.scenario.views },
-    soon: t.scenario.soon,
   };
 }
 

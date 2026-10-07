@@ -42,7 +42,12 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Writing from the outline**: a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
 - **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
 - **List or index cards**: the outline shows as a list or as index cards, like the step outline.
-- **Step outline templates**: three acts, Save the Cat, eight sequences or TV episode. Slots are sections of the Fountain file, readable in other software, each with its running time.
+
+### The manuscript (novel)
+
+- **One scene at a time**: you write the text of each scene in outline order, with word counts per scene and in total.
+- **In this scene**: characters and places mentioned in the text show up beside it, along with the card’s notes.
+- **Your files**: every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
 
 ### The Bible
 
@@ -67,6 +72,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene, its location or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
 - **Step outline**: the scenes in order, as a list or as index cards, with their synopsis, characters and length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
+- **Step outline templates**: three acts, Save the Cat, eight sequences or TV episode. Slots are sections of the Fountain file, readable in other software, each with its running time.
 - **Synopsis**: one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
 - **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **Import**: an existing `.fountain` file becomes a project, with its Scene, Character and Location cards already created and linked.
@@ -91,14 +97,14 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Mentions | `@` in a card to create a thread automatically |
 | Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
 | Manuscript | Focused editor per scene, in the Outline’s order |
-| Screenplay | Act templates and target lengths in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
+| Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
 | Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |
 
-The Manuscript (novel) view is visible in the app but not built yet.
+
 
 ## Platforms
 

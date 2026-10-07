@@ -8,12 +8,9 @@ import { useSettings } from "../settings";
 import { minutesFor, usePagination } from "./usePagination";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
-const READY: Record<View, boolean> = { toile: true, plan: false, bible: true, manuscrit: false };
 
 export function TopBar() {
   const { t, views, kind } = useVocab();
-  // Un scénario a son séquencier et son éditeur ; le plan et le manuscrit du roman pas encore.
-  const ready = (v: View) => READY[v] || kind === "scenario";
   const lang = useSettings((s) => s.lang);
   const pagination = usePagination();
   const pages = kind === "scenario" ? (pagination?.pages ?? 0) : 0;
@@ -53,7 +50,6 @@ export function TopBar() {
             type="button"
             className={view === v ? "is-current" : ""}
             aria-current={view === v ? "page" : undefined}
-            title={ready(v) ? undefined : t.views.soon}
             onClick={() => setView(v)}
           >
             {views[v]}

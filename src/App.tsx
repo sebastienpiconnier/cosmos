@@ -4,10 +4,10 @@ import { useCosmos } from "./store";
 import { TopBar } from "./components/TopBar";
 import { Toile } from "./components/Toile";
 import { Bible } from "./components/Bible";
-import { Bientot } from "./components/Bientot";
 import { ScreenplayView } from "./components/ScreenplayView";
 import { Sequencier } from "./components/Sequencier";
 import { Plan } from "./components/Plan";
+import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
 import { useT } from "./i18n";
 import { storage } from "./storage";
@@ -102,7 +102,7 @@ export function App() {
           {view === "bible" && <Bible />}
           {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Plan />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}
-          {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Bientot view="manuscrit" />)}
+          {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Manuscript />)}
         </main>
       </div>
     </ReactFlowProvider>

@@ -114,6 +114,7 @@ src/
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
+  manuscript.ts         Manuscrit d'un roman : mots, cartes citées dans le texte, textes sans carte (fonctions pures)
   plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
@@ -145,7 +146,7 @@ src/
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
-    Bientot.tsx         Vue Manuscrit d'un roman, pas encore construite
+    Manuscript.tsx      Vue Manuscrit d'un roman : une scène à la fois dans l'ordre du Plan, panneau « Dans cette scène »
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
     model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
     rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
@@ -187,6 +188,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 MonRoman/
   cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, facultatif)
   cartes/<id>.md       une carte par fichier
+  manuscrit/<id>.md    texte d'une scène du roman (Markdown sans en-tête), au nom de sa carte Scène
   medias/<nom>.jpg     images des cartes (copiées dans le projet)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
@@ -238,6 +240,10 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
 - **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
 - **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
+- **Manuscrit d'un roman** : un fichier `manuscrit/<id>.md` par scène écrite, sans en-tête (le titre reste celui de la carte, les notes de la carte restent dans `cartes/`). Une scène sans texte n'a pas de fichier. L'ordre est celui du Plan (`planOrder`). Le texte lu sur disque passe par `markdownToHtml`, donc par `sanitizeHtml`, et le nom du fichier doit être un identifiant de carte valide.
+- **Le texte d'une scène n'est jamais effacé avec sa carte** : supprimer la carte laisse le fichier du manuscrit. La vue liste ces « textes sans carte » et peut recréer la carte (`restoreScene`, même identifiant).
+- **Manuscrit et annulation** : le texte n'est pas dans l'historique du store, l'éditeur a le sien. L'éditeur est remonté à chaque changement de scène (`key`).
+- **Stockage Tauri** : `readAll` lit les dossiers de `TEXT_DIRS` (paths.ts). Un nouveau dossier de fichiers texte doit y être ajouté, sinon il s'enregistre mais ne se relit pas dans l'app de bureau (le navigateur, lui, relit tout).
 - **Gabarits du séquencier** : dans un scénario, une case de gabarit est une section Fountain (`# Catalyseur [[cosmos:beat:c_catalyst]]`), pas une entrée de `cosmos.json` : l'ordre des scènes reste celui du fichier, et les autres logiciels voient de simples sections. La note marque les sections posées par un gabarit (retirées quand on en change) ; celles de l'auteur ne sont jamais touchées. Le libellé affiché vient de la clé (il suit la langue), l'éditeur masque la note (`sectionLabel`). Poser un gabarit met la première case avant la première scène et les autres à la fin.
 - **Deux modèles de plan, exprès** : roman = `plan` dans `cosmos.json` (plan.ts), scénario = sections du fichier Fountain (template.ts). Les clés de case et les libellés sont communs (`PLAN_TEMPLATES`, `t.plan.beats`).
 - **Liste ou fiches** : le Plan et le séquencier partagent le réglage d'appareil `sequencerMode`.
@@ -294,7 +300,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
 4. (fait, sauf la chronologie) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case. Reste : chronologie par intrigue
-5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan (`planOrder` dans plan.ts), panneau « Dans cette scène » (personnages détectés)
+5. (fait) **Manuscrit** : une scène à la fois dans l'ordre du Plan, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)

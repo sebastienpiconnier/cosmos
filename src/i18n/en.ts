@@ -41,7 +41,7 @@ export const en: Messages = {
     untitled: "Untitled",
     youWrite: "You’re writing…",
     novel: "A novel",
-    novelHint: "Canvas, bible and outline. The prose manuscript is coming soon.",
+    novelHint: "Canvas, bible, outline and a manuscript written scene by scene.",
     screenplay: "A screenplay",
     screenplayHint: "Step outline, standard film format, pages and minutes.",
     folderHint: "You’ll then choose the folder where the project is saved.",
@@ -64,7 +64,6 @@ export const en: Messages = {
     plan: "Outline",
     bible: "Bible",
     manuscrit: "Manuscript",
-    soon: "Coming soon",
   },
 
   status: {
@@ -155,16 +154,34 @@ export const en: Messages = {
     emptyBody: "Create a first entry below, or cards on the canvas: they will show up here, neatly sorted.",
   },
 
-  soon: {
-    planTitle: "Outline, coming soon",
-    planBody:
-      "Scenes from the canvas will slot into a template (Save the Cat, three acts, hero’s journey) and a timeline per plotline.",
-    manuscritTitle: "Manuscript, coming soon",
-    manuscritBody:
-      "A focused editor for each scene, with the characters and places found in the text shown alongside.",
-  },
 
   dialog: { pickFolder: "Choose the project folder" },
+
+  manuscript: {
+    scenesAria: "Manuscript scenes, in outline order",
+    scenesTitle: "Scenes",
+    wordsOne: "{n} word",
+    wordsMany: "{n} words",
+    empty: "No scene yet",
+    emptyBody: "The manuscript is written scene by scene. Create a first scene here, in the Outline or on the canvas.",
+    newScene: "Title of the first scene…",
+    add: "Create the scene",
+    untitled: "Untitled scene",
+    sceneTitle: "Scene title",
+    placeholder: "Write the scene…",
+    editorAria: "Text of the scene “{title}”",
+    previous: "Previous scene",
+    next: "Next scene",
+    position: "Scene {n} of {total}",
+    inScene: "In this scene",
+    nothingDetected: "Characters and places mentioned in the text will show up here.",
+    show: "Show the card “{title}” on the canvas",
+    notes: "Card notes",
+    noNotes: "This scene has no notes on its card.",
+    orphans: "Texts without a card",
+    orphansHint: "The card of these scenes was deleted. Their text is still in the project.",
+    restore: "Recreate the card",
+  },
 
   plan: {
     title: "Outline",
@@ -265,14 +282,6 @@ export const en: Messages = {
     types: {
       lieu: { label: "Location", section: "Locations", titlePlaceholder: "Location name" },
       scene: { label: "Scene", section: "Scenes", titlePlaceholder: "INT. LIGHTHOUSE - NIGHT" },
-    },
-    soon: {
-      planTitle: "Step outline, coming soon",
-      planBody:
-        "Scenes from the canvas will slot into a template (three acts, Save the Cat, eight sequences, TV episode), with an estimated running time per act.",
-      manuscritTitle: "Screenplay, coming soon",
-      manuscritBody:
-        "A standard-format editor: scene headings, action, character, dialogue, parenthetical and transition, with Tab and Enter to move between them. About one page per minute.",
     },
   },
 
