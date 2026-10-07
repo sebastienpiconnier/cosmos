@@ -7,6 +7,7 @@ import { Bible } from "./components/Bible";
 import { Bientot } from "./components/Bientot";
 import { ScreenplayView } from "./components/ScreenplayView";
 import { Sequencier } from "./components/Sequencier";
+import { Home } from "./components/Home";
 import { useT } from "./i18n";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
@@ -16,21 +17,21 @@ export function App() {
   const view = useCosmos((s) => s.view);
   const kind = useCosmos((s) => s.kind);
   const loaded = useCosmos((s) => s.loaded);
-  const openFailed = useCosmos((s) => s.openFailed);
-  const dismissOpenFailed = useCosmos((s) => s.dismissOpenFailed);
-  const load = useCosmos((s) => s.load);
+  const screen = useCosmos((s) => s.screen);
+  const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
 
+  // Au lancement : la liste des projets, puis l'accueil.
   useEffect(() => {
-    load();
-  }, [load]);
+    start();
+  }, [start]);
 
   // Sauvegarde automatique : chaque modification relance le délai,
   // on enregistre quand l'auteur marque une pause.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = useCosmos.subscribe((s, prev) => {
-      if (!s.loaded || s.status !== "modifie") return;
+      if (!s.loaded || s.screen !== "project" || s.status !== "modifie") return;
       const same =
         s.nodes === prev.nodes && s.edges === prev.edges && s.screenplay === prev.screenplay && s.kind === prev.kind && s.paper === prev.paper;
       if (same && s.status === prev.status) return;
@@ -48,7 +49,7 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        save();
+        if (useCosmos.getState().screen === "project") save();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -56,19 +57,12 @@ export function App() {
   }, [save]);
 
   if (!loaded) return <div className="loading">{t.app.loading}</div>;
+  if (screen === "home") return <Home />;
 
   return (
     <ReactFlowProvider>
       <div className="app">
         <TopBar />
-        {openFailed && (
-          <div className="app-alert" role="alert">
-            <span>{t.app.openFailed}</span>
-            <button type="button" className="icon-button" aria-label={t.app.dismiss} onClick={dismissOpenFailed}>
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-        )}
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}

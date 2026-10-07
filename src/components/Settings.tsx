@@ -8,7 +8,8 @@ import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
 
-export function Settings() {
+/** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
+export function Settings({ project = true }: { project?: boolean }) {
   const t = useT();
   const { lang, themePref, setLang, setThemePref } = useSettings();
   const kind = useCosmos((s) => s.kind);
@@ -66,6 +67,8 @@ export function Settings() {
 
       {open && (
         <div className="settings-panel" id={ids.panel} role="group" aria-label={t.settings.title}>
+          {project && (
+            <>
           {/* Réglage du projet (enregistré dans cosmos.json) */}
           <div className="eyebrow">{t.kinds.section}</div>
           <label htmlFor={ids.kind}>{t.kinds.label}</label>
@@ -105,8 +108,11 @@ export function Settings() {
             </>
           )}
 
+            </>
+          )}
+
           {/* Réglages de l'appareil (langue, apparence) */}
-          <div className="eyebrow settings-sep">{t.settings.title}</div>
+          <div className={project ? "eyebrow settings-sep" : "eyebrow"}>{t.settings.title}</div>
           <label htmlFor={ids.lang}>{t.settings.language}</label>
           <select id={ids.lang} value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
             {LANGS.map((code) => (

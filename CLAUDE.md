@@ -24,7 +24,7 @@ Toute fonction doit respecter ces règles :
 4. **Pas de chemin de fichier écrit à la main** : toujours `join()` de `@tauri-apps/api/path`, et toujours passer par `src/storage/`.
 5. **Raccourcis** : `metaKey || ctrlKey` (Cmd sur Mac, Ctrl ailleurs), jamais l'un sans l'autre.
 6. **On détecte des capacités, pas des systèmes** : `isTouch()`, `storage.canPickFolder` (voir `src/platform.ts`). `isMobileOS()` seulement quand c'est inévitable (stockage).
-7. **Mobile** : pas de sélecteur de dossier, le projet vit dans l'espace privé de l'app (`$APPDATA/projets/`). Pas de dialogue natif de dossier à appeler.
+7. **Mobile** : pas de sélecteur de dossier, chaque projet a son dossier dans l'espace privé de l'app (`$APPDATA/projets/<id>/`). Pas de dialogue natif de dossier à appeler.
 8. Toute nouvelle permission Tauri va dans `src-tauri/capabilities/default.json` et doit fonctionner sur toutes les cibles.
 
 Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
@@ -118,9 +118,10 @@ src/
     en.ts               Traduction anglaise
     langs.ts            Liste des langues, détection
     index.ts            useT(), getT(), fmt()
-  App.tsx               Chargement, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
+  App.tsx               Accueil ou projet ouvert, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
   components/
-    TopBar.tsx          Logo, curseur de vues Chaos → Ordre, statut d'enregistrement
+    Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
+    TopBar.tsx          Logo, titre du projet, curseur de vues Chaos → Ordre, statut, bouton « Projets »
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
     Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
@@ -153,9 +154,10 @@ src/
   storage/
     paths.ts            Format du dossier projet
     index.ts            Choix du stockage, serialize / deserialize
+    recents.ts          Liste des projets connus de l'appareil (localStorage, réglage de l'appareil)
     markdown.ts         Carte ↔ fichier .md (frontmatter), nettoyage HTML
-    browser.ts          Dossier simulé dans localStorage
-    tauri.ts            Vrai dossier sur disque (choisi sur ordinateur, privé sur mobile)
+    browser.ts          Dossiers simulés dans localStorage, une clé par projet
+    tauri.ts            Vrais dossiers sur disque : un par projet (choisi sur ordinateur, privé sur mobile)
   assets/fonts/         Courier Prime en TTF pour le PDF (licence OFL jointe)
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 .github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
@@ -195,8 +197,10 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Menu des types** : options en `onPointerDown={preventDefault}` + `onClick`, pour garder le focus dans l'éditeur à la souris comme au doigt.
 - **Sécurité** : les `.md` viennent du disque, `markdownToHtml` passe par `sanitizeHtml` (liste blanche de balises). La Bible affiche ce HTML avec `dangerouslySetInnerHTML` : ne jamais court-circuiter le nettoyage.
 - **Raccourcis** : React Flow ignore Suppr/Retour arrière dans les champs et l'éditeur. Les nouveaux raccourcis globaux doivent faire de même.
+- **Plusieurs projets** : l'app s'ouvre toujours sur l'accueil (`screen: "home"`), jamais directement sur le dernier projet. Le stockage travaille sur le projet sélectionné (`storage.select(id)`) ; la liste de l'accueil (`recents.ts`) est un réglage de l'appareil, et en retirer un projet ne supprime aucun fichier. La sauvegarde automatique ne tourne que projet ouvert, et « Projets » enregistre avant de revenir à l'accueil.
+- **Créer n'écrase jamais** : `createProject` ouvre le projet qui se trouve déjà à l'emplacement choisi au lieu d'y écrire le nouveau. Un dossier sans projet choisi par « Ouvrir un dossier » n'est pas initialisé : message, et l'auteur passe par « Nouveau projet ».
 - **Dossier du projet hors du dossier personnel** : le droit accordé par le sélecteur de dossier ne vaut que pour la session. `tauri-plugin-persisted-scope` (déclaré après le plugin fs dans `lib.rs`) le conserve ; sans lui, un projet sur un autre disque est refusé au lancement suivant. Ce défaut ne se voit ni en `tauri dev` au premier essai ni dans le navigateur : tester l'exe en le relançant.
-- **Ouverture qui échoue** : `load()` rattrape toute erreur de lecture, oublie le dossier, ouvre le projet d'exemple et affiche un message (`openFailed`). Ne jamais laisser une promesse de stockage sans `catch` au démarrage : l'app resterait sur « Ouverture du projet… ».
+- **Ouverture qui échoue** : toute erreur de lecture est rattrapée ; on reste à l'accueil avec un message (`openFailed`). Ne jamais laisser une promesse de stockage sans `catch` au démarrage : l'app resterait sur « Ouverture du projet… ».
 - **Ne jamais écraser un projet existant** : quand `save()` fait choisir un dossier et que celui-ci contient déjà un projet, il l'ouvre au lieu d'y écrire ce qui est à l'écran.
 - **Sauvegarde** : seuls les fichiers modifiés sont réécrits (diff avec `lastFiles`), les cartes supprimées sont effacées du disque.
 - **Scénario non modifié** : tant que `screenplay === savedScreenplay` dans le store, `scenario.fountain` est réécrit tel quel, à l'octet près. Les fonctions de `link.ts` rendent donc le même objet quand rien ne change : ne pas recréer le scénario sans raison.
@@ -224,7 +228,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 6 du plan)
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 6 du plan), accueil et projets multiples
 2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue

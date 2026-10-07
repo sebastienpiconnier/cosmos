@@ -3,9 +3,10 @@
 //   cartes/<id>.md     une carte par fichier, Markdown + frontmatter
 //   scenario.fountain  texte du scénario (projets scénario uniquement)
 //
-// - Tauri sur ordinateur (macOS, Windows, Linux) : dossier choisi par l'auteur.
-// - Tauri sur mobile (iOS, Android) : dossier privé de l'app (pas de sélecteur de dossier).
-// - Navigateur (npm run dev) : les mêmes fichiers simulés dans localStorage.
+// - Tauri sur ordinateur (macOS, Windows, Linux) : un dossier par projet, choisi par l'auteur.
+// - Tauri sur mobile (iOS, Android) : un dossier par projet dans l'espace privé de l'app.
+// - Navigateur (npm run dev) : les mêmes fichiers simulés dans localStorage, une clé par projet.
+// Plusieurs projets : le stockage en liste les connus (écran d'accueil) et travaille sur celui qu'on sélectionne.
 
 import type { Project, ProjectMeta } from "../types";
 import { cardToFile, fileToCard } from "./markdown";
@@ -15,8 +16,11 @@ import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, cardPath, type FileMap } from ".
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
+import type { ProjectKind } from "../types";
+import type { ProjectEntry } from "./recents";
 
 export * from "./paths";
+export type { ProjectEntry } from "./recents";
 
 export interface Storage {
   kind: "browser" | "tauri";
@@ -26,6 +30,19 @@ export interface Storage {
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */
   pickFolder(): Promise<boolean>;
+  /** Projets connus de cet appareil, les plus récemment ouverts d'abord. */
+  list(): Promise<ProjectEntry[]>;
+  /** Choisit le projet sur lequel portent readAll, write et location. */
+  select(id: string): void;
+  /**
+   * Prépare l'emplacement d'un nouveau projet et le sélectionne : dialogue de dossier sur ordinateur,
+   * nouvel emplacement privé ailleurs. Renvoie false si l'auteur annule.
+   */
+  create(): Promise<boolean>;
+  /** Inscrit le projet sélectionné en tête de la liste, avec son titre et son type. */
+  remember(info: { title: string; kind: ProjectKind }): void;
+  /** Retire un projet de la liste, sans toucher à ses fichiers. */
+  unlist(id: string): void;
   readAll(): Promise<FileMap | null>;
   /** Oublie le dossier mémorisé (il n'a pas pu être lu) : l'auteur le choisira à nouveau. */
   forget(): void;

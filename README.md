@@ -55,6 +55,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 
 ### Confort
 
+- **Plusieurs projets** : un écran d'accueil pour choisir celui sur lequel travailler, ou en créer un.
 - **Sauvegarde automatique** dans des fichiers Markdown, ou `Cmd+S` / `Ctrl+S`.
 - **Français et anglais**, avec la typographie propre à chaque langue.
 - **Mode clair, sombre ou comme le système.**
@@ -101,12 +102,14 @@ npm run tauri dev      # app desktop
 npm run dev            # dans le navigateur (http://localhost:1420), sans accès disque
 ```
 
-Au premier lancement, un petit projet d'exemple s'affiche. Dans l'app desktop, « Enregistrer » ou « Ouvrir un dossier » permet de choisir le dossier du roman.
+L'app s'ouvre sur l'accueil : la liste de tes projets et un formulaire « Nouveau projet ». Sur ordinateur, chaque projet est un dossier que tu choisis ; « Essayer avec un exemple » crée un petit projet pour découvrir.
 
 **Mobile** (sur Mac) : `npm run tauri ios init` puis `npm run tauri ios dev` (Xcode requis), ou `android init` / `android dev` (Android Studio et NDK requis). Sur mobile, les projets sont rangés dans l'espace privé de l'app.
 
 ## Utilisation
 
+- **Choisir un projet** : à chaque lancement, l'accueil liste tes projets. Depuis un projet, le bouton « Projets » enregistre et y revient.
+- **Nouveau projet** : un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer.
 - **Nouvelle carte** : double-clic sur le canevas, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
 - **Changer le type** : taper **/** en début de ligne, ou toucher l'étiquette du type (« IDÉE ») : Personnage, Lieu, Scène, Thème ou Question.
 - **Tirer un fil** depuis un point au bord d'une carte vers une autre, puis nommer le lien (« soupçonne », « se passe à »). Pour le renommer : double-clic sur le fil (ou simple appui au doigt).

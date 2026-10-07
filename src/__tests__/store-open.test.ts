@@ -35,9 +35,9 @@ describe("dossier du projet illisible", () => {
     expect(state().loaded).toBe(true);
     expect(state().openFailed).toBe(true);
     expect(forget).toHaveBeenCalledOnce();
-    // Le projet d'exemple est affiché, mais rien n'est « à enregistrer » : aucun dialogue ne s'ouvre seul.
-    expect(state().nodes.length).toBeGreaterThan(0);
-    expect(state().status).toBe("enregistre");
+    // On reste à l'accueil : rien n'est ouvert à la place du projet, rien n'est « à enregistrer ».
+    expect(state().screen).toBe("home");
+    expect(state().nodes).toEqual([]);
   });
 
   it("le message se ferme, et disparaît dès qu'un projet s'ouvre", async () => {

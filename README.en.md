@@ -55,6 +55,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 ### Comfort
 
+- **Several projects**: a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
 - **English and French**, each with its own typography.
 - **Light, dark or system appearance.**
@@ -101,12 +102,14 @@ npm run tauri dev      # desktop app
 npm run dev            # in the browser (http://localhost:1420), no disk access
 ```
 
-On first launch, a small sample project is shown. In the desktop app, “Save” or “Open folder” lets you choose the project folder.
+The app opens on the home screen: the list of your projects and a “New project” form. On a computer, each project is a folder you choose; “Try with an example” creates a small project to explore.
 
 **Mobile** (on a Mac): `npm run tauri ios init` then `npm run tauri ios dev` (Xcode required), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
 
 ## Usage
 
+- **Choose a project**: on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
+- **New project**: a working title, novel or screenplay, and on a computer the folder to save it in.
 - **New card**: double-click the canvas, long-press with a finger, or use the “New card” button. Then just write.
 - **Change the type**: type **/** at the start of a line, or tap the type label (“IDEA”): Character, Place, Scene, Theme or Question.
 - **Drag a thread** from a point on a card’s edge to another card, then name the link (“suspects”, “takes place at”). To rename it: double-click the thread (or a single tap with a finger).

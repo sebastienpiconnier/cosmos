@@ -84,12 +84,36 @@ button { font: inherit; color: inherit; }
 
 .app { display: flex; flex-direction: column; height: 100%; }
 .app-main { flex: 1; min-height: 0; position: relative; }
-/* Message d'erreur sous la barre du haut (dossier du projet illisible) */
-.app-alert {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 20px;
-  background: var(--surface); border-bottom: 2px solid var(--danger); color: var(--ink); font-size: 14px; line-height: 1.4;
-}
-.app-alert .icon-button { flex-shrink: 0; font-size: 18px; }
+/* ---------- Accueil : choisir ou créer un projet ---------- */
+.home { display: flex; flex-direction: column; height: 100%; }
+.home-actions { margin-left: auto; }
+.home-main { flex: 1; min-height: 0; overflow: auto; display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; justify-content: center; gap: 24px; padding: 32px 24px; }
+.home-alert { flex-basis: 100%; max-width: 944px; margin: 0; padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.5; }
+.home-panel { flex: 1 1 340px; max-width: 460px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; background: var(--surface); border-radius: 16px; }
+.home-panel h1, .home-panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; }
+.home-list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.home-list li { display: flex; align-items: center; gap: 6px; }
+.home-project { flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer; }
+.home-project:hover { border-color: var(--line-2); background: var(--ground); }
+.home-project-title { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.home-project-meta { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.home-list .icon-button { flex-shrink: 0; width: 44px; height: 44px; font-size: 18px; }
+.home-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.home-form > label, .home-kinds legend { font-size: 13px; font-weight: 600; }
+.home-form input[type="text"] { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.home-form input[type="text"]::placeholder { color: var(--placeholder); }
+.home-kinds { margin: 8px 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.home-kinds legend { padding: 0; margin-bottom: 6px; }
+.home-kind { flex: 1 1 160px; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; padding: 12px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; }
+.home-kind.is-selected { border-color: var(--accent); }
+.home-kind input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.home-kind-name { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+.home-kind-hint { grid-column: 1 / -1; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.home-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.home-create { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--surface); font-size: 15px; font-weight: 600; cursor: pointer; }
+.home-create:hover { background: var(--accent-ink); }
+.home-buttons .ghost-button { min-height: 44px; }
+.home button:disabled { opacity: 0.6; cursor: default; }
 
 /* ---------- Barre du haut ---------- */
 .topbar {

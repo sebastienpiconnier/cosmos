@@ -1,7 +1,7 @@
 // Stockage sur disque via Tauri.
-// - Ordinateur : l'auteur choisit un dossier projet (mémorisé pour la prochaine fois).
-// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, le projet vit
-//   dans l'espace privé de l'app. La synchronisation entre appareils viendra plus tard.
+// - Ordinateur : chaque projet est un dossier choisi par l'auteur (la liste des projets ouverts est mémorisée).
+// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, chaque projet a son dossier
+//   dans l'espace privé de l'app ($APPDATA/projets/). La synchronisation entre appareils viendra plus tard.
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
@@ -11,52 +11,79 @@ import type { Storage } from "./index";
 import { CARDS_DIR, META_FILE, SCREENPLAY_FILE, type FileMap } from "./paths";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
+import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 
+/** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
-const MOBILE_PROJECT = "mon-projet";
+const MOBILE_DIR = "projets";
 const mobile = isMobileOS();
 
-let folder: string | null = (() => {
-  if (mobile) return null; // résolu à la première lecture (API asynchrone)
-  try {
-    return localStorage.getItem(LAST_FOLDER_KEY);
-  } catch {
-    return null;
-  }
-})();
+/** Projet sélectionné : chemin du dossier (ordinateur) ou nom du dossier privé (mobile). */
+let current: string | null = null;
+
+const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 async function projectFolder(): Promise<string | null> {
-  if (!folder && mobile) folder = await join(await appDataDir(), "projets", MOBILE_PROJECT);
-  return folder;
+  if (!current) return null;
+  return mobile ? join(await appDataDir(), MOBILE_DIR, current) : current;
+}
+
+function adoptLegacyFolder() {
+  try {
+    const path = localStorage.getItem(LAST_FOLDER_KEY);
+    if (!path) return;
+    if (!readRecents().some((e) => e.id === path)) touchRecent({ id: path, name: baseName(path), openedAt: 0 });
+    localStorage.removeItem(LAST_FOLDER_KEY);
+  } catch {
+    /* rien à reprendre */
+  }
 }
 
 export const tauriStorage: Storage = {
   kind: "tauri",
   canPickFolder: !mobile,
-  location: () => (mobile || !folder ? null : (folder.split(/[\\/]/).pop() ?? folder)),
+  location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {
     if (mobile) return true;
     const chosen = await open({ directory: true, title: getT().dialog.pickFolder });
     if (typeof chosen !== "string") return false;
-    folder = chosen;
-    try {
-      localStorage.setItem(LAST_FOLDER_KEY, chosen);
-    } catch {
-      /* préférence non mémorisée, sans gravité */
-    }
+    current = chosen;
     return true;
   },
 
   forget() {
-    if (mobile) return; // le dossier privé de l'app ne se choisit pas
-    folder = null;
-    try {
-      localStorage.removeItem(LAST_FOLDER_KEY);
-    } catch {
-      /* rien à oublier */
-    }
+    current = null;
   },
+
+  async list() {
+    if (!mobile) {
+      adoptLegacyFolder();
+      return byRecency(readRecents());
+    }
+    // Mobile : la liste mémorisée, complétée par les dossiers présents (réinstallation, ancien projet unique).
+    const list = readRecents();
+    const dir = await join(await appDataDir(), MOBILE_DIR);
+    if (await exists(dir)) {
+      for (const entry of await readDir(dir)) {
+        if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0 });
+      }
+    }
+    return byRecency(list);
+  },
+  select(id) {
+    current = id;
+  },
+  async create() {
+    if (!mobile) return this.pickFolder();
+    current = `projet-${Date.now().toString(36)}`;
+    return true;
+  },
+  remember(info) {
+    if (!current) return;
+    touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now() });
+  },
+  unlist: dropRecent,
 
   async readAll() {
     const dir = await projectFolder();

@@ -8,7 +8,33 @@ export const en: Messages = {
   app: {
     loading: "Opening project…",
     openFailed: "Your project folder couldn’t be opened. Choose it again with “Open folder”: your files have not been changed.",
-    dismiss: "Close this message",
+  },
+
+  // Home screen: choose the project to work on.
+  home: {
+    title: "Your projects",
+    empty: "No project yet. Create the first one, or try with an example.",
+    openedOn: "opened {date}",
+    openFolder: "Open folder…",
+    unlist: "Remove “{title}” from the list",
+    unlistHint: "Removes the project from this list. Its files are not deleted.",
+    notAProject: "This folder doesn’t contain a Cosmos project. To start one, use “New project”.",
+    openFailed: "This project couldn’t be opened.",
+    newTitle: "New project",
+    newHint: "Same canvas, same bible: only the writing workshop changes. You can switch later.",
+    workingTitle: "Working title",
+    titlePlaceholder: "The Lighthouse of the Missing",
+    untitled: "Untitled",
+    youWrite: "You’re writing…",
+    novel: "A novel",
+    novelHint: "Canvas and bible. The outline and the prose manuscript are coming soon.",
+    screenplay: "A screenplay",
+    screenplayHint: "Step outline, standard film format, pages and minutes.",
+    folderHint: "You’ll then choose the folder where the project is saved.",
+    create: "Create project",
+    example: "Try with an example",
+    projects: "Projects",
+    backHint: "Save and go back to the project list",
   },
 
   views: {

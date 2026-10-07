@@ -9,7 +9,33 @@ export const fr = {
   app: {
     loading: "Ouverture du projet…",
     openFailed: "Le dossier de ton projet n’a pas pu être ouvert. Choisis-le à nouveau avec « Ouvrir un dossier » : tes fichiers n’ont pas été modifiés.",
-    dismiss: "Fermer ce message",
+  },
+
+  // Écran d'accueil : choisir le projet sur lequel travailler.
+  home: {
+    title: "Tes projets",
+    empty: "Aucun projet pour l’instant. Crée le premier, ou essaie avec un exemple.",
+    openedOn: "ouvert le {date}",
+    openFolder: "Ouvrir un dossier…",
+    unlist: "Retirer « {title} » de la liste",
+    unlistHint: "Retire le projet de cette liste. Ses fichiers ne sont pas supprimés.",
+    notAProject: "Ce dossier ne contient pas de projet Cosmos. Pour en démarrer un, utilise « Nouveau projet ».",
+    openFailed: "Ce projet n’a pas pu être ouvert.",
+    newTitle: "Nouveau projet",
+    newHint: "Même canevas, même bible : seul l’atelier d’écriture change. Tu pourras basculer plus tard.",
+    workingTitle: "Titre de travail",
+    titlePlaceholder: "Le Phare des Absents",
+    untitled: "Sans titre",
+    youWrite: "Tu écris…",
+    novel: "Un roman",
+    novelHint: "Canevas et bible. Le plan et le manuscrit en prose arrivent bientôt.",
+    screenplay: "Un scénario",
+    screenplayHint: "Séquencier, format cinéma standard, pages et minutes.",
+    folderHint: "Tu choisiras ensuite le dossier où enregistrer le projet.",
+    create: "Créer le projet",
+    example: "Essayer avec un exemple",
+    projects: "Projets",
+    backHint: "Enregistrer et revenir à la liste des projets",
   },
 
   views: {

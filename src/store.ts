@@ -14,7 +14,7 @@ import {
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
-import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap } from "./storage";
+import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
@@ -51,7 +51,23 @@ interface CosmosState {
   clearPendingFocus: () => void;
   status: SaveStatus;
   loaded: boolean;
-  /** Le dossier du projet n'a pas pu être ouvert : un message invite à le choisir à nouveau. */
+  /** Accueil (choix du projet) ou projet ouvert. */
+  screen: "home" | "project";
+  /** Projets connus de cet appareil, pour l'accueil. */
+  projects: ProjectEntry[];
+  /** Le dossier choisi à l'accueil ne contient pas de projet. */
+  homeNotice: boolean;
+  /** Au lancement : liste les projets et affiche l'accueil. */
+  start: () => Promise<void>;
+  openProject: (id: string) => Promise<void>;
+  createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
+  /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
+  tryExample: () => Promise<void>;
+  /** Enregistre et revient à l'accueil. */
+  closeProject: () => Promise<void>;
+  /** Retire un projet de la liste de l'accueil, sans toucher à ses fichiers. */
+  unlistProject: (id: string) => Promise<void>;
+  /** Le dossier du projet n'a pas pu être ouvert : un message, à l'accueil, invite à le choisir à nouveau. */
   openFailed: boolean;
   dismissOpenFailed: () => void;
   lastFiles: FileMap;
@@ -70,6 +86,7 @@ interface CosmosState {
   renameLink: (id: string, label: string) => void;
 
   setView: (view: View, focusId?: string | null) => void;
+  /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
   load: () => Promise<void>;
   openFolder: () => Promise<void>;
   save: () => Promise<void>;
@@ -197,9 +214,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const project = deserialize(files);
     if (!project) return false;
     const { state, dirty } = openProject(project);
-    set({ ...state, lastFiles: files, openFailed: false, status: dirty ? "modifie" : "enregistre" });
+    set({
+      ...state,
+      lastFiles: files,
+      screen: "project",
+      view: "toile",
+      focusId: null,
+      openFailed: false,
+      homeNotice: false,
+      status: dirty ? "modifie" : "enregistre",
+    });
+    storage.remember({ title: state.title, kind: state.kind });
     return true;
   };
+  const refreshProjects = async () => set({ projects: await storage.list().catch(() => []) });
 
   return {
     title: "",
@@ -233,6 +261,66 @@ export const useCosmos = create<CosmosState>((set, get) => {
     clearPendingFocus: () => set({ pendingFocusId: null }),
     status: "enregistre",
     loaded: false,
+    screen: "home",
+    projects: [],
+    homeNotice: false,
+
+    start: async () => {
+      await refreshProjects();
+      set({ loaded: true, screen: "home" });
+    },
+
+    openProject: async (id) => {
+      storage.select(id);
+      set({ openFailed: false, homeNotice: false });
+      try {
+        const files = await storage.readAll();
+        // Dossier vidé ou déplacé depuis la dernière fois : on reste à l'accueil, avec un message.
+        if (!files || !openFiles(files)) set({ homeNotice: true });
+      } catch (err) {
+        console.error(err);
+        storage.forget();
+        set({ openFailed: true });
+      }
+    },
+
+    createProject: async ({ title, kind }) => {
+      if (!(await storage.create())) return;
+      // L'emplacement choisi contient déjà un projet : on l'ouvre, on ne l'écrase pas.
+      const existing = await storage.readAll().catch(() => null);
+      if (existing && openFiles(existing)) return;
+      const { state } = openProject({ meta: { version: 1, title, kind, layout: [], links: [] }, cards: [], screenplay: null });
+      set({
+        ...state,
+        lastFiles: {},
+        screen: "project",
+        view: "toile",
+        focusId: null,
+        openFailed: false,
+        homeNotice: false,
+        status: "modifie",
+      });
+      await get().save();
+    },
+
+    tryExample: async () => {
+      if (!(await storage.create())) return;
+      await get().load();
+      if (get().screen === "project" && get().status === "modifie") await get().save();
+    },
+
+    closeProject: async () => {
+      if (get().status === "modifie") await get().save();
+      // Un enregistrement en échec garde le projet à l'écran : rien n'est perdu en revenant à l'accueil.
+      if (get().status === "erreur") return;
+      await refreshProjects();
+      set({ screen: "home" });
+    },
+
+    unlistProject: async (id) => {
+      storage.unlist(id);
+      await refreshProjects();
+    },
     openFailed: false,
     dismissOpenFailed: () => set({ openFailed: false }),
     lastFiles: {},
@@ -317,23 +405,32 @@ export const useCosmos = create<CosmosState>((set, get) => {
         storage.forget();
         failed = true;
       }
+      // Après un échec, on reste à l'accueil : l'auteur choisit à nouveau son dossier.
+      if (failed) {
+        set({ loaded: true, openFailed: true, screen: "home" });
+        return;
+      }
       const { state, dirty } = openProject((files && deserialize(files)) || demoProject());
-      // Après un échec, rien n'est « à enregistrer » : pas de dialogue de dossier qui s'ouvre tout seul.
-      const saved = failed || (files !== null && !dirty);
-      set({ ...state, lastFiles: files ?? {}, loaded: true, openFailed: failed, status: saved ? "enregistre" : "modifie" });
+      set({
+        ...state,
+        lastFiles: files ?? {},
+        loaded: true,
+        screen: "project",
+        view: "toile",
+        focusId: null,
+        openFailed: false,
+        homeNotice: false,
+        status: files !== null && !dirty ? "enregistre" : "modifie",
+      });
+      if (files) storage.remember({ title: state.title, kind: state.kind });
     },
 
     openFolder: async () => {
       if (!(await storage.pickFolder())) return;
       try {
         const files = await storage.readAll();
-        if (files) {
-          openFiles(files);
-        } else {
-          // Dossier vide : on y enregistre le projet courant.
-          set({ lastFiles: {}, status: "modifie", openFailed: false });
-          await get().save();
-        }
+        // Un dossier sans projet ne s'ouvre pas : pour en démarrer un, c'est « Nouveau projet ».
+        if (!files || !openFiles(files)) set({ homeNotice: true, openFailed: false });
       } catch (err) {
         console.error(err);
         storage.forget();
@@ -369,6 +466,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           savedScreenplay: screenplay,
           status: get().status === "enregistrement" ? "enregistre" : get().status,
         });
+        storage.remember({ title: get().title, kind: get().kind });
       } catch (err) {
         console.error(err);
         set({ status: "erreur" });
