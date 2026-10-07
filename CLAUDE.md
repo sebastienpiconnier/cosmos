@@ -1,10 +1,10 @@
 # Cosmos
 
-Application d'écriture pour romanciers et scénaristes « architectes » : une toile libre où l'on pose ses idées en vrac, qui s'organise progressivement en bible (personnages, lieux, scènes…) puis en plan et en manuscrit. Fil rouge : **du chaos au monde ordonné**.
+Application d'écriture pour romanciers et scénaristes « architectes » : un canevas libre où l'on pose ses idées en vrac, qui s'organise progressivement en bible (personnages, lieux, scènes…) puis en plan et en manuscrit. Fil rouge : **du chaos au monde ordonné**.
 
 ## Principes produit (à respecter dans toute évolution)
 
-- **Un seul contenu, plusieurs vues.** Toile, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
+- **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
 - **Trois gestes** : taper (double-clic, appui long ou bouton « + »), tirer un fil, déposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
@@ -31,7 +31,7 @@ Tester les deux modes : dans Chrome, outils de développement, mode appareil (ta
 
 ## Romans et scénarios (règle du projet)
 
-Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absent = roman). Même toile, même modèle de cartes, mêmes fichiers : seuls le vocabulaire, certains styles et, plus tard, les éditeurs changent. L'auteur peut basculer à tout moment (Réglages, « Ce projet »).
+Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absent = roman). Même canevas, même modèle de cartes, mêmes fichiers : seuls le vocabulaire, certains styles et, plus tard, les éditeurs changent. L'auteur peut basculer à tout moment (Réglages, « Ce projet »).
 
 | | Roman | Scénario |
 |---|---|---|
@@ -79,7 +79,7 @@ Apparence : **Comme le système** (par défaut), **Claire** ou **Sombre**, dans 
 |---|---|
 | Coquille | Tauri 2 (`src-tauri/`) : macOS, Windows, Linux, iOS, Android ; plugins `fs` et `dialog` |
 | Front | React 19 + TypeScript (strict) + Vite |
-| Toile | React Flow (`@xyflow/react` v12) |
+| Canevas | React Flow (`@xyflow/react` v12) |
 | Éditeur | TipTap v3 (ProseMirror) |
 | État | Zustand (`src/store.ts`) |
 | Markdown | `marked` (md → html) et `turndown` (html → md) |
@@ -196,6 +196,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Conventions
 
+- **Vocabulaire** : la première vue s'appelle **Canevas** en français (Canvas en anglais), plus « Toile ». Les noms techniques n'ont pas changé : composant `Toile.tsx`, vue `toile`, clés i18n `views.toile` et `t.toile`, classes CSS `.toile`.
 - Interface **multilingue** (voir plus haut), français de référence au tutoiement, anglais direct et chaleureux.
 - **Pas de tiret cadratin (—)** dans les textes d'interface ni la documentation : virgules, deux-points ou parenthèses.
 - Code et noms techniques en anglais, commentaires en français.
@@ -205,8 +206,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 3 du plan)
-2. Toile : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 3 du plan)
+2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
@@ -214,7 +215,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)
-9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand la toile est très dézoomée (menu hors du zoom de React Flow)
+9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
 ## Changer de machine (PC Windows ↔ Mac)

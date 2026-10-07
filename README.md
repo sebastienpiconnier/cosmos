@@ -2,9 +2,9 @@
 
 **Français** · [English](README.en.md)
 
-Du chaos au monde ordonné : une toile pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.
+Du chaos au monde ordonné : un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.
 
-![La toile de Cosmos : quatre cartes (idée, personnage, lieu, scène) reliées par des fils étiquetés](docs/images/toile-fr.png)
+![Le canevas de Cosmos : quatre cartes (idée, personnage, lieu, scène) reliées par des fils étiquetés](docs/images/canevas-fr.png)
 
 ## L'idée
 
@@ -12,7 +12,7 @@ Une histoire commence rarement par le chapitre un. Elle commence par des fragmen
 
 L'app s'adresse aux auteurs « architectes », ceux qui préparent avant d'écrire. Elle repose sur quelques partis pris :
 
-- **Un seul contenu, plusieurs vues.** Toile, Plan, Bible et Manuscrit sont quatre lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
+- **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont quatre lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
 - **La structure émerge, on ne la configure pas.** Aucun formulaire, aucun champ obligatoire. Une carte naît « Idée » et devient Personnage, Lieu ou Scène quand tu le décides.
 - **Trois gestes suffisent** : taper, tirer un fil, déposer.
 - **Tes textes t'appartiennent.** Un projet est un dossier de fichiers Markdown, lisibles dans n'importe quel éditeur, avec ou sans Cosmos.
@@ -22,20 +22,20 @@ L'app s'adresse aux auteurs « architectes », ceux qui préparent avant d'écri
 
 Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne aujourd'hui.
 
-### La toile
+### Le canevas
 
-- **Cartes libres** : double-clic sur la toile, appui long au doigt ou bouton « Nouvelle carte », et tu écris directement. Texte riche (gras, italique, listes).
+- **Cartes libres** : double-clic sur le canevas, appui long au doigt ou bouton « Nouvelle carte », et tu écris directement. Texte riche (gras, italique, listes).
 - **Six types de carte** : Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Fils étiquetés** : tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche.
-- **Mini-carte et zoom** pour s'y retrouver quand la toile grandit.
+- **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
 
 ### La Bible
 
-Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand la toile change.
+Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change.
 
 ### Romans et scénarios
 
-Un projet est un roman ou un scénario, et tu peux basculer à tout moment. La toile et les fichiers restent les mêmes, seul le vocabulaire s'adapte : le Lieu devient Décor, le Plan devient Séquencier, le Manuscrit devient Scénario, et les cartes Scène prennent la forme d'un en-tête de scène (`INT. PHARE - NUIT`) en Courier Prime.
+Un projet est un roman ou un scénario, et tu peux basculer à tout moment. Le canevas et les fichiers restent les mêmes, seul le vocabulaire s'adapte : le Lieu devient Décor, le Plan devient Séquencier, le Manuscrit devient Scénario, et les cartes Scène prennent la forme d'un en-tête de scène (`INT. PHARE - NUIT`) en Courier Prime.
 
 ### L'éditeur de scénario
 
@@ -46,7 +46,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Six éléments** : en-tête de scène, action, personnage, didascalie, dialogue, transition, avec les retraits standard.
 - **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
 - **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
-- **Relié à la toile** : chaque en-tête de scène est lié à sa carte Scène. Renommer l'un renomme l'autre, et les cartes sans texte attendent dans « Scènes à écrire ».
+- **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène. Renommer l'un renomme l'autre, et les cartes sans texte attendent dans « Scènes à écrire ».
 - **Un fichier ouvert** : le texte est enregistré dans `scenario.fountain`, au format [Fountain](https://fountain.io), lisible par les autres logiciels de scénario.
 
 ### Confort
@@ -57,13 +57,13 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Souris, doigt et clavier** : chaque action a les trois chemins.
 - **Hors ligne** : polices embarquées, aucun compte, aucun serveur.
 
-![La même toile en mode sombre, interface en anglais](docs/images/canvas-dark-en.png)
+![Le même canevas en mode sombre, interface en anglais](docs/images/canvas-dark-en.png)
 
 ### À venir
 
 | Étape | Contenu |
 |---|---|
-| Toile | Images, cadres de regroupement, redimensionnement des cartes, recherche, annuler et rétablir |
+| Canevas | Images, cadres de regroupement, redimensionnement des cartes, recherche, annuler et rétablir |
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
@@ -103,7 +103,7 @@ Au premier lancement, un petit projet d'exemple s'affiche. Dans l'app desktop, �
 
 ## Utilisation
 
-- **Nouvelle carte** : double-clic sur la toile, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
+- **Nouvelle carte** : double-clic sur le canevas, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
 - **Changer le type** : taper **/** en début de ligne, ou toucher l'étiquette du type (« IDÉE ») : Personnage, Lieu, Scène, Thème ou Question.
 - **Tirer un fil** depuis un point au bord d'une carte vers une autre, puis nommer le lien (« soupçonne », « se passe à »). Pour le renommer : double-clic sur le fil (ou simple appui au doigt).
 - **Bible** : sommaire et fiches générés à partir des cartes.
@@ -129,7 +129,7 @@ Par défaut, l'app peut lire et écrire dans le dossier personnel et Documents. 
 
 ## Pour développer
 
-Tauri 2, React 19, TypeScript strict, Vite, React Flow pour la toile, TipTap pour l'éditeur, Zustand pour l'état.
+Tauri 2, React 19, TypeScript strict, Vite, React Flow pour le canevas, TipTap pour l'éditeur, Zustand pour l'état.
 
 ```bash
 npm run build   # vérification TypeScript + build

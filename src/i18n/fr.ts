@@ -12,7 +12,7 @@ export const fr = {
     aria: "Vues du projet",
     chaos: "Chaos",
     order: "Ordre",
-    toile: "Toile",
+    toile: "Canevas",
     plan: "Plan",
     bible: "Bible",
     manuscrit: "Manuscrit",
@@ -76,18 +76,18 @@ export const fr = {
   bible: {
     tocTitle: "Sommaire, généré automatiquement",
     tocAria: "Sommaire de la bible",
-    seeOnCanvas: "Voir sur la toile",
+    seeOnCanvas: "Voir sur le canevas",
     toDig: "À creuser",
     linkedTo: "Relié à",
     untitled: "Sans titre",
     emptyTitle: "La bible est vide",
-    emptyBody: "Crée des cartes sur la toile et transforme-les avec « / » : elles apparaîtront ici, rangées.",
+    emptyBody: "Crée des cartes sur le canevas et transforme-les avec « / » : elles apparaîtront ici, rangées.",
   },
 
   soon: {
     planTitle: "Plan, bientôt",
     planBody:
-      "Les scènes de la toile se glisseront dans un gabarit (Save the Cat, trois actes, voyage du héros) et une chronologie par intrigue.",
+      "Les scènes du canevas se glisseront dans un gabarit (Save the Cat, trois actes, voyage du héros) et une chronologie par intrigue.",
     manuscritTitle: "Manuscrit, bientôt",
     manuscritBody:
       "Un éditeur focus par scène, avec en marge les fiches des personnages et lieux détectés dans le texte.",
@@ -113,7 +113,7 @@ export const fr = {
     soon: {
       planTitle: "Séquencier, bientôt",
       planBody:
-        "Les scènes de la toile se rangeront dans un gabarit (trois actes, Save the Cat, huit séquences, épisode de série), avec la durée estimée de chaque acte.",
+        "Les scènes du canevas se rangeront dans un gabarit (trois actes, Save the Cat, huit séquences, épisode de série), avec la durée estimée de chaque acte.",
       manuscritTitle: "Scénario, bientôt",
       manuscritBody:
         "Un éditeur au format standard : en-têtes de scène, action, personnage, dialogue, didascalie et transition, avec Tab et Entrée pour passer de l’un à l’autre. Environ une page par minute.",
@@ -165,7 +165,7 @@ export const fr = {
     writeScene: "Écrire la scène « {title} »",
     inSceneTitle: "Dans cette scène",
     noScene: "Place le curseur dans une scène pour voir sa carte, son décor et ses personnages.",
-    noCard: "Cette scène n’a pas encore de carte sur la toile.",
+    noCard: "Cette scène n’a pas encore de carte sur le canevas.",
     createCard: "Créer la carte",
     locationScenesOne: "{n} scène dans ce décor",
     locationScenesMany: "{n} scènes dans ce décor",

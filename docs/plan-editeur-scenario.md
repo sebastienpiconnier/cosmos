@@ -56,7 +56,7 @@ Quand le projet est un **scénario** (`kind: "scenario"`), la vue **Scénario** 
 - **Tab** change le type de l'élément courant, **Entrée** crée l'élément suivant logique ;
 - complétion des personnages et des décors depuis la Bible ;
 - compteur de **pages** et de **minutes** (une page ≈ une minute) ;
-- chaque en-tête de scène est relié à sa carte Scène sur la toile ;
+- chaque en-tête de scène est relié à sa carte Scène sur le canevas ;
 - exports **Fountain**, **PDF** au format standard et **FDX** (Final Draft).
 
 Hors périmètre de ce plan : collaboration temps réel, révisions colorées (pages bleues, roses…), numérotation de tournage verrouillée, dépouillement complet. Ils sont listés en fin de document.
@@ -251,7 +251,7 @@ Fichiers : `src/storage/paths.ts` (`SCREENPLAY_FILE = "scenario.fountain"`), `in
   - lecture des notes `[[cosmos:id]]` ;
   - synchronisation titre de carte ↔ texte d'en-tête (l'en-tête fait foi au chargement) ;
   - liste « scènes sans carte » et « cartes sans scène ».
-- Passer un projet roman en scénario : si `scenario.fountain` n'existe pas, le créer avec un en-tête par carte Scène (ordre de la toile de haut en bas, en attendant le Séquencier) et une page de titre (`Title:` = titre du projet).
+- Passer un projet roman en scénario : si `scenario.fountain` n'existe pas, le créer avec un en-tête par carte Scène (ordre du canevas de haut en bas, en attendant le Séquencier) et une page de titre (`Title:` = titre du projet).
 - Tauri : aucune nouvelle permission (fichier dans le dossier projet déjà autorisé).
 
 **Fini quand** : test d'intégration du stockage navigateur (écrire, relire, comparer) ; supprimer une carte Scène ne supprime **pas** le texte de la scène (la note de lien est simplement retirée).
