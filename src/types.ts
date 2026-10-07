@@ -3,6 +3,15 @@
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
+/**
+ * Nature du projet. Change le vocabulaire (Lieu → Décor, Plan → Séquencier…), le style des
+ * scènes (en-têtes de scène) et, plus tard, l'éditeur de la vue Manuscrit (format scénario).
+ * Les clés internes et le format des cartes restent identiques : on peut basculer à tout moment.
+ */
+export type ProjectKind = "roman" | "scenario";
+export const PROJECT_KINDS: ProjectKind[] = ["roman", "scenario"];
+export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || v === "scenario";
+
 /** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
 export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "theme", "question"];
 
@@ -39,6 +48,8 @@ export interface Link {
 export interface ProjectMeta {
   version: 1;
   title: string;
+  /** Absent dans les projets créés avant le mode scénario : vaut alors "roman". */
+  kind?: ProjectKind;
   layout: CardLayout[];
   links: Link[];
   viewport?: { x: number; y: number; zoom: number };

@@ -10,7 +10,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
-import { fmt, getT, useT } from "../i18n";
+import { fmt, getT } from "../i18n";
+import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -21,7 +22,9 @@ type MenuState = { via: "slash"; from: number; to: number; query: string } | { v
 function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
   const deleteCard = useCosmos((s) => s.deleteCard);
-  const t = useT();
+  const { t, types, kind } = useVocab();
+  // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
+  const slugline = kind === "scenario" && data.type === "scene";
   const lang = useSettings((s) => s.lang);
 
   const [slash, setSlash] = useState<MenuState | null>(null);
@@ -35,8 +38,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     setSlash(menu);
   };
   const options = useMemo(
-    () => (slash ? CARD_TYPES.filter((type) => norm(t.types[type].label).includes(norm(slash.query))) : []),
-    [slash, t],
+    () => (slash ? CARD_TYPES.filter((type) => norm(types[type].label).includes(norm(slash.query))) : []),
+    [slash, types],
   );
 
   // Refs pour que les gestionnaires TipTap (créés une seule fois) voient l'état courant.
@@ -132,6 +135,15 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
     };
   }, [labelMenuOpen]);
 
+  // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge).
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [data.title, slugline]);
+
   // Pendant qu'on tire un fil, toute la carte devient une cible de dépôt.
   const connection = useConnection();
   const isDropTarget = connection.inProgress && connection.fromNode?.id !== id;
@@ -172,14 +184,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
           className="card-type nodrag"
           aria-haspopup="listbox"
           aria-expanded={slash?.via === "label"}
-          aria-label={fmt(t.card.changeType, { type: t.types[data.type].label })}
+          aria-label={fmt(t.card.changeType, { type: types[data.type].label })}
           onClick={() => {
             setActive(Math.max(0, CARD_TYPES.indexOf(data.type)));
             openMenu(slash?.via === "label" ? null : { via: "label", query: "" });
           }}
         >
           <span className="card-dot" />
-          {t.types[data.type].label}
+          {types[data.type].label}
         </button>
         <button
           type="button"
@@ -191,12 +203,22 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
         </button>
       </div>
 
-      <input
-        className="card-title nodrag"
+      {/* Titre sur plusieurs lignes si besoin (zone qui grandit), mais sans retour à la ligne :
+          Entrée passe au corps de la carte. */}
+      <textarea
+        ref={titleRef}
+        rows={1}
+        className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
         value={data.title}
-        placeholder={t.types[data.type].titlePlaceholder}
+        placeholder={types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
-        onChange={(e) => updateCard(id, { title: e.target.value })}
+        onChange={(e) => updateCard(id, { title: e.target.value.replace(/\n/g, " ") })}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            editor?.commands.focus("start");
+          }
+        }}
       />
 
       <div className="nodrag nowheel nopan">
@@ -217,7 +239,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
               onClick={() => pick(type)}
             >
               <span className="card-dot" style={{ background: typeColor(type) }} />
-              {t.types[type].label}
+              {types[type].label}
             </button>
           ))}
         </div>

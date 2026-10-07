@@ -4,14 +4,14 @@
 import { useMemo, useState } from "react";
 import { useCosmos } from "../store";
 import { typeColor, type CardType } from "../types";
-import { useT } from "../i18n";
+import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 
 // Ordre de la bible : les personnages d'abord, les idées en vrac à la fin.
 const ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
 
 export function Bible() {
-  const t = useT();
+  const { t, types, kind } = useVocab();
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
@@ -64,7 +64,7 @@ export function Bible() {
               >
                 <span className="toc-label">
                   <span className="card-dot" style={{ background: typeColor(s.type) }} />
-                  {t.types[s.type].section}
+                  {types[s.type].section}
                 </span>
                 <span className="toc-count">{s.cards.length}</span>
               </button>
@@ -73,14 +73,16 @@ export function Bible() {
         </ul>
       </nav>
 
-      <section className="bible-main" aria-label={t.types[shown.type].section}>
-        <h1>{t.types[shown.type].section}</h1>
+      <section className="bible-main" aria-label={types[shown.type].section}>
+        <h1>{types[shown.type].section}</h1>
         {shown.cards.map((card) => {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
           return (
             <article key={card.id} className="bible-entry" style={{ ["--type" as string]: typeColor(shown.type) }}>
               <header>
-                <h2>{card.title || t.bible.untitled}</h2>
+                <h2 className={kind === "scenario" && shown.type === "scene" ? "is-slugline" : undefined}>
+                  {card.title || t.bible.untitled}
+                </h2>
                 <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
                   {t.bible.seeOnCanvas}
                 </button>

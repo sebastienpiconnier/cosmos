@@ -95,6 +95,31 @@ export const fr = {
 
   dialog: { pickFolder: "Choisir le dossier du projet" },
 
+  kinds: {
+    section: "Ce projet",
+    label: "Type de projet",
+    roman: "Roman",
+    scenario: "Scénario",
+    hint: "Adapte le vocabulaire et, bientôt, l’éditeur d’écriture. Modifiable à tout moment.",
+  },
+
+  // Vocabulaire propre aux scénarios : remplace celui du roman quand le projet est un scénario.
+  scenario: {
+    views: { plan: "Séquencier", manuscrit: "Scénario" },
+    types: {
+      lieu: { label: "Décor", section: "Décors", titlePlaceholder: "Nom du décor" },
+      scene: { label: "Scène", section: "Scènes", titlePlaceholder: "INT. PHARE - NUIT" },
+    },
+    soon: {
+      planTitle: "Séquencier, bientôt",
+      planBody:
+        "Les scènes de la toile se rangeront dans un gabarit (trois actes, Save the Cat, huit séquences, épisode de série), avec la durée estimée de chaque acte.",
+      manuscritTitle: "Scénario, bientôt",
+      manuscritBody:
+        "Un éditeur au format standard : en-têtes de scène, action, personnage, dialogue, didascalie et transition, avec Tab et Entrée pour passer de l’un à l’autre. Environ une page par minute.",
+    },
+  },
+
   // Projet d'exemple du premier lancement (devient le contenu de l'auteur ensuite).
   demo: {
     title: "Mon premier projet",

@@ -1,8 +1,8 @@
 # Cosmos
 
-Du chaos au monde ordonné : une toile pour les écrivains qui construisent leur histoire avant de l'écrire.
+Du chaos au monde ordonné : une toile pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.
 
-*From chaos to an ordered world: a canvas for writers who build their story before writing it. Interface in English and French, light and dark modes.*
+*From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it. Interface in English and French, light and dark modes.*
 
 ## Démarrer
 
@@ -38,7 +38,7 @@ Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertiss
 - **Tirer un fil** depuis un point au bord d'une carte vers une autre, puis nommer le lien (« soupçonne », « se passe à »). Pour le renommer : double-clic sur le fil (ou simple appui au doigt).
 - **Bible** : sommaire et fiches générés à partir des cartes.
 - Sauvegarde automatique, ou **Cmd+S** (Ctrl+S sous Windows et Linux).
-- **Réglages** (icône en haut à droite) : langue de l'interface (français, anglais) et apparence (comme le système, claire, sombre).
+- **Réglages** (icône en haut à droite) : type de projet (roman ou scénario : le vocabulaire s'adapte, Lieu devient Décor, Plan devient Séquencier…), langue de l'interface (français, anglais) et apparence (comme le système, claire, sombre).
 
 ## Fichiers
 

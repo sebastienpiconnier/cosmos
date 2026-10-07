@@ -4,14 +4,18 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
+import { useCosmos } from "../store";
+import { PROJECT_KINDS, isProjectKind } from "../types";
 
 export function Settings() {
   const t = useT();
   const { lang, themePref, setLang, setThemePref } = useSettings();
+  const kind = useCosmos((s) => s.kind);
+  const setKind = useCosmos((s) => s.setKind);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -59,7 +63,27 @@ export function Settings() {
 
       {open && (
         <div className="settings-panel" id={ids.panel} role="group" aria-label={t.settings.title}>
-          <div className="eyebrow">{t.settings.title}</div>
+          {/* Réglage du projet (enregistré dans cosmos.json) */}
+          <div className="eyebrow">{t.kinds.section}</div>
+          <label htmlFor={ids.kind}>{t.kinds.label}</label>
+          <select
+            id={ids.kind}
+            value={kind}
+            aria-describedby={ids.kindHint}
+            onChange={(e) => isProjectKind(e.target.value) && setKind(e.target.value)}
+          >
+            {PROJECT_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {t.kinds[k]}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint" id={ids.kindHint}>
+            {t.kinds.hint}
+          </p>
+
+          {/* Réglages de l'appareil (langue, apparence) */}
+          <div className="eyebrow settings-sep">{t.settings.title}</div>
           <label htmlFor={ids.lang}>{t.settings.language}</label>
           <select id={ids.lang} value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
             {LANGS.map((code) => (

@@ -6,6 +6,8 @@ import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-serif/400.css";
+import "@fontsource/courier-prime/400.css"; // en-têtes de scène (scénario)
+import "@fontsource/courier-prime/700.css";
 import "@xyflow/react/dist/style.css";
 import "./styles.css";
 import { App } from "./App";

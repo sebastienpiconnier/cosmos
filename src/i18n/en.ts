@@ -94,6 +94,30 @@ export const en: Messages = {
 
   dialog: { pickFolder: "Choose the project folder" },
 
+  kinds: {
+    section: "This project",
+    label: "Project type",
+    roman: "Novel",
+    scenario: "Screenplay",
+    hint: "Adapts the vocabulary and, soon, the writing editor. You can change it anytime.",
+  },
+
+  scenario: {
+    views: { plan: "Step outline", manuscrit: "Screenplay" },
+    types: {
+      lieu: { label: "Location", section: "Locations", titlePlaceholder: "Location name" },
+      scene: { label: "Scene", section: "Scenes", titlePlaceholder: "INT. LIGHTHOUSE - NIGHT" },
+    },
+    soon: {
+      planTitle: "Step outline, coming soon",
+      planBody:
+        "Scenes from the canvas will slot into a template (three acts, Save the Cat, eight sequences, TV episode), with an estimated running time per act.",
+      manuscritTitle: "Screenplay, coming soon",
+      manuscritBody:
+        "A standard-format editor: scene headings, action, character, dialogue, parenthetical and transition, with Tab and Enter to move between them. About one page per minute.",
+    },
+  },
+
   demo: {
     title: "My first project",
     idea: "A lighthouse that lights itself every 13th of the month?",

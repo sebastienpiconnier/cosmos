@@ -36,6 +36,7 @@
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-text: "IBM Plex Serif", Georgia, serif;
+  --font-script: "Courier Prime", "Courier New", monospace; /* format scénario */
 }
 
 :root[data-theme="dark"] {
@@ -106,11 +107,13 @@ button { font: inherit; color: inherit; }
 /* Réglages */
 .settings { position: relative; }
 .settings-panel {
-  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: 240px;
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: 260px;
   display: flex; flex-direction: column; gap: 6px; padding: 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop);
 }
 .settings-panel label { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.settings-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.settings-sep { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .settings-panel select {
   min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px;
   background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
@@ -171,7 +174,10 @@ button { font: inherit; color: inherit; }
 .card:hover .card-delete, .card.is-selected .card-delete, .card-delete:focus-visible { opacity: 1; }
 .card-delete:hover { background: var(--ground); color: var(--ink); }
 
-.card-title { display: block; width: 100%; border: 0; outline: none; background: transparent; padding: 2px 12px; font: 600 16px var(--font-ui); color: var(--ink); }
+.card-title { display: block; width: 100%; border: 0; outline: none; background: transparent; padding: 2px 12px; font: 600 16px/1.35 var(--font-ui); color: var(--ink); resize: none; overflow: hidden; field-sizing: content; }
+/* Scénario : en-tête de scène (INT./EXT. DÉCOR - MOMENT) */
+.is-slugline { font-family: var(--font-script) !important; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.card-title.is-slugline { font-size: 14px; }
 .card-title::placeholder { color: var(--placeholder); font-weight: 500; }
 
 .card-editor, .card-editor:focus-visible { padding: 4px 12px 12px; min-height: 28px; outline: none; font: 15px/1.5 var(--font-text); color: var(--ink); cursor: text; }

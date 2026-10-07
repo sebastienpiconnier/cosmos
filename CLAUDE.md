@@ -1,6 +1,6 @@
 # Cosmos
 
-Application d'écriture pour romanciers « architectes » : une toile libre où l'on pose ses idées en vrac, qui s'organise progressivement en bible (personnages, lieux, scènes…) puis en plan et en manuscrit. Fil rouge : **du chaos au monde ordonné**.
+Application d'écriture pour romanciers et scénaristes « architectes » : une toile libre où l'on pose ses idées en vrac, qui s'organise progressivement en bible (personnages, lieux, scènes…) puis en plan et en manuscrit. Fil rouge : **du chaos au monde ordonné**.
 
 ## Principes produit (à respecter dans toute évolution)
 
@@ -28,6 +28,25 @@ Toute fonction doit respecter ces règles :
 8. Toute nouvelle permission Tauri va dans `src-tauri/capabilities/default.json` et doit fonctionner sur toutes les cibles.
 
 Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
+
+## Romans et scénarios (règle du projet)
+
+Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absent = roman). Même toile, même modèle de cartes, mêmes fichiers : seuls le vocabulaire, certains styles et, plus tard, les éditeurs changent. L'auteur peut basculer à tout moment (Réglages, « Ce projet »).
+
+| | Roman | Scénario |
+|---|---|---|
+| Vue Plan | Plan | Séquencier (step outline) |
+| Vue Manuscrit | Manuscrit (prose) | Scénario (format standard) |
+| Carte `lieu` | Lieu | Décor (location) |
+| Carte `scene` | titre libre | en-tête de scène `INT. PHARE - NUIT`, police Courier Prime |
+| Gabarits du Plan | Save the Cat, trois actes, voyage du héros | trois actes, Save the Cat, huit séquences, épisode de série |
+| Mesure | mots | pages et durée (1 page ≈ 1 minute) |
+
+1. **Ne jamais dupliquer un composant par type de projet** : on lit le vocabulaire avec `useVocab()` (`src/vocab.ts`), qui fusionne `t.scenario` par-dessus le vocabulaire roman.
+2. Les **clés internes ne changent pas** (`lieu` reste `lieu` même affiché « Décor ») : basculer de type ne touche à aucun fichier de carte.
+3. **Éditeur de scénario (à venir)** : texte stocké en **Fountain** (`scenario/<scene-id>.fountain`), format texte ouvert lisible par Final Draft, Highland, WriterSolo, Fade In, Trelby. Éléments : en-tête de scène, action, personnage, didascalie (parenthétique), dialogue, transition. **Tab** change le type d'élément, **Entrée** passe à l'élément suivant logique (personnage → dialogue → action). Complétion des noms de personnages et de décors depuis la Bible.
+4. **Export scénario** : PDF au format standard (Courier 12, marges normalisées, une page ≈ une minute), Fountain, FDX (Final Draft).
+5. La **Bible d'un scénario** ajoute le nombre de scènes par décor et par personnage (utile au dépouillement) ; plus tard : accessoires, costumes, jour/nuit.
 
 ## Multilingue (règle du projet)
 
@@ -90,6 +109,7 @@ src/
   store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde
   platform.ts           isTauri, isTouch, isMobileOS
   settings.ts           Réglages de l'appareil : langue, apparence (appliqués avant le premier rendu)
+  vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
     fr.ts               Textes de référence (type Messages)
     en.ts               Traduction anglaise
@@ -98,7 +118,7 @@ src/
   App.tsx               Chargement, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
   components/
     TopBar.tsx          Logo, curseur de vues Chaos → Ordre, statut d'enregistrement
-    Settings.tsx        Menu Réglages : langue, apparence
+    Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
     Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
@@ -118,7 +138,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, positions des cartes, fils (avec étiquettes)
+  cosmos.json          titre, type (roman | scenario), positions des cartes, fils (avec étiquettes)
   cartes/<id>.md       une carte par fichier
 ```
 
@@ -141,6 +161,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Toute la carte est une cible** pendant qu'on tire un fil (`useConnection` + Handle `drop` plein cadre). Ne pas l'afficher en dehors d'un tirage, il bloquerait les clics.
 - **Focus d'une nouvelle carte** : React Flow masque un nœud tant qu'il n'est pas mesuré, d'où les quelques essais de `focus()` dans `CardNode`.
 - **Appui long** : écouteurs natifs dans `Toile`. Le navigateur émule ensuite mousedown/click sous le doigt, donc sur la carte créée : ces événements sont avalés pendant 400 ms. Les écouteurs sont en phase de capture, car d3-zoom (sous React Flow) stoppe la propagation des événements tactiles.
+- **Titres de carte** : `textarea` d'une ligne qui grandit (les en-têtes de scène sont longs), Entrée passe au corps de la carte au lieu d'insérer un retour.
 - **Textes figés par TipTap** : le texte indicatif est une fonction (relue à chaque rendu) et l'`aria-label` de l'éditeur est mis à jour par `setOptions` quand la langue change.
 - **React Flow en sombre** : il ajoute la classe `.dark` ; nos surcharges citent `.react-flow.dark` pour garder la priorité. La mini-carte colore les cartes par classe (`type-<type>`), pas par couleur.
 - **Menu des types** : options en `onPointerDown={preventDefault}` + `onClick`, pour garder le focus dans l'éditeur à la souris comme au doigt.
@@ -159,11 +180,12 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre
+1. (fait) Toile, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène)
 2. Toile : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue
 5. **Manuscrit** : éditeur focus par scène, ordre issu du Plan, panneau « Dans cette scène » (personnages détectés)
+5 bis. **Scénario** : éditeur au format standard en Fountain (voir « Romans et scénarios »), compteur de pages et de minutes, export PDF standard, Fountain et FDX
 6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)

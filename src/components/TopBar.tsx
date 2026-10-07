@@ -1,13 +1,13 @@
 import { useCosmos, type View } from "../store";
 import { storage } from "../storage";
-import { useT } from "../i18n";
+import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 const READY: Record<View, boolean> = { toile: true, plan: false, bible: true, manuscrit: false };
 
 export function TopBar() {
-  const t = useT();
+  const { t, views } = useVocab();
   const { view, setView, status, save, openFolder } = useCosmos();
 
   const location =
@@ -39,7 +39,7 @@ export function TopBar() {
             title={READY[v] ? undefined : t.views.soon}
             onClick={() => setView(v)}
           >
-            {t.views[v]}
+            {views[v]}
           </button>
         ))}
         <span className="views-pole">{t.views.order}</span>

@@ -13,7 +13,7 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import type { CardData, CardType, Project } from "./types";
+import { isProjectKind, type CardData, type CardType, type Project, type ProjectKind } from "./types";
 import { deserialize, serialize, storage, type FileMap } from "./storage";
 import { getT } from "./i18n";
 
@@ -25,6 +25,8 @@ export const CARD_WIDTH = 240;
 
 interface CosmosState {
   title: string;
+  kind: ProjectKind;
+  setKind: (kind: ProjectKind) => void;
   nodes: CardNode[];
   edges: Edge[];
   view: View;
@@ -69,14 +71,16 @@ function fromProject(p: Project) {
     return toNode(c, l?.x ?? 80 + (i % 5) * 280, l?.y ?? 80 + Math.floor(i / 5) * 220, l?.width);
   });
   const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating" }));
-  return { title: p.meta.title, nodes, edges };
+  const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
+  return { title: p.meta.title, kind, nodes, edges };
 }
 
-function toProject(s: Pick<CosmosState, "title" | "nodes" | "edges">): Project {
+function toProject(s: Pick<CosmosState, "title" | "kind" | "nodes" | "edges">): Project {
   return {
     meta: {
       version: 1,
       title: s.title,
+      kind: s.kind,
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -99,6 +103,7 @@ function demoProject(): Project {
     meta: {
       version: 1,
       title: d.title,
+      kind: "roman",
       layout: [
         { id: idee, x: 60, y: 60 },
         { id: ines, x: 120, y: 300 },
@@ -124,6 +129,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
   return {
     title: "",
+    kind: "roman",
+    setKind: (kind) => {
+      set({ kind });
+      touch();
+    },
     nodes: [],
     edges: [],
     view: "toile",
