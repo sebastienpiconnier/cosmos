@@ -1,8 +1,78 @@
 # Cosmos
 
+**Français** · [English](README.en.md)
+
 Du chaos au monde ordonné : une toile pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.
 
-*From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it. Interface in English and French, light and dark modes.*
+![La toile de Cosmos : quatre cartes (idée, personnage, lieu, scène) reliées par des fils étiquetés](docs/images/toile-fr.png)
+
+## L'idée
+
+Une histoire commence rarement par le chapitre un. Elle commence par des fragments : une image, un personnage, un lieu, une question sans réponse. Cosmos donne à ces fragments un endroit où se poser, puis les aide à devenir un monde cohérent, un plan et enfin un texte.
+
+L'app s'adresse aux auteurs « architectes », ceux qui préparent avant d'écrire. Elle repose sur quelques partis pris :
+
+- **Un seul contenu, plusieurs vues.** Toile, Plan, Bible et Manuscrit sont quatre lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
+- **La structure émerge, on ne la configure pas.** Aucun formulaire, aucun champ obligatoire. Une carte naît « Idée » et devient Personnage, Lieu ou Scène quand tu le décides.
+- **Trois gestes suffisent** : taper, tirer un fil, déposer.
+- **Tes textes t'appartiennent.** Un projet est un dossier de fichiers Markdown, lisibles dans n'importe quel éditeur, avec ou sans Cosmos.
+- **L'IA questionne, elle n'écrit pas à ta place.** Elle est prévue pour plus tard et restera optionnelle.
+
+## Fonctionnalités
+
+Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne aujourd'hui.
+
+### La toile
+
+- **Cartes libres** : double-clic sur la toile, appui long au doigt ou bouton « Nouvelle carte », et tu écris directement. Texte riche (gras, italique, listes).
+- **Six types de carte** : Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
+- **Fils étiquetés** : tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche.
+- **Mini-carte et zoom** pour s'y retrouver quand la toile grandit.
+
+### La Bible
+
+Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand la toile change.
+
+### Romans et scénarios
+
+Un projet est un roman ou un scénario, et tu peux basculer à tout moment. La toile et les fichiers restent les mêmes, seul le vocabulaire s'adapte : le Lieu devient Décor, le Plan devient Séquencier, le Manuscrit devient Scénario, et les cartes Scène prennent la forme d'un en-tête de scène (`INT. PHARE - NUIT`) en Courier Prime.
+
+### Confort
+
+- **Sauvegarde automatique** dans des fichiers Markdown, ou `Cmd+S` / `Ctrl+S`.
+- **Français et anglais**, avec la typographie propre à chaque langue.
+- **Mode clair, sombre ou comme le système.**
+- **Souris, doigt et clavier** : chaque action a les trois chemins.
+- **Hors ligne** : polices embarquées, aucun compte, aucun serveur.
+
+![La même toile en mode sombre, interface en anglais](docs/images/canvas-dark-en.png)
+
+### À venir
+
+| Étape | Contenu |
+|---|---|
+| Toile | Images, cadres de regroupement, redimensionnement des cartes, recherche, annuler et rétablir |
+| Mentions | `@` dans une carte pour créer un fil automatiquement |
+| Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
+| Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
+| Scénario | Éditeur au format standard en [Fountain](https://fountain.io), compteur de pages et de minutes, exports PDF, Fountain et FDX (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
+| Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
+| IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
+| Export | Bible et manuscrit en PDF, docx, epub |
+| Mobile | Apps iOS et Android |
+| Synchronisation | Entre appareils, puis collaboration |
+
+Les vues Plan et Manuscrit sont visibles dans l'app mais pas encore construites.
+
+## Plateformes
+
+| Système | État |
+|---|---|
+| macOS (Apple Silicon et Intel), Windows, Linux | Prêt : installeurs fabriqués par GitHub Actions |
+| iOS, iPadOS, Android | Code prêt (tactile, stockage), projet natif à initialiser |
+| Navigateur | Pour le développement (stockage dans le navigateur) |
+
+Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertissement au premier lancement : clic droit sur l'app, puis « Ouvrir ». Les secrets à ajouter pour signer sont listés dans `release.yml`. Même principe sous Windows (SmartScreen).
 
 ## Démarrer
 
@@ -17,18 +87,6 @@ npm run dev            # dans le navigateur (http://localhost:1420), sans accès
 
 Au premier lancement, un petit projet d'exemple s'affiche. Dans l'app desktop, « Enregistrer » ou « Ouvrir un dossier » permet de choisir le dossier du roman.
 
-## Plateformes
-
-| Système | État |
-|---|---|
-| macOS (Apple Silicon et Intel), Windows, Linux | Prêt : installeurs fabriqués par GitHub Actions |
-| iOS, iPadOS, Android | Code prêt (tactile, stockage), projet natif à initialiser |
-| Navigateur | Pour le développement (stockage dans le navigateur) |
-
-**Publier une version** : `git tag v0.1.0 && git push --tags`. GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier.
-
-Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertissement au premier lancement : clic droit sur l'app, puis « Ouvrir ». Les secrets à ajouter pour signer sont listés dans `release.yml`. Même principe sous Windows (SmartScreen).
-
 **Mobile** (sur Mac) : `npm run tauri ios init` puis `npm run tauri ios dev` (Xcode requis), ou `android init` / `android dev` (Android Studio et NDK requis). Sur mobile, les projets sont rangés dans l'espace privé de l'app.
 
 ## Utilisation
@@ -38,21 +96,36 @@ Sans signature Apple (compte développeur à 99 $/an), macOS affiche un avertiss
 - **Tirer un fil** depuis un point au bord d'une carte vers une autre, puis nommer le lien (« soupçonne », « se passe à »). Pour le renommer : double-clic sur le fil (ou simple appui au doigt).
 - **Bible** : sommaire et fiches générés à partir des cartes.
 - Sauvegarde automatique, ou **Cmd+S** (Ctrl+S sous Windows et Linux).
-- **Réglages** (icône en haut à droite) : type de projet (roman ou scénario : le vocabulaire s'adapte, Lieu devient Décor, Plan devient Séquencier…), langue de l'interface (français, anglais) et apparence (comme le système, claire, sombre).
+- **Réglages** (icône en haut à droite) : type de projet (roman ou scénario), langue de l'interface (français, anglais) et apparence (comme le système, claire, sombre).
 
 ## Fichiers
 
-Chaque projet est un dossier : `cosmos.json` (positions et liens) et `cartes/*.md` (une carte par fichier Markdown). Ils restent lisibles dans n'importe quel éditeur.
+Chaque projet est un dossier : `cosmos.json` (titre, positions et liens) et `cartes/*.md` (une carte par fichier Markdown). Ils restent lisibles dans n'importe quel éditeur.
 
-Pour retrouver un **projet d'écriture** (le dossier ouvert dans Cosmos, pas le code de l'app) sur plusieurs ordinateurs, il suffit de placer ce dossier dans iCloud Drive, Dropbox ou OneDrive (éviter de l'ouvrir sur deux machines en même temps). Le **code** de Cosmos, lui, ne va jamais dans OneDrive ni iCloud : il passe par GitHub.
+```markdown
+---
+id: k3x9a7bq2m
+type: personnage
+title: "Inès Morvan"
+---
+Gardienne remplaçante. Ne supporte pas le **silence**.
+```
+
+Pour retrouver un **projet d'écriture** (le dossier ouvert dans Cosmos, pas le code de l'app) sur plusieurs ordinateurs, il suffit de placer ce dossier dans iCloud Drive, Dropbox ou OneDrive (éviter de l'ouvrir sur deux machines en même temps).
 
 Par défaut, l'app peut lire et écrire dans le dossier personnel et Documents. Pour un projet sur un disque externe, ajouter le chemin dans `src-tauri/capabilities/default.json` (permission `fs:scope`).
 
-## Travailler sur plusieurs ordinateurs
-
-- **Le code** passe par GitHub : `git push` en fin de session, `git pull` (puis `npm install` si besoin) en début de session sur l'autre machine. Ne pas mettre le dossier du code dans OneDrive ou iCloud.
-- **Les projets d'écriture** (dossiers ouverts dans Cosmos) peuvent vivre dans OneDrive ou iCloud Drive, accessibles depuis le PC comme le Mac. Ne pas ouvrir le même projet sur deux machines en même temps.
-
 ## Pour développer
 
-Voir `CLAUDE.md` : architecture, conventions et feuille de route, prévu pour travailler avec Claude Code.
+Tauri 2, React 19, TypeScript strict, Vite, React Flow pour la toile, TipTap pour l'éditeur, Zustand pour l'état.
+
+```bash
+npm run build   # vérification TypeScript + build
+npm test        # tests (Vitest)
+```
+
+**Publier une version** : `git tag v0.1.0 && git push --tags`. GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier.
+
+**Travailler sur plusieurs ordinateurs** : le code passe par GitHub (`git push` en fin de session, `git pull` puis `npm install` si besoin en début de session sur l'autre machine). Ne pas mettre le dossier du code dans OneDrive ou iCloud.
+
+Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLAUDE.md), prévu pour travailler avec Claude Code.
