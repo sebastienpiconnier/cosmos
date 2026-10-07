@@ -173,6 +173,26 @@ export const fr = {
     noCharacters: "Personne ne parle encore.",
     linesOne: "{n} réplique",
     linesMany: "{n} répliques",
+    // Complétion : vocabulaire écrit dans le scénario (majuscules) et précisions du menu.
+    moments: ["JOUR", "NUIT", "AUBE", "CRÉPUSCULE", "SOIR", "MATIN", "PLUS TARD", "CONTINU"],
+    extensions: [
+      { text: "(V.O.)", hint: "voix off" },
+      { text: "(H.C.)", hint: "hors champ" },
+      { text: "(SUITE)", hint: "suite de la réplique" },
+    ],
+    suggest: {
+      title: "Suggestions",
+      character: "personnage",
+      location: "décor",
+      moment: "moment",
+      interior: "intérieur",
+      exterior: "extérieur",
+      both: "les deux",
+      newCard: "nouvelle carte",
+      createCharacter: "Créer la fiche de {name}",
+      createLocation: "Créer le décor {name}",
+    },
+    linkSetIn: "se passe à",
   },
 
   // Projet d'exemple du premier lancement (devient le contenu de l'auteur ensuite).

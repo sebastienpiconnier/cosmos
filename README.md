@@ -46,6 +46,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Six éléments** : en-tête de scène, action, personnage, didascalie, dialogue, transition, avec les retraits standard.
 - **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
 - **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
+- **Complétion** : les personnages et les décors de la Bible se proposent pendant que tu écris, avec les extensions (V.O., H.C.) et les moments (JOUR, NUIT). Un personnage ou un décor inconnu peut devenir une carte en un geste.
 - **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène. Renommer l'un renomme l'autre, et les cartes sans texte attendent dans « Scènes à écrire ».
 - **Un fichier ouvert** : le texte est enregistré dans `scenario.fountain`, au format [Fountain](https://fountain.io), lisible par les autres logiciels de scénario.
 
@@ -67,7 +68,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 | Mentions | `@` dans une carte pour créer un fil automatiquement |
 | Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
 | Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
-| Scénario | Complétion des personnages et des décors, compteur de pages et de minutes, séquencier, exports PDF, Fountain et FDX (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
+| Scénario | Compteur de pages et de minutes, séquencier, exports PDF, Fountain et FDX (en cours, voir [le plan](docs/plan-editeur-scenario.md)) |
 | Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Export | Bible et manuscrit en PDF, docx, epub |

@@ -206,6 +206,7 @@ button { font: inherit; color: inherit; }
 .slash-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px; }
 .slash-item { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; font-size: 14px; cursor: pointer; }
 .slash-item.is-active, .slash-item:hover { background: var(--accent-soft); }
+.slash-hint { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 
 /* Bouton « Nouvelle carte » */
 .add-card {
@@ -293,7 +294,7 @@ button { font: inherit; color: inherit; }
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc
    85ch = 8,5 pouces de large, marges de 1,5 pouce à gauche et 1 pouce à droite, 60 caractères de texte. */
 .sp-scroll { flex: 1; min-height: 0; overflow: auto; padding: 16px 16px 40vh; container: sp / inline-size; }
-.sp-page { width: 85ch; max-width: 100%; margin: 0 auto; background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card); font: 16px/1.3 var(--font-script); }
+.sp-page { position: relative; width: 85ch; max-width: 100%; margin: 0 auto; background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card); font: 16px/1.3 var(--font-script); }
 .sp-editor, .sp-editor:focus-visible { min-height: 70vh; padding: 6ch 10ch 10ch 15ch; outline: none; cursor: text; }
 .sp-el { margin: 1.3em 0 0; white-space: pre-wrap; overflow-wrap: break-word; }
 .sp-editor > :first-child { margin-top: 0; }
@@ -304,6 +305,9 @@ button { font: inherit; color: inherit; }
 .sp-transition { text-align: right; text-transform: uppercase; }
 .sp-el.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
 .sp-transition.is-empty::before { float: right; }
+
+/* Complétion : le menu des cartes, posé sous le curseur (position donnée par ScreenplayView). */
+.sp-suggest { width: max-content; min-width: 220px; max-width: min(360px, calc(100% - 16px)); font: 14px var(--font-ui); color: var(--ink); }
 
 /* Éléments Fountain conservés tels quels (note, section, texte mis de côté…) */
 .sp-preserved {

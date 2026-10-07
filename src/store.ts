@@ -51,6 +51,10 @@ interface CosmosState {
   onConnect: (c: Connection) => void;
 
   addCard: (pos: { x: number; y: number }, type?: CardType) => string;
+  /** Carte créée depuis une autre vue que la toile : posée sous les autres, sans prendre le focus. */
+  addTitledCard: (type: CardType, title: string) => string;
+  /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
+  linkCards: (source: string, target: string, label: string) => void;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
   deleteCard: (id: string) => void;
   renameLink: (id: string, label: string) => void;
@@ -219,6 +223,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
       touch();
       return card.id;
+    },
+    addTitledCard: (type, title) => {
+      const card: CardData = { id: newId(), type, title, html: "" };
+      const lowest = get().nodes.reduce((y, n) => Math.max(y, n.position.y), -140);
+      set({ nodes: [...get().nodes, toNode(card, 80, lowest + 220)] });
+      touch();
+      return card.id;
+    },
+    linkCards: (source, target, label) => {
+      const linked = get().edges.some(
+        (e) => (e.source === source && e.target === target) || (e.source === target && e.target === source),
+      );
+      if (linked || source === target) return;
+      const edge = { source, target, sourceHandle: null, targetHandle: null };
+      set({ edges: addEdge({ ...edge, id: newId(), label, type: "floating" }, get().edges) });
+      touch();
     },
     updateCard: (id, patch) => {
       const nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));

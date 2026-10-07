@@ -12,12 +12,12 @@ Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-edi
 - [x] Phase 1 : modèle, parseur, sérialiseur
 - [x] Phase 2 : stockage et lien avec les cartes
 - [x] Phase 3 : l'éditeur
-- [ ] Phase 4 : complétion
+- [x] Phase 4 : complétion
 - [ ] Phase 5 : pages, minutes, séquencier minimal
 - [ ] Phase 6 : exports
 - [ ] Phase 7 : finitions
 
-Dernière session : 7 octobre 2026, phases 0 à 3 faites. Prochaine étape : phase 4 (complétion).
+Dernière session : 7 octobre 2026, phases 0 à 4 faites. Prochaine étape : phase 5 (pages, minutes, séquencier minimal).
 
 Notes de la phase 1 :
 
@@ -44,6 +44,15 @@ Notes de la phase 3 :
 - Ajouts par rapport au plan : **Échap** sort de l'éditeur vers la barre d'éléments (Tab ne le permet plus) ; **Maj+Entrée** va à la ligne dans une action ou un dialogue ; sur petit écran la liste des scènes devient une liste déroulante.
 - Majuscules : en-têtes, personnages et transitions passent en majuscules pendant qu'on les écrit. Un texte déjà présent dans le fichier n'est pas réécrit, il est seulement affiché en majuscules.
 - Un en-tête qui change de type (Tab) perd son lien avec la carte et son numéro de scène.
+
+Notes de la phase 4 :
+
+- `src/screenplay/editor/autocomplete.ts` (calcul des suggestions, fonctions pures) et `src/components/SuggestionMenu.tsx` (menu partagé avec le menu « / » des cartes).
+- Vérifié par tests et dans Edge piloté par script : « HU » propose HUGO, préfixe puis décor puis moment, création d'un décor depuis un en-tête lié (carte et fil « se passe à »), menu « / » des cartes inchangé.
+- Le menu s'ouvre en écrivant (pas en déplaçant le curseur), en fin d'élément seulement. Une suggestion n'est présélectionnée que si elle complète ce qui est tapé : sur un nom déjà complet ou un élément vide, Entrée garde son rôle habituel.
+- Une carte Personnage « Hugo Le Bris » propose aussi « HUGO » ; les noms et décors déjà utilisés dans le scénario passent devant, par fréquence.
+- La création de carte est proposée pour un personnage sans carte et, après le tiret de l'en-tête, pour un décor sans carte. Le fil n'est tiré que pour un décor, depuis la carte de la scène si elle existe.
+- Le rapprochement décor ↔ carte se fait sur le nom exact : « PHARE, LANTERNE » ne retrouve pas la carte « Phare de Kerlaouen ».
 
 ---
 

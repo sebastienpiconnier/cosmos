@@ -171,6 +171,26 @@ export const en: Messages = {
     noCharacters: "Nobody speaks yet.",
     linesOne: "{n} line",
     linesMany: "{n} lines",
+    // Completion: words written into the screenplay (uppercase) and menu hints.
+    moments: ["DAY", "NIGHT", "DAWN", "DUSK", "EVENING", "MORNING", "LATER", "CONTINUOUS"],
+    extensions: [
+      { text: "(V.O.)", hint: "voice-over" },
+      { text: "(O.S.)", hint: "off screen" },
+      { text: "(CONT'D)", hint: "continued" },
+    ],
+    suggest: {
+      title: "Suggestions",
+      character: "character",
+      location: "location",
+      moment: "time",
+      interior: "interior",
+      exterior: "exterior",
+      both: "both",
+      newCard: "new card",
+      createCharacter: "Create a card for {name}",
+      createLocation: "Create the location {name}",
+    },
+    linkSetIn: "takes place at",
   },
 
   demo: {

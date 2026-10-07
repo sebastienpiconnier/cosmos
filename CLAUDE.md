@@ -123,6 +123,7 @@ src/
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
     Toile.tsx           ReactFlow : double-clic / appui long / bouton « + » = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
+    SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches + liens
     ScreenplayView.tsx  Vue Scénario : liste des scènes, feuille, panneau « Dans cette scène »
@@ -139,6 +140,7 @@ src/
       convert.ts        Screenplay ↔ document ProseMirror (un élément = un nœud de premier niveau)
       keymap.ts         Tab, Maj+Tab, Entrée, Maj+Entrée, Retour arrière, Échap
       autodetect.ts     Détection à la frappe (int., ext., parenthèse) et majuscules
+      autocomplete.ts   Suggestions : personnages, extensions, préfixes, décors, moments (fonctions pures)
       index.ts          screenplayExtensions() : l'assemblage
   storage/
     paths.ts            Format du dossier projet
@@ -192,6 +194,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Tab dans l'éditeur de scénario** : il change le type d'élément et ne quitte donc plus le texte. Échap rend la main au clavier (focus sur la barre d'éléments) : ne pas retirer ce chemin, sinon piège au clavier.
 - **Majuscules du scénario** : seul l'élément en cours d'écriture est mis en majuscules (`autodetect.ts`), jamais au chargement, ni en annulant, ni pendant une saisie composée (accents morts, IME). Le CSS met le reste en majuscules à l'affichage.
 - **Éléments conservés** (note, section, texte mis de côté…) : leurs libellés viennent de variables CSS `--sp-label-*` posées par React, pour suivre la langue sans redessiner les nœuds.
+- **Complétion du scénario** : le menu ne présélectionne une suggestion que si elle complète le texte tapé (`active` vaut -1 sinon), pour qu'Entrée continue de passer à l'élément suivant sur un nom déjà complet. Ses touches sont prises dans `editorProps.handleKeyDown`, avant le clavier de l'éditeur.
 - **Page de titre Fountain** : une clé ne commence pas par un marqueur et ne contient pas de note, sinon un en-tête forcé en première ligne (`.PHARE [[cosmos:id]]`) est pris pour une page de titre.
 
 ## Conventions
@@ -206,7 +209,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
-1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 3 du plan)
+1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario (phases 0 à 4 du plan)
 2. Canevas : images (glisser-déposer, copiées dans `medias/`), cadres de regroupement (nœud parent React Flow), redimensionnement des cartes, recherche, annuler/rétablir
 3. Mentions `@` dans les cartes (extension Mention de TipTap) qui créent un fil automatiquement
 4. **Plan** : gabarits (Save the Cat, trois actes, voyage du héros, libre), cases où glisser les scènes, chronologie par intrigue

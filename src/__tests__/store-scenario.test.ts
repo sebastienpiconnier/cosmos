@@ -184,6 +184,22 @@ describe("lien scène ↔ carte", () => {
     expect(disk()).not.toHaveProperty(cardPath("lanterne"));
   });
 
+  it("carte créée depuis le scénario : sous les autres, sans focus, reliée une seule fois", async () => {
+    const id = state().addTitledCard("lieu", "Phare, Lanterne");
+    const created = state().nodes.find((n) => n.id === id)!;
+    expect(created.data).toMatchObject({ type: "lieu", title: "Phare, Lanterne" });
+    expect(created.position.y).toBeGreaterThan(400);
+    expect(state().pendingFocusId).toBeNull();
+
+    state().linkCards("lanterne", id, "se passe à");
+    state().linkCards(id, "lanterne", "autre");
+    state().linkCards(id, id, "boucle");
+    await state().save();
+    expect(JSON.parse(disk()[META_FILE]).links).toEqual([
+      { id: expect.any(String), source: "lanterne", target: id, label: "se passe à" },
+    ]);
+  });
+
   it("une carte qui n'est plus une Scène perd son lien", async () => {
     state().updateCard("lanterne", { type: "idee" });
     await state().save();

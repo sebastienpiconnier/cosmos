@@ -3,6 +3,8 @@
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { SuggestionMenu } from "./SuggestionMenu";
+import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
@@ -43,6 +45,50 @@ export function ScreenplayView() {
   const barRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState<{ index: number; type: EditableType | null }>({ index: 0, type: null });
 
+  // Complétion ouverte sous le curseur (personnages, décors, moments).
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<{ items: Suggestion[]; active: number; style: CSSProperties } | null>(null);
+  const menuRef = useRef(menu);
+  menuRef.current = menu;
+
+  /** Recalcule les suggestions pour l'élément en cours ; ferme le menu s'il n'y a rien à proposer. */
+  const refreshMenu = (ed: Editor) => {
+    const element = currentElement(ed.state);
+    const { $from, empty } = ed.state.selection;
+    // Seulement en fin d'élément : on complète ce qu'on est en train d'écrire.
+    if (!element || !empty || $from.parentOffset !== element.node.content.size) return setMenu(null);
+    if (element.type !== "character" && element.type !== "sceneHeading") return setMenu(null);
+    const state = useCosmos.getState();
+    const t = getT().screenplay;
+    const titles = (type: string) => state.nodes.filter((n) => n.data.type === type && n.data.title.trim()).map((n) => n.data.title);
+    const result = suggest(element.type, element.node.textContent, {
+      characterCards: titles("personnage"),
+      locationCards: titles("lieu"),
+      // Le document de l'éditeur, plus frais que le store (reconverti avec un léger délai).
+      elements: fromDoc(ed.state.doc.toJSON(), {}).elements,
+      currentIndex: $from.index(0),
+      locale: useSettings.getState().lang,
+      moments: t.moments,
+      extensions: t.extensions,
+      labels: t.suggest,
+    });
+    const page = pageRef.current;
+    if (result.items.length === 0 || !page) return setMenu(null);
+
+    const caret = ed.view.coordsAtPos($from.pos);
+    const box = page.getBoundingClientRect();
+    const left = Math.max(8, Math.min(caret.left - box.left, box.width - 240));
+    // Près du bas de l'écran (ou du clavier virtuel), le menu s'ouvre vers le haut.
+    const visible = window.visualViewport?.height ?? window.innerHeight;
+    const style: CSSProperties =
+      caret.bottom > visible * 0.6
+        ? { left, top: "auto", bottom: box.bottom - caret.top + 4 }
+        : { left, top: caret.bottom - box.top + 4 };
+    setMenu({ ...result, style });
+  };
+  const refreshRef = useRef(refreshMenu);
+  refreshRef.current = refreshMenu;
+
   // Dernier modèle échangé avec le store : s'il change sans nous (autre dossier ouvert), on recharge.
   const synced = useRef(screenplay);
   // Document modifié mais pas encore reconverti.
@@ -58,6 +104,8 @@ export function ScreenplayView() {
     synced.current = next;
     useCosmos.getState().setScreenplay(next);
   }, []);
+
+  const pickRef = useRef<(index: number) => void>(() => {});
 
   const track = (ed: Editor) => {
     const index = ed.state.selection.$from.index(0);
@@ -86,7 +134,34 @@ export function ScreenplayView() {
     immediatelyRender: true,
     editorProps: {
       attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": getT().screenplay.editorAria },
+      // Menu de complétion ouvert : flèches, Entrée et Échap sont pour lui (avant le clavier de l'éditeur).
+      handleKeyDown: (_view, event) => {
+        const open = menuRef.current;
+        if (!open) return false;
+        const count = open.items.length;
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          const step = event.key === "ArrowDown" ? 1 : -1;
+          const from = open.active === -1 && step === -1 ? 0 : open.active;
+          setMenu({ ...open, active: (from + step + count) % count });
+          return true;
+        }
+        if (event.key === "Enter" && !event.shiftKey && open.active >= 0) {
+          pickRef.current(open.active);
+          return true;
+        }
+        if (event.key === "Escape") {
+          setMenu(null);
+          return true;
+        }
+        return false;
+      },
     },
+    // Le menu suit la frappe ; déplacer le curseur sans rien écrire le referme.
+    onTransaction: ({ editor: ed, transaction }) => {
+      if (transaction.docChanged) refreshRef.current(ed);
+      else if (transaction.selectionSet) setMenu(null);
+    },
+    onBlur: () => setMenu(null),
     onCreate: ({ editor: ed }) => track(ed),
     onSelectionUpdate: ({ editor: ed }) => track(ed),
     onUpdate: ({ editor: ed }) => {
@@ -191,14 +266,31 @@ export function ScreenplayView() {
     view.focus();
   };
 
+  /** Choisir une suggestion : elle remplace le texte de l'élément, ou crée une carte. */
+  const pick = (index: number) => {
+    const item = menuRef.current?.items[index];
+    const element = currentElement(editor.state);
+    if (!item || !element) return;
+    if (item.create) {
+      const { addTitledCard, linkCards } = useCosmos.getState();
+      const id = addTitledCard(item.create.type, item.create.title);
+      // Un décor créé depuis l'en-tête d'une scène : un fil relie la scène à son décor.
+      const sceneCard = element.node.attrs.cardId as string | null;
+      if (item.create.type === "lieu" && sceneCard) linkCards(sceneCard, id, sp.linkSetIn);
+      refreshMenu(editor);
+      return;
+    }
+    if (item.text === undefined) return;
+    const start = element.pos + 1;
+    editor.view.dispatch(editor.state.tr.insertText(item.text, start, start + element.node.content.size).scrollIntoView());
+    editor.view.focus();
+  };
+  pickRef.current = pick;
+
   /** Une scène écrite sans carte : on crée sa carte sur la toile, sous les autres. */
   const createCard = (target: Scene) => {
     emit();
-    const { addCard, updateCard, clearPendingFocus } = useCosmos.getState();
-    const lowest = nodes.reduce((y, n) => Math.max(y, n.position.y), -140);
-    const id = addCard({ x: 80, y: lowest + 220 }, "scene");
-    clearPendingFocus();
-    updateCard(id, { title: target.text });
+    const id = useCosmos.getState().addTitledCard("scene", target.text);
     const pos = posOf(editor.state.doc, target.index);
     const node = editor.state.doc.nodeAt(pos);
     if (node?.type.name === "sceneHeading") {
@@ -301,10 +393,24 @@ export function ScreenplayView() {
         <div className="sr-only" aria-live="polite">
           {current.type ? sp.elements[current.type] : ""}
         </div>
+        {/* La suggestion active est annoncée : le focus reste dans le texte. */}
+        <div className="sr-only" aria-live="polite">
+          {menu && menu.active >= 0 ? `${menu.items[menu.active].label}, ${menu.items[menu.active].hint}` : ""}
+        </div>
 
         <div className="sp-scroll">
-          <div className="sp-page" style={labels} lang={lang}>
+          <div className="sp-page" style={labels} lang={lang} ref={pageRef}>
             <EditorContent editor={editor} />
+            {menu && (
+              <SuggestionMenu
+                title={sp.suggest.title}
+                className="sp-suggest"
+                style={menu.style}
+                items={menu.items}
+                active={menu.active}
+                onPick={pick}
+              />
+            )}
           </div>
         </div>
       </div>

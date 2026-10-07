@@ -13,6 +13,7 @@ import { useCosmos, type CardNode as CardNodeT } from "../store";
 import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
+import { SuggestionMenu } from "./SuggestionMenu";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -226,23 +227,13 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeT>) {
       </div>
 
       {slash && options.length > 0 && (
-        <div className={`slash-menu nodrag${menuUp ? " opens-up" : ""}`} role="listbox" aria-label={t.card.menuTitle}>
-          <div className="slash-title">{t.card.menuTitle}</div>
-          {options.map((type, i) => (
-            <button
-              key={type}
-              type="button"
-              role="option"
-              aria-selected={i === active}
-              className={`slash-item${i === active ? " is-active" : ""}`}
-              onPointerDown={(e) => e.preventDefault() /* garde le focus dans l'éditeur */}
-              onClick={() => pick(type)}
-            >
-              <span className="card-dot" style={{ background: typeColor(type) }} />
-              {types[type].label}
-            </button>
-          ))}
-        </div>
+        <SuggestionMenu
+          title={t.card.menuTitle}
+          className={menuUp ? "opens-up" : ""}
+          items={options.map((type) => ({ key: type, label: types[type].label, color: typeColor(type) }))}
+          active={active}
+          onPick={(i) => pick(options[i])}
+        />
       )}
     </div>
   );
