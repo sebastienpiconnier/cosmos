@@ -129,7 +129,7 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 
 Pour retrouver un **projet d'écriture** (le dossier ouvert dans Cosmos, pas le code de l'app) sur plusieurs ordinateurs, il suffit de placer ce dossier dans iCloud Drive, Dropbox ou OneDrive (éviter de l'ouvrir sur deux machines en même temps).
 
-Par défaut, l'app peut lire et écrire dans le dossier personnel et Documents. Pour un projet sur un disque externe, ajouter le chemin dans `src-tauri/capabilities/default.json` (permission `fs:scope`).
+Le dossier que tu choisis dans l'app reste autorisé d'un lancement à l'autre, où qu'il soit (autre disque, OneDrive, clé USB). Si l'app ne parvient plus à l'ouvrir, elle te le dit et tu le choisis à nouveau avec « Ouvrir un dossier ».
 
 ## Pour développer
 

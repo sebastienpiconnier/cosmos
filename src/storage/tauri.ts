@@ -48,6 +48,16 @@ export const tauriStorage: Storage = {
     return true;
   },
 
+  forget() {
+    if (mobile) return; // le dossier privé de l'app ne se choisit pas
+    folder = null;
+    try {
+      localStorage.removeItem(LAST_FOLDER_KEY);
+    } catch {
+      /* rien à oublier */
+    }
+  },
+
   async readAll() {
     const dir = await projectFolder();
     if (!dir) return null;

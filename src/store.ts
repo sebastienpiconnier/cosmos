@@ -51,6 +51,9 @@ interface CosmosState {
   clearPendingFocus: () => void;
   status: SaveStatus;
   loaded: boolean;
+  /** Le dossier du projet n'a pas pu être ouvert : un message invite à le choisir à nouveau. */
+  openFailed: boolean;
+  dismissOpenFailed: () => void;
   lastFiles: FileMap;
 
   onNodesChange: (changes: NodeChange<CardNode>[]) => void;
@@ -189,6 +192,14 @@ function demoProject(): Project {
 
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
+  /** Adopte un projet lu sur disque. Rend faux si ces fichiers ne forment pas un projet. */
+  const openFiles = (files: FileMap): boolean => {
+    const project = deserialize(files);
+    if (!project) return false;
+    const { state, dirty } = openProject(project);
+    set({ ...state, lastFiles: files, openFailed: false, status: dirty ? "modifie" : "enregistre" });
+    return true;
+  };
 
   return {
     title: "",
@@ -222,6 +233,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     clearPendingFocus: () => set({ pendingFocusId: null }),
     status: "enregistre",
     loaded: false,
+    openFailed: false,
+    dismissOpenFailed: () => set({ openFailed: false }),
     lastFiles: {},
 
     onNodesChange: (changes) => {
@@ -293,30 +306,48 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setView: (view, focusId = null) => set({ view, focusId }),
 
     load: async () => {
-      const files = await storage.readAll();
+      let files: FileMap | null = null;
+      let failed = false;
+      try {
+        files = await storage.readAll();
+      } catch (err) {
+        // Dossier mémorisé illisible (accès refusé, disque absent) : l'app s'ouvre quand même,
+        // et l'auteur choisit à nouveau son dossier. Sans cela, elle resterait sur « Ouverture… ».
+        console.error(err);
+        storage.forget();
+        failed = true;
+      }
       const { state, dirty } = openProject((files && deserialize(files)) || demoProject());
-      set({ ...state, lastFiles: files ?? {}, loaded: true, status: files && !dirty ? "enregistre" : "modifie" });
+      // Après un échec, rien n'est « à enregistrer » : pas de dialogue de dossier qui s'ouvre tout seul.
+      const saved = failed || (files !== null && !dirty);
+      set({ ...state, lastFiles: files ?? {}, loaded: true, openFailed: failed, status: saved ? "enregistre" : "modifie" });
     },
 
     openFolder: async () => {
       if (!(await storage.pickFolder())) return;
-      const files = await storage.readAll();
-      if (files) {
-        const project = deserialize(files);
-        if (project) {
-          const { state, dirty } = openProject(project);
-          set({ ...state, lastFiles: files, status: dirty ? "modifie" : "enregistre" });
+      try {
+        const files = await storage.readAll();
+        if (files) {
+          openFiles(files);
+        } else {
+          // Dossier vide : on y enregistre le projet courant.
+          set({ lastFiles: {}, status: "modifie", openFailed: false });
+          await get().save();
         }
-      } else {
-        // Dossier vide : on y enregistre le projet courant.
-        set({ lastFiles: {}, status: "modifie" });
-        await get().save();
+      } catch (err) {
+        console.error(err);
+        storage.forget();
+        set({ openFailed: true });
       }
     },
 
     save: async () => {
       if (storage.canPickFolder && !storage.location()) {
         if (!(await storage.pickFolder())) return;
+        // Le dossier choisi contient déjà un projet : on l'ouvre, on ne l'écrase jamais
+        // avec ce qui est à l'écran (le projet d'exemple, le plus souvent).
+        const existing = await storage.readAll().catch(() => null);
+        if (existing && openFiles(existing)) return;
       }
       const { screenplay, savedScreenplay } = get();
       const files = serialize(toProject(get()));

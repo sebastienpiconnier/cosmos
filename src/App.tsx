@@ -16,6 +16,8 @@ export function App() {
   const view = useCosmos((s) => s.view);
   const kind = useCosmos((s) => s.kind);
   const loaded = useCosmos((s) => s.loaded);
+  const openFailed = useCosmos((s) => s.openFailed);
+  const dismissOpenFailed = useCosmos((s) => s.dismissOpenFailed);
   const load = useCosmos((s) => s.load);
   const save = useCosmos((s) => s.save);
 
@@ -59,6 +61,14 @@ export function App() {
     <ReactFlowProvider>
       <div className="app">
         <TopBar />
+        {openFailed && (
+          <div className="app-alert" role="alert">
+            <span>{t.app.openFailed}</span>
+            <button type="button" className="icon-button" aria-label={t.app.dismiss} onClick={dismissOpenFailed}>
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+        )}
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}

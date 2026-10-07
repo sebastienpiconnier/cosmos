@@ -5,6 +5,10 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     // Sélecteur de dossier natif
     .plugin(tauri_plugin_dialog::init())
+    // Le dossier choisi par l'auteur reste autorisé d'un lancement à l'autre. Sans cela, un projet
+    // hors du dossier personnel (autre disque, OneDrive déplacé) est refusé au redémarrage.
+    // À déclarer après le plugin fs.
+    .plugin(tauri_plugin_persisted_scope::init())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

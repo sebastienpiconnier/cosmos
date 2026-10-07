@@ -84,6 +84,12 @@ button { font: inherit; color: inherit; }
 
 .app { display: flex; flex-direction: column; height: 100%; }
 .app-main { flex: 1; min-height: 0; position: relative; }
+/* Message d'erreur sous la barre du haut (dossier du projet illisible) */
+.app-alert {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 20px;
+  background: var(--surface); border-bottom: 2px solid var(--danger); color: var(--ink); font-size: 14px; line-height: 1.4;
+}
+.app-alert .icon-button { flex-shrink: 0; font-size: 18px; }
 
 /* ---------- Barre du haut ---------- */
 .topbar {

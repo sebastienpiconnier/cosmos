@@ -27,6 +27,8 @@ export interface Storage {
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */
   pickFolder(): Promise<boolean>;
   readAll(): Promise<FileMap | null>;
+  /** Oublie le dossier mémorisé (il n'a pas pu être lu) : l'auteur le choisira à nouveau. */
+  forget(): void;
   /** Écrit les fichiers donnés et supprime ceux listés dans `removed`. */
   write(files: FileMap, removed: string[]): Promise<void>;
   /**

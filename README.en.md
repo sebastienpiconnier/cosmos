@@ -129,7 +129,7 @@ Stand-in keeper. Can’t stand **silence**.
 
 To use a **writing project** (the folder opened in Cosmos, not the app’s code) on several computers, put that folder in iCloud Drive, Dropbox or OneDrive (avoid opening it on two machines at once).
 
-By default, the app can read and write in the home folder and Documents. For a project on an external drive, add the path in `src-tauri/capabilities/default.json` (`fs:scope` permission).
+The folder you choose in the app stays allowed from one launch to the next, wherever it is (another drive, OneDrive, a USB stick). If the app can no longer open it, it tells you and you choose it again with “Open folder”.
 
 ## Development
 

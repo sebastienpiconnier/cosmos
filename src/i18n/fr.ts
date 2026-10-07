@@ -6,7 +6,11 @@
 export const fr = {
   meta: { name: "Français" },
 
-  app: { loading: "Ouverture du projet…" },
+  app: {
+    loading: "Ouverture du projet…",
+    openFailed: "Le dossier de ton projet n’a pas pu être ouvert. Choisis-le à nouveau avec « Ouvrir un dossier » : tes fichiers n’ont pas été modifiés.",
+    dismiss: "Fermer ce message",
+  },
 
   views: {
     aria: "Vues du projet",

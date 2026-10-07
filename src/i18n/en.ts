@@ -5,7 +5,11 @@ import type { Messages } from "./fr";
 export const en: Messages = {
   meta: { name: "English" },
 
-  app: { loading: "Opening project…" },
+  app: {
+    loading: "Opening project…",
+    openFailed: "Your project folder couldn’t be opened. Choose it again with “Open folder”: your files have not been changed.",
+    dismiss: "Close this message",
+  },
 
   views: {
     aria: "Project views",

@@ -19,6 +19,7 @@ export const browserStorage: Storage = {
   canPickFolder: false,
   location: () => null,
   pickFolder: async () => true,
+  forget: () => {},
   async readAll() {
     const files = load();
     return Object.keys(files).length ? files : null;
