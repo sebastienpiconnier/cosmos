@@ -21,6 +21,7 @@ import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
+import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
   headingTitles,
@@ -91,6 +92,11 @@ interface CosmosState {
    * son propre historique : celui du canevas est alors vidé, pour qu'annuler une carte n'efface jamais du texte.
    */
   setScreenplay: (screenplay: Screenplay, undoable?: boolean) => void;
+  /**
+   * Écrit un champ de la page de titre du scénario (une valeur vide le retire) et rend le scénario
+   * obtenu. Le titre du projet suit quand il était le même ; le nom d'auteur est retenu sur l'appareil.
+   */
+  setTitlePageField: (field: TitleField, value: string) => Screenplay | null;
   /** Historique d'annulation : états précédents et états annulés (cartes, fils, scénario). */
   past: Snapshot[];
   future: Snapshot[];
@@ -225,6 +231,16 @@ function sceneCards(nodes: CardNode[]): SceneCard[] {
     .map((n) => ({ id: n.id, title: n.data.title }));
 }
 
+/** Premier scénario d'un projet : la page de titre porte aussi l'auteur connu de l'appareil. */
+function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
+  const screenplay = initialScreenplay(title, sceneCards(nodes));
+  const author = useSettings.getState().author.trim();
+  if (!author) return screenplay;
+  let titlePage = writeTitleField(screenplay.titlePage, "credit", getT().screenplay.titlePage.creditDefault);
+  titlePage = writeTitleField(titlePage, "author", author);
+  return { ...screenplay, titlePage };
+}
+
 /** L'en-tête fait foi : les cartes Scène liées prennent le texte de leur en-tête. */
 function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode[] {
   const titles = headingTitles(screenplay);
@@ -243,7 +259,7 @@ function openProject(p: Project) {
   const base = fromProject(p);
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplay =
-    p.screenplay ?? (base.kind === "scenario" ? initialScreenplay(base.title, sceneCards(base.nodes)) : null);
+    p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
   const nodes = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
   // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
   // la pagination ne change pas d'un appareil à l'autre.
@@ -399,7 +415,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       forgetHistory();
       const { screenplay, title, nodes, paperChosen } = get();
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
-      if (kind === "scenario" && !screenplay) set({ kind, screenplay: initialScreenplay(title, sceneCards(nodes)) });
+      if (kind === "scenario" && !screenplay) set({ kind, screenplay: firstScreenplay(title, nodes) });
       else set({ kind });
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
@@ -427,6 +443,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
       else forgetHistory();
       set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay) });
       touch();
+    },
+    setTitlePageField: (field, value) => {
+      const { screenplay, title } = get();
+      if (!screenplay) return null;
+      const before = readTitleField(screenplay.titlePage, field);
+      let titlePage = writeTitleField(screenplay.titlePage, field, value);
+      if (titlePage === screenplay.titlePage) return screenplay;
+      // Premier nom d'auteur : la mention « Écrit par » se pose toute seule (on peut la changer ou l'effacer).
+      if (field === "author" && !before && !readTitleField(titlePage, "credit")) {
+        titlePage = writeTitleField(titlePage, "credit", getT().screenplay.titlePage.creditDefault);
+      }
+      if (field === "author") useSettings.getState().setAuthor(readTitleField(titlePage, "author"));
+      const next = { ...screenplay, titlePage };
+      const renamed = field === "title" && before.trim() === title.trim() && readTitleField(titlePage, "title") !== "";
+      forgetHistory();
+      set(renamed ? { screenplay: next, title: readTitleField(titlePage, "title") } : { screenplay: next });
+      touch();
+      return next;
     },
     past: [],
     future: [],

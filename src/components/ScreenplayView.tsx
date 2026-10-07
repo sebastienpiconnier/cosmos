@@ -5,6 +5,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SynopsisField } from "./SynopsisField";
+import { TitlePage } from "./TitlePage";
+import { LAYOUTS } from "../screenplay/layout";
+import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
@@ -36,6 +39,8 @@ import {
   type EditableType,
 } from "../screenplay/editor";
 
+/** Sous cette largeur (px), une page entière serait illisible : la feuille redevient continue (voir styles.css). */
+const PAGE_MIN_WIDTH = 640;
 const EMIT_DELAY = 250; // ms après la dernière frappe, avant de reconvertir le document en modèle
 
 /** Position, dans le document, du nœud de premier niveau d'index donné. */
@@ -56,6 +61,20 @@ export function ScreenplayView() {
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
   const focusMode = useCosmos((s) => s.focusMode);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
+
+  // À l'ouverture d'un scénario déjà commencé, on arrive sur le texte : la page de titre est juste au-dessus.
+  useEffect(() => {
+    if ((useCosmos.getState().screenplay?.elements.length ?? 0) === 0) return;
+    const sheet = pageRef.current;
+    const scroller = sheet?.closest<HTMLElement>(".sp-scroll");
+    if (sheet && scroller && scroller.scrollHeight > scroller.clientHeight) scroller.scrollTop = sheet.offsetTop - scroller.offsetTop - 16;
+  }, []);
+
+  // Le format de page a changé : les pages se recoupent.
+  useEffect(() => {
+    const ed = editorRef.current;
+    if (ed && !ed.isDestroyed) ed.view.dispatch(ed.state.tr.setMeta("cosmos:paper", paper));
+  }, [paper]);
 
   // Mode focus : Cmd/Ctrl+Maj+F le bascule ; quitter la vue le termine.
   useEffect(() => {
@@ -172,6 +191,14 @@ export function ScreenplayView() {
         locale: () => useSettings.getState().lang,
         placeholder: (type) => getT().screenplay.placeholders[type],
         // Tab est pris par l'éditeur : Échap rend la main au clavier, sur la barre d'éléments.
+        // Vraies pages (A4 ou Letter) quand l'écran est assez large, feuille continue sinon.
+        pages: {
+          geometry: () => {
+            const l = LAYOUTS[useCosmos.getState().paper];
+            return { lines: l.linesPerPage, pageLines: l.pageLines, marginTop: l.margin.top * 6 };
+          },
+          enabled: (dom) => (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+        },
         onEscape: () =>
           (
             barRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]') ??
@@ -307,6 +334,13 @@ export function ScreenplayView() {
     editor.chain().focus().setTextSelection(pos + 1).run();
     const dom = editor.view.nodeDOM(pos);
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
+  };
+
+  /** Page de titre : le champ part dans le store, et l'éditeur n'est pas rechargé pour autant. */
+  const setTitleField = (field: TitleField, value: string) => {
+    emit();
+    const next = useCosmos.getState().setTitlePageField(field, value);
+    if (next) synced.current = next;
   };
 
   /**
@@ -504,6 +538,7 @@ export function ScreenplayView() {
         </div>
 
         <div className="sp-scroll">
+          {!focusMode && <TitlePage paper={paper} onChange={setTitleField} />}
           <div className="sp-page" data-paper={paper} data-numbers={sceneNumbers ? "" : undefined} style={labels} lang={lang} ref={pageRef}>
             <EditorContent editor={editor} />
             {menu && (

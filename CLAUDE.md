@@ -115,7 +115,7 @@ src/
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
-  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier (appliqués avant le premier rendu)
+  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
     fr.ts               Textes de référence (type Messages)
@@ -137,6 +137,7 @@ src/
     Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
+    TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : synopsis, personnages, longueur, réordonnancement
     ExportMenu.tsx      Bouton « Exporter » d'un scénario : PDF, Fountain, FDX
     usePagination.ts    Pagination du scénario courant (hook)
@@ -152,6 +153,7 @@ src/
     paginate.ts         Estimation des pages par comptage de lignes
     sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
     import.ts           Fichier Fountain → projet scénario (cartes Scène, Personnage, Décor)
+    titlePage.ts        Champs de la page de titre (titre, auteur, contact…) ↔ clés du fichier Fountain
     export/             Exports : typeset.ts (composition en pages), pdf.ts, fdx.ts, index.ts (chargés à la demande)
     editor/             Éditeur TipTap : un nœud bloc par élément
       nodes.ts          Schéma (six éléments éditables + « preserved » pour le reste)
@@ -160,6 +162,7 @@ src/
       autodetect.ts     Détection à la frappe (int., ext., parenthèse) et majuscules
       autocomplete.ts   Suggestions : personnages, extensions, préfixes, décors, moments (fonctions pures)
       adopt.ts          Une scène ou un personnage écrits à l'instant reçoivent leur carte sur le canevas
+      pages.ts          Découpage de la feuille en vraies pages (A4, Letter) par décorations ProseMirror
       index.ts          screenplayExtensions() : l'assemblage
   storage/
     paths.ts            Format du dossier projet
@@ -242,9 +245,14 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Majuscules du scénario** : seul l'élément en cours d'écriture est mis en majuscules (`autodetect.ts`), jamais au chargement, ni en annulant, ni pendant une saisie composée (accents morts, IME). Le CSS met le reste en majuscules à l'affichage.
 - **Éléments conservés** (note, section, texte mis de côté…) : leurs libellés viennent de variables CSS `--sp-label-*` posées par React, pour suivre la langue sans redessiner les nœuds.
 - **Complétion du scénario** : le menu ne présélectionne une suggestion que si elle complète le texte tapé (`active` vaut -1 sinon), pour qu'Entrée continue de passer à l'élément suivant sur un nom déjà complet. Ses touches sont prises dans `editorProps.handleKeyDown`, avant le clavier de l'éditeur.
+- **Colonnes de la vue Scénario** : la colonne du milieu a une largeur minimale de page (850 px) quand la fenêtre le permet ; ce sont les panneaux latéraux qui se resserrent. Sinon la feuille passe en continu sur un portable ordinaire.
 - **Séquencier, glisser-déposer** : l'index de la scène glissée vit dans une ref, pas seulement dans l'état React. Le dépôt peut arriver avant le rendu suivant et lirait sinon une valeur périmée.
 - **Export PDF** : `pdf.ts` et les polices (importées en `?inline`) ne doivent être atteints que par `import()` dynamique depuis `export/index.ts`, jamais par un import statique, sinon ils entrent dans le paquet de démarrage. La pagination se décide dans `typeset.ts` (pur, testé), pas dans `pdf.ts`.
 - **Exports, enregistrement** : toujours `storage.saveAs()` (dialogue du système dans Tauri, téléchargement dans le navigateur). `ScreenplayView` envoie ce qui attend dans le store dès que l'éditeur perd le focus, pour que l'export voie la dernière frappe.
+- **Feuille du scénario, en vraies pages** : tout est en `em` dans `.sp-page` (1em = une ligne, 0.6em = un caractère), donc une page Letter fait 51em × 66em et une page A4 49.62em × 70.14em. Quand la place manque, c'est `font-size` qui diminue (`100cqw / largeur`) : la page garde ses proportions. Ne pas remettre de `px`, de `ch` de marge ni de `line-height` autre que 1 dans la feuille, sinon le ratio se perd.
+- **Coupures de page** : le texte reste un seul document ProseMirror. `pages.ts` mesure la hauteur réelle des éléments et insère, par décorations, la fin de page, l'espace et la marge haute suivante. C'est un affichage : rien n'est écrit dans le fichier. Sous 640 px de large (`PAGE_MIN_WIDTH`, même seuil dans `styles.css`), la feuille redevient continue.
+- **Pages à l'écran et pages estimées** : l'écran coupe d'après le rendu, le compteur et le PDF d'après `paginate.ts` et `typeset.ts`. Ils peuvent différer d'une page sur un long texte (un paragraphe n'est pas coupé en deux à l'écran).
+- **Page de titre** : ses champs vivent dans `screenplay.titlePage` sous les clés Fountain (`Title`, `Credit`, `Author`, `Draft date`, `Contact`…), jamais traduites. `setTitlePageField` rend le scénario obtenu pour que la vue mette `synced` à jour sans recharger l'éditeur. Le titre de la page de garde et celui du projet se suivent tant qu'ils sont identiques.
 - **Synopsis d'une scène** : c'est le synopsis Fountain, une ligne `= …` juste sous l'en-tête (`sceneSynopsis`, `setSceneSynopsis`). Il vit donc dans `scenario.fountain`, pas dans la carte, et suit sa scène quand on la déplace. Depuis la vue Scénario il s'écrit par une transaction de l'éditeur (`saveSynopsis`), depuis le séquencier par `setScreenplay(…, true)`. Faute de synopsis, le séquencier montre le texte de la carte, en plus discret.
 - **Présentation du séquencier** (liste ou fiches) : réglage de l'appareil (`sequencerMode`), comme la langue. Ce n'est pas une donnée du projet.
 - **Numéros de scène** : c'est un affichage (compteur CSS dans l'éditeur, option de `typeset` et de `buildFdx`), jamais une écriture dans `scenario.fountain`. Seul un numéro déjà présent dans le fichier (`#12A#`) est une donnée.

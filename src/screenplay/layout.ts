@@ -17,6 +17,8 @@ export interface Layout {
   margin: { top: number; bottom: number; left: number; right: number };
   /** Lignes de texte par page (constante à ajuster si le PDF s'écarte de plus de 5 %). */
   linesPerPage: number;
+  /** Hauteur totale de la page en lignes, marges comprises (6 lignes par pouce) : sert à l'écran. */
+  pageLines: number;
   /** Largeur de chaque élément, en caractères. */
   columns: Record<"action" | "character" | "parenthetical" | "dialogue", number>;
   /** Retrait depuis la marge gauche, en caractères. */
@@ -33,6 +35,7 @@ function layout(paper: Paper, width: number, height: number, linesPerPage: numbe
     height,
     margin: MARGIN,
     linesPerPage,
+    pageLines: height * 6,
     columns: {
       // Letter : 8,5 − 1,5 − 1 = 6 pouces, soit 60 caractères. A4 : 57.
       action: Math.floor((width - MARGIN.left - MARGIN.right) * CHARS_PER_INCH + 1e-6),

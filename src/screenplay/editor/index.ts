@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Autodetect } from "./autodetect";
 import { ScreenplayKeymap } from "./keymap";
+import { Pages, type PagesOptions } from "./pages";
 import {
   Action,
   Character,
@@ -27,6 +28,8 @@ export interface ScreenplayEditorOptions {
   /** Texte indicatif d'un élément vide (i18n, relu à chaque rendu). */
   placeholder: (type: EditableType) => string;
   onEscape: () => void;
+  /** Aspect « pages » : géométrie de la page courante, et écran assez large ou non. */
+  pages?: PagesOptions;
 }
 
 export function screenplayExtensions(options: ScreenplayEditorOptions): Extensions {
@@ -67,5 +70,6 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     }),
     ScreenplayKeymap.configure({ onEscape: options.onEscape }),
     Autodetect.configure({ locale: options.locale }),
+    ...(options.pages ? [Pages.configure(options.pages)] : []),
   ];
 }

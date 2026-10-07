@@ -22,9 +22,12 @@ interface SettingsState {
   setThemePref: (pref: ThemePref) => void;
   sequencerMode: SequencerMode;
   setSequencerMode: (mode: SequencerMode) => void;
+  /** Nom d'auteur, proposé sur la page de titre des nouveaux scénarios. */
+  author: string;
+  setAuthor: (author: string) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -47,17 +50,19 @@ export const useSettings = create<SettingsState>((set) => ({
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
   sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
+  author: typeof saved.author === "string" ? saved.author : "",
+  setAuthor: (author) => set({ author }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

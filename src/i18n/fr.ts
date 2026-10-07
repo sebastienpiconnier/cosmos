@@ -292,6 +292,18 @@ export const fr = {
       done: "Export terminé.",
       failed: "L’export a échoué.",
     },
+    // Page de titre : libellés des champs (les clés du fichier Fountain, elles, restent en anglais).
+    titlePage: {
+      aria: "Page de titre du scénario",
+      title: "Titre",
+      credit: "Mention (écrit par, d’après…)",
+      creditDefault: "Écrit par",
+      author: "Nom de l’auteur",
+      source: "Source (d’après le roman de…)",
+      contact: "Contact : adresse, téléphone, courriel",
+      date: "Date de la version",
+      copyright: "Copyright",
+    },
     synopsis: {
       add: "+ Synopsis",
       addFor: "Ajouter un synopsis à la scène « {title} »",

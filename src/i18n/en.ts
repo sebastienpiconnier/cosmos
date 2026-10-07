@@ -290,6 +290,18 @@ export const en: Messages = {
       done: "Export finished.",
       failed: "The export failed.",
     },
+    // Title page: field labels (the keys in the Fountain file stay in English anyway).
+    titlePage: {
+      aria: "Screenplay title page",
+      title: "Title",
+      credit: "Credit (written by, based on…)",
+      creditDefault: "Written by",
+      author: "Author’s name",
+      source: "Source (based on the novel by…)",
+      contact: "Contact: address, phone, email",
+      date: "Draft date",
+      copyright: "Copyright",
+    },
     synopsis: {
       add: "+ Synopsis",
       addFor: "Add a synopsis to the scene “{title}”",

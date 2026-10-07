@@ -91,6 +91,8 @@ Retours après essai dans l'exe (7 octobre 2026) :
 
 Séquencier, après le plan (7 octobre 2026) : deux présentations au choix (liste ou fiches), les personnages qui parlent dans chaque scène (cliquables s'ils ont une carte), et un synopsis par scène, écrit depuis le volet des scènes de la vue Scénario ou depuis le séquencier. Le synopsis est une ligne Fountain `= …` sous l'en-tête.
 
+Page de titre et vraies pages (7 octobre 2026) : la vue Scénario commence par une page de garde modifiable (titre, mention, auteur, source, contact, date, copyright), et la feuille est découpée en pages aux proportions exactes du format choisi (mesuré : 1,414 en A4, 1,294 en Letter), marges réelles et interligne simple. C'est un changement par rapport à la phase 3, où la feuille était continue avec un interligne plus aéré.
+
 Vérifications à faire à la main (aucune n'a pu l'être ici) :
 
 - ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain ;

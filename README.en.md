@@ -48,6 +48,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 ![The screenplay editor (French interface): scene list, standard-format page and “In this scene” panel](docs/images/scenario-fr.png)
 
+- **Real pages**: the sheet has the proportions and margins of the chosen paper size (A4 or US Letter), page after page, as in print.
+- **Title page**: a cover page where you write the title, your name, the “Written by” credit, your contact address and the date. Your name is remembered for your next screenplays.
 - **Six elements**: scene heading, action, character, parenthetical, dialogue, transition, with the standard indents.
 - **All from the keyboard**: `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
 - **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.

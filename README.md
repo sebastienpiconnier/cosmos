@@ -48,6 +48,8 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 
 ![L'éditeur de scénario : liste des scènes, feuille au format standard et panneau « Dans cette scène »](docs/images/scenario-fr.png)
 
+- **De vraies pages** : la feuille a les proportions et les marges du format choisi (A4 ou US Letter), page après page, comme à l'impression.
+- **Page de titre** : une page de garde où tu écris le titre, ton nom, la mention « Écrit par », ton adresse de contact et la date. Ton nom est retenu pour tes prochains scénarios.
 - **Six éléments** : en-tête de scène, action, personnage, didascalie, dialogue, transition, avec les retraits standard.
 - **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
 - **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
