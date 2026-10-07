@@ -9,6 +9,7 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
+import { CharacterAssistant } from "./CharacterAssistant";
 
 // Ordre de la bible : les personnages d'abord, les idées en vrac à la fin.
 const ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
@@ -153,6 +154,7 @@ export function Bible() {
               ) : (
                 <p className="muted">{t.bible.toDig}</p>
               )}
+              {shown.type === "personnage" && <CharacterAssistant card={card} />}
               {links.length > 0 && (
                 <div className="bible-links">
                   <span className="eyebrow">{t.bible.linkedTo}</span>

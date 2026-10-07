@@ -23,6 +23,7 @@ import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
 import { removeMentions, renameMentions } from "./mentions";
 import { isBlank, type Manuscript } from "./manuscript";
+import { appendAnswer, isParked, parkedTitle } from "./assistant";
 import { EMPTY_PLAN, isEmptyPlan, placeScene, prunePlan, readPlan, setTemplate, stepScene, type Plan, type PlanTemplate } from "./plan";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
@@ -79,6 +80,10 @@ interface CosmosState {
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string) => string;
+  /** Assistant personnage : ajoute la question (en gras) et la réponse au texte de la fiche. */
+  answerQuestion: (id: string, question: string, answer: string) => void;
+  /** Assistant personnage, « Je ne sais pas encore » : crée une carte Question reliée au personnage. */
+  parkQuestion: (id: string, question: string) => string | null;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte Scène. */
   manuscript: Manuscript;
   setManuscriptText: (id: string, html: string) => void;
@@ -449,6 +454,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
+    },
+    answerQuestion: (id, question, answer) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card) return;
+      const html = appendAnswer(card.html, question, answer);
+      if (html !== card.html) get().updateCard(id, { html });
+    },
+    parkQuestion: (id, question) => {
+      const { nodes, edges } = get();
+      const character = nodes.find((n) => n.id === id)?.data;
+      if (!character || isParked(nodes.map((n) => n.data), edges, id, question)) return null;
+      // Une seule étape d'historique pour la carte et son fil.
+      record();
+      const card: CardData = { id: newId(), type: "question", title: parkedTitle(character.title, question), html: "" };
+      const spot = firstFreeCell(boxes(nodes));
+      const edge = { id: newId(), source: card.id, target: id, sourceHandle: null, targetHandle: null, label: getT().assistant.linkLabel, type: "floating" };
+      set({ nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: addEdge(edge, edges) });
+      touch();
+      return card.id;
     },
     manuscript: {},
     setManuscriptText: (id, html) => {

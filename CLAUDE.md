@@ -114,6 +114,7 @@ src/
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
+  assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
   manuscript.ts         Manuscrit d'un roman : mots, cartes citées dans le texte, textes sans carte (fonctions pures)
   plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
@@ -139,6 +140,7 @@ src/
     Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
+    CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
@@ -240,6 +242,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
 - **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
 - **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
+- **Assistant personnage, sans format propre** : une réponse s'ajoute au texte de la fiche (la question en gras, la réponse dessous) et « Je ne sais pas encore » crée une carte Question reliée au personnage. L'assistant retrouve où l'on en est en relisant les cartes : question en gras dans la fiche = répondue, carte Question reliée dont le titre finit par la question = en attente. Reformuler une question dans `fr.ts` ou `en.ts` la fait donc réapparaître comme ouverte dans les projets existants, et changer de langue aussi : à éviter sans raison.
+- **L'assistant n'écrit jamais à la place de l'auteur** : il pose la question, rien d'autre. Pas de réponse proposée, pas de texte généré.
 - **Manuscrit d'un roman** : un fichier `manuscrit/<id>.md` par scène écrite, sans en-tête (le titre reste celui de la carte, les notes de la carte restent dans `cartes/`). Une scène sans texte n'a pas de fichier. L'ordre est celui du Plan (`planOrder`). Le texte lu sur disque passe par `markdownToHtml`, donc par `sanitizeHtml`, et le nom du fichier doit être un identifiant de carte valide.
 - **Le texte d'une scène n'est jamais effacé avec sa carte** : supprimer la carte laisse le fichier du manuscrit. La vue liste ces « textes sans carte » et peut recréer la carte (`restoreScene`, même identifiant).
 - **Manuscrit et annulation** : le texte n'est pas dans l'historique du store, l'éditeur a le sien. L'éditeur est remonté à chaque changement de scène (`key`).
@@ -302,7 +306,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 4. (fait, sauf la chronologie) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case. Reste : chronologie par intrigue
 5. (fait) **Manuscrit** : une scène à la fois dans l'ordre du Plan, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
-6. **Assistant personnage** : banques de questions par niveau (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question
+6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée
 7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
 8. Export : bible et manuscrit en PDF, docx, epub (Pandoc)
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)

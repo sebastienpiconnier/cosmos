@@ -43,6 +43,12 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Changer d'avis** : passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
 - **Liste ou fiches** : le plan s'affiche en liste ou en fiches, comme le séquencier.
 
+### L'assistant personnage
+
+- **Des questions, pas des réponses** : dans la fiche d'un personnage, « Questionner » pose une question à la fois, sur trois niveaux (Essentiel, Approfondi, Intime).
+- **Ta réponse rejoint la fiche**, sous la question. Tu peux aussi passer à une autre question.
+- **« Je ne sais pas encore »** garde la question pour plus tard : elle devient une carte Question reliée au personnage sur le canevas.
+
 ### Le manuscrit (roman)
 
 - **Une scène à la fois** : tu écris le texte de chaque scène dans l'ordre du plan, avec le nombre de mots par scène et au total.
@@ -94,11 +100,8 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 
 | Étape | Contenu |
 |---|---|
-| Mentions | `@` dans une carte pour créer un fil automatiquement |
-| Plan | Gabarits (Save the Cat, trois actes, voyage du héros), cases où glisser les scènes |
-| Manuscrit | Éditeur focus par scène, dans l'ordre du Plan |
+| Plan | Chronologie par intrigue |
 | Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
-| Assistant personnage | Banques de questions par niveau, réponses ajoutées à la fiche |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Export | Bible et manuscrit en PDF, docx, epub |
 | Mobile | Apps iOS et Android |

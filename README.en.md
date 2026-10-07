@@ -43,6 +43,12 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
 - **List or index cards**: the outline shows as a list or as index cards, like the step outline.
 
+### The character assistant
+
+- **Questions, not answers**: in a character’s entry, “Ask about” puts one question at a time, across three levels (Essential, In depth, Intimate).
+- **Your answer joins the entry**, under the question. You can also skip to another question.
+- **“I don’t know yet”** keeps the question for later: it becomes a Question card linked to the character on the canvas.
+
 ### The manuscript (novel)
 
 - **One scene at a time**: you write the text of each scene in outline order, with word counts per scene and in total.
@@ -94,11 +100,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 | Step | Content |
 |---|---|
-| Mentions | `@` in a card to create a thread automatically |
-| Outline | Templates (Save the Cat, three acts, hero’s journey), slots to drop scenes into |
-| Manuscript | Focused editor per scene, in the Outline’s order |
+| Outline | Timeline by storyline |
 | Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
-| Character assistant | Question banks by level, answers added to the sheet |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Export | Bible and manuscript as PDF, docx, epub |
 | Mobile | iOS and Android apps |

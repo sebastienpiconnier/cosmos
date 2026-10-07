@@ -383,6 +383,22 @@ button { font: inherit; color: inherit; }
 .empty-view .bible-add { justify-content: center; border-top: 0; }
 .bible-body { font: 17px/1.6 var(--font-text); margin-top: 8px; }
 .bible-body p { margin: 0 0 10px; }
+/* Assistant personnage : une question à la fois, dans la fiche. */
+.assistant { margin-top: 14px; }
+.assistant-toggle { width: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); font-size: 14px; }
+.assistant-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--ground); }
+.assistant-panel .sq-modes { flex-wrap: wrap; }
+.assistant-panel .sq-modes button { min-height: 44px; }
+.assistant-count { margin-left: 4px; font-size: 12px; font-weight: 400; opacity: 0.8; }
+.assistant-hint, .assistant-done { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.assistant-panel form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.assistant-question { font: 500 18px/1.4 var(--font-display); color: var(--ink); }
+.assistant-panel textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 16px/1.5 var(--font-text); resize: vertical; }
+.assistant-panel textarea::placeholder { color: var(--placeholder); }
+.assistant-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.assistant-actions button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+.assistant-actions button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+.assistant-actions button:disabled { opacity: 0.45; cursor: default; }
 .bible-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
 .chip { font-size: 13px; background: var(--accent-soft); color: var(--accent-ink); padding: 5px 10px; border-radius: 999px; }
 .link-button { border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 0; }
