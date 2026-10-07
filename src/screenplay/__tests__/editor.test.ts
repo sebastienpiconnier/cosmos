@@ -337,18 +337,29 @@ describe("sortir au clavier", () => {
 
 describe("ce qu'on écrit alimente le canevas", () => {
   const created: [string, string][] = [];
+  const links: [string, string][] = [];
+  const places: { id: string; title: string }[] = [];
   const host = (cards: string[] = []) => ({
-    addCard: (type: "scene" | "personnage", title: string) => {
+    addCard: (type: "scene" | "personnage" | "lieu", title: string) => {
       created.push([type, title]);
+      const id = `carte${created.length}`;
       if (type === "personnage") cards.push(title);
-      return `carte${created.length}`;
+      if (type === "lieu") places.push({ id, title });
+      return id;
     },
     characterCards: () => cards,
+    locationCards: () => places,
+    linkSceneToLocation: (scene: string, place: string) => void links.push([scene, place]),
     locale: "fr",
   });
+  const reset = () => {
+    created.length = 0;
+    links.length = 0;
+    places.length = 0;
+  };
 
   it("une scène et ses personnages écrits au clavier reçoivent leurs cartes, une seule fois", () => {
-    created.length = 0;
+    reset();
     const cards = ["Inès Morvan"];
     open([]);
     type("int. phare - nuit");
@@ -361,7 +372,11 @@ describe("ce qu'on écrit alimente le canevas", () => {
     type("hugo (h.c.)");
     // Le personnage n'a pas encore de réplique : son nom n'est pas fini.
     adoptNew(editor, host(cards));
-    expect(created).toEqual([["scene", "INT. PHARE - NUIT"]]);
+    expect(created).toEqual([
+      ["scene", "INT. PHARE - NUIT"],
+      ["lieu", "Phare"],
+    ]);
+    expect(links).toEqual([["carte1", "carte2"]]);
     press("Enter");
     type("Tu ne devrais pas monter seule.");
     press("Enter");
@@ -374,16 +389,47 @@ describe("ce qu'on écrit alimente le canevas", () => {
     // Hugo est nouveau ; Inès a déjà sa carte (« Inès Morvan »).
     expect(created).toEqual([
       ["scene", "INT. PHARE - NUIT"],
+      ["lieu", "Phare"],
       ["personnage", "Hugo"],
     ]);
     expect(model().elements[0]).toEqual({ type: "sceneHeading", text: "INT. PHARE - NUIT", cardId: "carte1" });
     // Rien de plus au passage suivant.
     expect(adoptNew(editor, host(cards))).toBeNull();
-    expect(created).toHaveLength(2);
+    expect(created).toHaveLength(3);
+  });
+
+  it("décor : une seule carte par lieu, reliée à chaque scène ; pas de décor pour un titre libre", () => {
+    reset();
+    places.push({ id: "port", title: "Port" });
+    open([]);
+    type("ext. port - jour");
+    press("Enter");
+    type("Hugo attend.");
+    press("Enter");
+    press("Tab", { shiftKey: true });
+    type("int. phare, lanterne - nuit");
+    press("Enter");
+    type("La lampe.");
+    press("Enter");
+    press("Tab", { shiftKey: true });
+    type("ext. PORT - nuit");
+    press("Enter");
+    type("Personne.");
+    press("Enter");
+    press("Tab", { shiftKey: true });
+    type("Inès trouve le journal");
+    press("Enter");
+    type("Elle lit.");
+    adoptNew(editor, host());
+
+    expect(created.filter(([kind]) => kind === "lieu")).toEqual([["lieu", "Phare, Lanterne"]]);
+    expect(created.filter(([kind]) => kind === "scene")).toHaveLength(4);
+    const lantern = places.find((p) => p.title === "Phare, Lanterne")!.id;
+    expect(links.map(([, place]) => place)).toEqual(["port", lantern, "port"]);
   });
 
   it("un fichier ouvert n'est pas transformé en cartes d'office", () => {
-    created.length = 0;
+    reset();
     open("INT. PHARE - NUIT\n\nLa lampe.\n\nHUGO\nOui.\n");
     expect(adoptNew(editor, host())).toBeNull();
     expect(created).toEqual([]);
@@ -394,11 +440,14 @@ describe("ce qu'on écrit alimente le canevas", () => {
     press("Enter");
     type("Hugo attend.");
     adoptNew(editor, host());
-    expect(created).toEqual([["scene", "EXT. PORT - JOUR"]]);
+    expect(created).toEqual([
+      ["scene", "EXT. PORT - JOUR"],
+      ["lieu", "Port"],
+    ]);
   });
 
   it("la création des cartes n'entre pas dans l'historique d'annulation", () => {
-    created.length = 0;
+    reset();
     open([]);
     type("int. phare - nuit");
     press("Enter");

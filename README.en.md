@@ -47,7 +47,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **All from the keyboard**: `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
 - **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
 - **Completion**: characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
-- **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
+- **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene, its location or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
 - **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
 - **Step outline**: the list of scenes in order, with their length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
 - **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).

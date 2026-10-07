@@ -50,7 +50,7 @@ const NONE: SuggestResult = { items: [], active: -1 };
 const MAX = 6;
 
 /** Comparaison sans casse ni accents : « ines » retrouve « INÈS ». */
-const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
+export const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
 
 /** « LE GARDIEN » → « Le Gardien » : titre de la carte créée depuis un nom en majuscules. */
 export function titleCase(name: string, locale: string): string {

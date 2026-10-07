@@ -126,7 +126,14 @@ export function ScreenplayView() {
     // Une scène ou un personnage écrits à l'instant reçoivent leur carte sur le canevas.
     if (ed && !ed.isDestroyed && ed.state.doc === doc) {
       const host = {
-        addCard: (type: "scene" | "personnage", title: string) => useCosmos.getState().addTitledCard(type, title),
+        addCard: (type: "scene" | "personnage" | "lieu", title: string) => useCosmos.getState().addTitledCard(type, title),
+        locationCards: () =>
+          useCosmos
+            .getState()
+            .nodes.filter((n) => n.data.type === "lieu")
+            .map((n) => ({ id: n.id, title: n.data.title })),
+        linkSceneToLocation: (sceneId: string, locationId: string) =>
+          useCosmos.getState().linkCards(sceneId, locationId, getT().screenplay.linkSetIn),
         characterCards: () =>
           useCosmos
             .getState()

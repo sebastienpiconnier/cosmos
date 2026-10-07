@@ -1,19 +1,23 @@
 // Ce qui vient d'être écrit dans le scénario alimente le canevas : un en-tête de scène validé
-// (suivi d'un autre élément) reçoit sa carte Scène, un personnage qui parle reçoit sa carte
-// Personnage s'il n'en a pas.
+// (suivi d'un autre élément) reçoit sa carte Scène et la carte de son décor, reliées par un fil ;
+// un personnage qui parle reçoit sa carte Personnage. Rien n'est créé en double.
 // Seuls les éléments écrits dans cette session sont concernés (attribut « known » absent) : une carte
 // supprimée exprès n'est pas recréée, et un fichier venu d'ailleurs n'est pas transformé en cartes d'office.
 
 import type { Editor } from "@tiptap/react";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { characterName } from "../scenes";
-import { matchesCharacter, titleCase } from "./autocomplete";
+import { characterName, headingParts } from "../scenes";
+import { fold, matchesCharacter, titleCase } from "./autocomplete";
 
 export interface AdoptHost {
   /** Crée une carte sur le canevas et rend son identifiant. */
-  addCard: (type: "scene" | "personnage", title: string) => string;
+  addCard: (type: "scene" | "personnage" | "lieu", title: string) => string;
   /** Titres des cartes Personnage existantes (relus à chaque appel). */
   characterCards: () => string[];
+  /** Cartes Décor existantes (relues à chaque appel). */
+  locationCards: () => { id: string; title: string }[];
+  /** Tire le fil « se passe à » entre une scène et son décor. */
+  linkSceneToLocation: (sceneId: string, locationId: string) => void;
   locale: string;
 }
 
@@ -33,6 +37,14 @@ export function adoptNew(editor: Editor, host: AdoptHost): PMNode | null {
       // Un en-tête encore seul en fin de texte est peut-être en cours de frappe : on attend la suite.
       const cardId = (node.attrs.cardId as string | null) || host.addCard("scene", text);
       tr.setNodeMarkup(offset, null, { ...node.attrs, cardId, known: true });
+      // Son décor : seulement pour un en-tête standard (INT., EXT.…), un titre libre n'en désigne pas.
+      const { prefix, location } = headingParts(text);
+      if (prefix && location) {
+        const place =
+          host.locationCards().find((card) => fold(card.title) === fold(location))?.id ??
+          host.addCard("lieu", titleCase(location.toLocaleUpperCase(host.locale), host.locale));
+        host.linkSceneToLocation(cardId, place);
+      }
     }
     if (type === "character" && (next === "dialogue" || next === "parenthetical")) {
       const name = characterName(text);

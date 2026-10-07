@@ -47,7 +47,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 - **Tout au clavier** : `Tab` change le type de l'élément, `Entrée` passe à l'élément suivant logique (personnage, puis dialogue, puis action). Une barre d'éléments fait la même chose à la souris et au doigt.
 - **Détection à la frappe** : une ligne qui commence par `int.` ou `ext.` devient un en-tête de scène, une parenthèse ouvre une didascalie.
 - **Complétion** : les personnages et les décors de la Bible se proposent pendant que tu écris, avec les extensions (V.O., H.C.) et les moments (JOUR, NUIT). Un personnage ou un décor inconnu peut devenir une carte en un geste.
-- **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène, et renommer l'un renomme l'autre. Une scène ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
+- **Relié au canevas** : chaque en-tête de scène est lié à sa carte Scène, et renommer l'un renomme l'autre. Une scène, son décor ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes** : le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence, en format US Letter ou A4.
 - **Séquencier** : la liste des scènes dans l'ordre, avec leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
 - **Exports** : PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
