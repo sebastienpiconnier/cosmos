@@ -25,7 +25,11 @@ export function TopBar() {
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19" />
         </svg>
-        <span className="brand-name">Cosmos</span>
+        {/* Le nom et le slogan du projet (celui du README) : « du chaos au monde ordonné ». */}
+        <span className="brand-text">
+          <span className="brand-name">Cosmos</span>
+          <span className="brand-tagline">{t.app.tagline}</span>
+        </span>
         {/* Le titre se change ici, directement. */}
         <input
           className="brand-project"
@@ -44,7 +48,6 @@ export function TopBar() {
       </div>
 
       <nav className="views" aria-label={t.views.aria}>
-        <span className="views-pole">{t.views.chaos}</span>
         {VIEWS.map((v) => (
           <button
             key={v}
@@ -56,7 +59,6 @@ export function TopBar() {
             {views[v]}
           </button>
         ))}
-        <span className="views-pole">{t.views.order}</span>
       </nav>
 
       <div className="actions">

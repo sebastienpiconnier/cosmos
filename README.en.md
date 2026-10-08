@@ -38,7 +38,8 @@ Cosmos is under active development (version 0.1).
 ### The canvas
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
-- **Six card types:** Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Seven card types:** Idea, Character, Place, Scene, Plot, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Double-click the thread (or tap it with a finger) to rename it.
 - **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
 - **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
@@ -51,7 +52,7 @@ Cosmos is under active development (version 0.1).
 
 ### The Bible
 
-A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Everything can be edited in place, title and text, and a character has a round portrait and a **character sheet**: role, gender, age, occupation, nicknames, background, appearance, personality, what they want, what they need, flaw, fear, secret, relationships, arc. All optional: only filled fields stay on screen. Under the name, the poster sums up gender, age, occupation and role, and says how often the text names them and from which scene.
+A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Every section is shown, even empty; you choose which to keep and in what order. Everything can be edited in place, title and text. Characters and places have a photo gallery (add by button or drop, enlarge, pick the main picture), places and plots have their own sheet too (atmosphere, period; dramatic question, stakes, inciting incident, obstacles, resolution), and a character has a round portrait and a **character sheet**: role, gender, age, occupation, nicknames, background, appearance, personality, what they want, what they need, flaw, fear, secret, relationships, arc. All optional: only filled fields stay on screen. Under the name, the poster sums up gender, age, occupation and role, and says how often the text names them and from which scene.
 
 ### The outline
 
@@ -121,6 +122,7 @@ It asks, it doesn’t write: no action changes your project without your say.
 - **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one, then “Organise the canvas” puts everything in frames.
 - **Tailored questions:** in the character assistant, a question based on what the entry already says. You do the answering.
 - **Character summary:** puts what you wrote in order, adding nothing.
+- **Describe a place from a photo:** if you ask, the AI notes what the photo shows (light, materials, atmosphere), inventing nothing. It needs a model that can read images.
 - **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
 
 The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs/prompts-ia.md) (in French, with the prompts themselves in English).

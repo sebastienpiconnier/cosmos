@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
 import { isTauri } from "./platform";
@@ -59,9 +60,12 @@ interface SettingsState {
   setAuthor: (author: string) => void;
   ai: AiSettings;
   setAi: (ai: AiSettings) => void;
+  /** Rubriques de la Bible : ordre et rubriques masquées. */
+  bibleSections: BibleSections;
+  setBibleSections: (sections: BibleSections) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -88,17 +92,19 @@ export const useSettings = create<SettingsState>((set) => ({
   setAuthor: (author) => set({ author }),
   ai: readAi(saved.ai),
   setAi: (ai) => set({ ai }),
+  bibleSections: readSections(saved.bibleSections),
+  setBibleSections: (bibleSections) => set({ bibleSections }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author, ai }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

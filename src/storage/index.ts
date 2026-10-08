@@ -58,6 +58,8 @@ export interface Storage {
   mediaUrl(name: string): Promise<string | null>;
   /** L'auteur choisit une image (bouton d'une carte). Renvoie null s'il annule. */
   pickImage(label: string): Promise<{ name: string; data: Uint8Array } | null>;
+  /** Plusieurs images d'un coup (galerie d'une fiche). Liste vide si l'auteur annule. */
+  pickImages(label: string): Promise<{ name: string; data: Uint8Array }[]>;
   /** Écrit les fichiers donnés et supprime ceux listés dans `removed`. */
   write(files: FileMap, removed: string[]): Promise<void>;
   /**

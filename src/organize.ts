@@ -2,7 +2,7 @@
 // Fonction pure : elle calcule des positions et des cadres, le store les applique en une seule étape
 // d'historique (Ctrl/Cmd+Z remet tout comme avant).
 //
-//   Personnages · Lieux · Thèmes · Questions        (une rangée de cadres)
+//   Personnages · Intrigues · Lieux · Thèmes · Questions   (une rangée de cadres)
 //   Récit : [case du gabarit [chapitre [scènes]]]   (une case par ligne ; sans gabarit, les chapitres)
 //   Idées en vrac
 //
@@ -153,8 +153,8 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
 
   const rows: Layout[] = [
     {
-      items: [...typeFrame("personnage", 3), ...typeFrame("lieu", 2), ...typeFrame("theme", 2), ...typeFrame("question", 2)],
-      columns: 4,
+      items: [...typeFrame("personnage", 3), ...typeFrame("intrigue", 2), ...typeFrame("lieu", 2), ...typeFrame("theme", 2), ...typeFrame("question", 2)],
+      columns: 5,
       gap: GROUP_GAP,
     },
     // Sans gabarit, les chapitres se suivent de gauche à droite ; avec, une case par ligne.

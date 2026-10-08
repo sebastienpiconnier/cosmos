@@ -115,7 +115,8 @@ src/
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
-  character.ts          Fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
+  bibleSections.ts      Rubriques de la Bible : ordre et rubriques masquées (réglage de l'appareil)
+  character.ts          Fiches (SHEET_FIELDS par type) et fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
   organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
   book.ts               Pages du livre (titre, dédicace, prologue…) et ordre de lecture du manuscrit (bookOrder)
   stats.ts              Statistiques du manuscrit (mots, pages, lecture) et objectifs d'écriture (fonctions pures)
@@ -146,7 +147,8 @@ src/
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches (titre et texte modifiables) + liens + création d'une fiche ; portrait rond des personnages
     BibleBody.tsx       Texte d'une fiche de la Bible, modifiable sur place (le corps de la carte)
-    CharacterSheet.tsx  Fiche d'identité d'un personnage : rôle, âge, métier, apparence, objectif, faille…
+    CardSheet.tsx       Fiche d'une carte selon son type : personnage (rôle, genre, âge…), lieu (époque, ambiance…), intrigue (question dramatique, enjeu…)
+    Gallery.tsx         Photos d'un personnage ou d'un lieu dans la Bible : ajout, agrandissement, image principale, description par l'IA (lieu)
     CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
@@ -183,7 +185,8 @@ src/
       index.ts          screenplayExtensions() : l'assemblage
   ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
     providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
-    tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
+    image.ts            Photo préparée pour une IA qui lit les images (réduite, JPEG, base64)
+    tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, description d'un lieu, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -227,11 +230,11 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 ```
 
-`page` (carte Scène : page hors récit, `titre`, `copyright`, `dedicace`, `epigraphe`, `prologue`, `epilogue`, `remerciements`, `auteur`), `fiche` (personnage : caractéristiques standard, clés fixes de `CHARACTER_FIELDS`) et `questions` (questions gardées pour plus tard) sont facultatifs, en JSON sur une ligne.
+`images` (photos supplémentaires de la fiche, simples noms de fichiers de `medias/`, vérifiés par `isMediaName`), `page` (carte Scène : page hors récit, `titre`, `copyright`, `dedicace`, `epigraphe`, `prologue`, `epilogue`, `remerciements`, `auteur`), `fiche` (personnage : caractéristiques standard, clés fixes de `CHARACTER_FIELDS`) et `questions` (questions gardées pour plus tard) sont facultatifs, en JSON sur une ligne.
 
 Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
-Types possibles : `idee`, `personnage`, `lieu`, `scene`, `theme`, `question`. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
+Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `theme`, `question`. Une Intrigue est une ligne d'histoire (principale, secondaire) avec sa fiche ; elle a sa ligne dans la chronologie du Plan, avant les Thèmes. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
 
 Le format est un contrat : toute évolution doit rester lisible par les versions précédentes ou passer par `version` dans `cosmos.json` avec une migration.
 
@@ -390,4 +393,10 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Barre du haut** : grille en trois colonnes (`1fr auto 1fr`) pour que les vues soient au centre exact de la fenêtre, quelle que soit la largeur du titre ou des actions.
 - **Une carte se déplace aussi par son image** (`dragHandle: ".card-handle, .card-image"`) ; le bouton de retrait de l'image garde `nodrag`.
 - **Page du manuscrit** : la taille du texte suit la largeur disponible (`clamp(12px, 100cqw / 34, 23px)`), la page garde ses proportions.
+- **Rubriques de la Bible** : toutes affichées, même vides (on y crée une fiche). L'ordre et les rubriques décochées sont un réglage de l'appareil (`settings.bibleSections`, bibleSections.ts), pas une donnée du projet. Un type que l'ordre enregistré ignore (type ajouté plus tard) se range près de sa place par défaut (`sectionOrder`). Ouvrir une fiche d'une rubrique masquée la réaffiche.
+- **Fiches par type** : `fiche` d'une carte n'accepte que les clés de `SHEET_FIELDS[type]` (lecture avec le type, `readFiche(raw, type)`). Les libellés des personnages sont dans `t.character.fields`, ceux des lieux et intrigues dans `t.fiche.fields`.
+- **Galerie** : `image` reste l'image principale (carte du canevas, portrait) ; `images` les autres photos. Ajouter des photos à une fiche sans image : la première devient l'image principale. Retirer une photo ne supprime jamais le fichier de `medias/`.
+- **IA et photos** : l'image est lue par une balise `<img>` (adresse `blob:` permise par `img-src`) puis réduite sur un canvas, jamais par `fetch` (la CSP refuse `blob:` dans `connect-src`). Format par service : bloc `image` (Claude), `image_url` en data URL (OpenAI, OpenRouter, LM Studio), `images` en base64 (Ollama natif). Une erreur 400/404 signifie le plus souvent que le modèle ne lit pas les images : message dédié (`gallery.visionModel`). La description n'est demandée que sur un clic, rendue en notes, et n'entre dans la fiche que sur un autre clic.
+- **Cartes repliées** : au-delà de 220 px de texte, la carte se replie avec « Plus de détails » (état d'affichage, non enregistré) ; elle reste dépliée pendant l'écriture. Le bouton est aligné à gauche pour ne pas passer sous le point d'accroche du bas.
+- **Barre du haut** : « Cosmos » et son slogan (« Du chaos au monde ordonné », celui du README) à gauche ; plus de pôles Chaos/Ordre autour des vues.
 

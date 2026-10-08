@@ -25,7 +25,7 @@ import { removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, readProgress, recordProgress, type Goals, type Progress } from "./stats";
 import { appendAnswer, isParked } from "./assistant";
-import { addQuestion, legacyParkedCards, removeQuestion, setFicheField, type CharacterField } from "./character";
+import { addQuestion, legacyParkedCards, removeQuestion, setFicheField, type SheetField } from "./character";
 import {
   EMPTY_PLAN,
   arrange,
@@ -122,7 +122,7 @@ interface CosmosState {
   /** Retire une question gardée pour plus tard (répondue ailleurs, ou plus utile). */
   dropQuestion: (id: string, question: string) => void;
   /** Change un champ de la fiche d'un personnage (vide : retiré). */
-  setFiche: (id: string, field: CharacterField, value: string) => void;
+  setFiche: (id: string, field: SheetField, value: string) => void;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
   openInBible: (id: string, assistant?: boolean) => void;
   /** Fiche à montrer en arrivant dans la Bible, puis remise à null. */
@@ -237,6 +237,12 @@ interface CosmosState {
   addImageCard: (pos: { x: number; y: number }, file: { name: string; data: Uint8Array }) => Promise<string | null>;
   /** Bouton de la carte : l'auteur choisit un fichier image. */
   pickCardImage: (id: string) => Promise<void>;
+  /** Galerie d'une fiche : ajoute des photos (choisies ou déposées), en une étape d'historique. */
+  addGalleryImages: (id: string, files?: { name: string; data: Uint8Array }[]) => Promise<number>;
+  /** Retire une photo de la galerie (le fichier reste dans medias/, l'annulation la rend). */
+  removeGalleryImage: (id: string, name: string) => void;
+  /** Une photo de la galerie devient l'image principale (le portrait) ; l'ancienne rejoint la galerie. */
+  useAsMainImage: (id: string, name: string) => void;
   deleteCard: (id: string) => void;
   renameLink: (id: string, label: string) => void;
 
@@ -1144,6 +1150,37 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return null;
       });
       if (file) await get().setCardImage(id, file);
+    },
+    addGalleryImages: async (id, given) => {
+      const files = (given ?? (await storage.pickImages(getT().card.imageFiles).catch(() => []))).filter((f) => imageExtension(f.name));
+      const names: string[] = [];
+      for (const file of files) {
+        const name = `${newId()}.${imageExtension(file.name)}`;
+        try {
+          await storage.writeMedia(name, file.data);
+          names.push(name);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || names.length === 0) return 0;
+      // Pas encore d'image principale : la première photo la devient.
+      const [first, ...rest] = card.image ? [undefined, ...names] : names;
+      get().updateCard(id, { ...(first ? { image: first } : {}), images: [...(card.images ?? []), ...rest] });
+      return names.length;
+    },
+    removeGalleryImage: (id, name) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card?.images?.includes(name)) return;
+      const images = card.images.filter((n) => n !== name);
+      get().updateCard(id, { images: images.length > 0 ? images : undefined });
+    },
+    useAsMainImage: (id, name) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card?.images?.includes(name)) return;
+      const images = card.images.map((n) => (n === name ? card.image : n)).filter((n): n is string => !!n);
+      get().updateCard(id, { image: name, images: images.length > 0 ? images : undefined });
     },
     deleteCard: (id) => {
       record();

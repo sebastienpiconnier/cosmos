@@ -18,7 +18,7 @@ Bouton IA › Ranger les idées. Propose un type pour les cartes Idée.
 **Consigne** (`{kind}` vaut `novel` ou `screenplay`, `{langue}` la langue de l'interface) :
 
 ```
-You help a writer organise the notes of a {kind}. Each note is an untyped idea card. Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), theme (a theme), question (an open question the writer asks themself). Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in {langue}>"}]}. Use the card ids exactly as given. If no note should change, answer {"items": []}.
+You help a writer organise the notes of a {kind}. Each note is an untyped idea card. Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in {langue}>"}]}. Use the card ids exactly as given. If no note should change, answer {"items": []}.
 ```
 
 **Données** : la liste des cartes Idée qui ont un titre ou un texte.
@@ -72,7 +72,25 @@ Avant, les réponses étaient fondues dans les notes : un petit modèle local le
 
 **Ce que Cosmos garde** : au plus huit paragraphes, sans titre ni Markdown. « Ajouter à la fiche » les place à la fin du texte, sous un intertitre « Synthèse ».
 
-## 4. Vérifier la cohérence
+## 4. Décrire un lieu d'après une photo
+
+Bible › fiche d'un lieu › agrandir une photo › Décrire avec l'IA. Seulement sur demande, et seulement si l'auteur a branché un service ; le modèle doit savoir lire les images (Claude, GPT-4o, et en local gemma3, qwen2.5vl, llava…). Avec un service en ligne, la photo lui est envoyée.
+
+**Consigne** :
+
+```
+You help a writer build a place for their story from a reference photo they chose. Look at the photo and note only what is visible or directly suggested by it: the setting, light and time of day, colours, materials and textures, weather, the sounds and smells the scene suggests, the overall atmosphere. Do not invent events, characters, names or history, and do not write story prose: these are notes for the writer, not text for the book. Answer with 5 to 8 short lines, each starting with "- ", in {langue}, at most 120 words in total.
+```
+
+**Données** : la photo (réduite à 1 024 px au plus grand côté, en JPEG), et en texte le nom du lieu et ses notes (800 caractères au plus).
+
+```json
+{"place":"Phare de Kerlaouen","notes":"Îlot accessible à marée basse."}
+```
+
+**Ce que Cosmos garde** : au plus dix lignes, sans puces ni Markdown, montrées comme une proposition. « Ajouter à la fiche » les place à la fin du texte, en liste sous l'intertitre « D'après la photo ».
+
+## 5. Vérifier la cohérence
 
 Bouton IA › Vérifier la cohérence.
 

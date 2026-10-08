@@ -8,6 +8,7 @@
 // image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
 // fiche: {"age":"34"}       (facultatif, personnage : caractéristiques standard, voir character.ts)
 // questions: ["…"]          (facultatif : questions gardées pour plus tard)
+// images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
@@ -86,6 +87,7 @@ export function cardToFile(card: CardData): string {
     ...(card.image ? [`image: ${card.image}`] : []),
     ...(card.type === "scene" && isPageKind(card.page) ? [`page: ${card.page}`] : []),
     ...(card.fiche && Object.keys(card.fiche).length > 0 ? [`fiche: ${JSON.stringify(card.fiche)}`] : []),
+    ...(card.images && card.images.length > 0 ? [`images: ${JSON.stringify(card.images)}`] : []),
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
     "---",
   ].join("\n");
@@ -114,7 +116,13 @@ export function fileToCard(text: string): CardData | null {
   // Le nom vient du disque : on n'accepte qu'un simple nom de fichier image, jamais un chemin.
   if (isMediaName(fields.image)) card.image = fields.image;
   if (isPageKind(fields.page)) card.page = fields.page;
-  const fiche = readFiche(parseJson(fields.fiche));
+  // Comme pour `image` : seuls de simples noms de fichiers images, jamais un chemin.
+  const gallery = parseJson(fields.images);
+  if (Array.isArray(gallery)) {
+    const names = [...new Set(gallery.filter((n): n is string => isMediaName(n)))];
+    if (names.length > 0) card.images = names;
+  }
+  const fiche = readFiche(parseJson(fields.fiche), type);
   if (fiche) card.fiche = fiche;
   const questions = readQuestions(parseJson(fields.questions));
   if (questions) card.questions = questions;

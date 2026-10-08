@@ -69,7 +69,7 @@ export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "sce
   return {
     system:
       `You help a writer organise the notes of a ${kind === "scenario" ? "screenplay" : "novel"}. Each note is an untyped idea card. ` +
-      `Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), theme (a theme), question (an open question the writer asks themself). ` +
+      `Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). ` +
       `Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. ` +
       `Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in ${language(lang)}>"}]}. ` +
       `Use the card ids exactly as given. If no note should change, answer {"items": []}.`,
@@ -154,6 +154,34 @@ export function parseSynthesis(reply: string): string[] {
     .filter((l) => l && !/^(synth[eè]se|summary|portrait)\s*:?$/i.test(l))
     .map((l) => clip(l, 1200))
     .slice(0, 8);
+}
+
+// ---------- Décrire un lieu d'après une photo ----------
+
+/**
+ * L'auteur demande, pour un lieu, ce que montre une photo qu'il a choisie comme référence. L'IA ne fait que
+ * relever ce qui est visible, en notes courtes : pas de prose à coller, pas d'histoire, pas de nom inventé.
+ * Proposé, jamais ajouté sans un clic de l'auteur.
+ */
+export function describePlacePrompt(place: CardData, lang: string): Prompt {
+  return {
+    system:
+      `You help a writer build a place for their story from a reference photo they chose. Look at the photo and note only what is visible or directly suggested by it: ` +
+      `the setting, light and time of day, colours, materials and textures, weather, the sounds and smells the scene suggests, the overall atmosphere. ` +
+      `Do not invent events, characters, names or history, and do not write story prose: these are notes for the writer, not text for the book. ` +
+      `Answer with 5 to 8 short lines, each starting with "- ", in ${language(lang)}, at most 120 words in total.`,
+    user: JSON.stringify({ place: place.title.trim(), notes: clip(plainText(place.html), 800) }),
+  };
+}
+
+/** Les notes de la description : des lignes courtes, débarrassées des puces et du Markdown. */
+export function parseNotes(reply: string): string[] {
+  return reply
+    .split(/\n+/)
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").replace(/[*_`#]/g, "").trim())
+    .filter((l) => l.length > 1)
+    .map((l) => clip(l, 300))
+    .slice(0, 10);
 }
 
 // ---------- Cohérence ----------

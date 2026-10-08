@@ -6,7 +6,7 @@
 //   questions: ["Que cache-t-elle aux autres ?"]
 // Les clés de la fiche sont écrites dans le fichier : ne jamais les renommer ni les traduire.
 
-import type { CardData, Link } from "./types";
+import type { CardData, CardType, Link } from "./types";
 
 /** Caractéristiques standard, dans l'ordre de la fiche. Libellés : `t.character.fields`. */
 export const CHARACTER_FIELDS = [
@@ -28,8 +28,22 @@ export const CHARACTER_FIELDS = [
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
 
+/** Fiche d'un lieu (idée reprise de la Bible du fork de NEO). */
+export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] as const;
+/** Fiche d'une intrigue : sa question dramatique et son parcours, du déclencheur à la résolution. */
+export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
+
+/** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
+export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
+  personnage: CHARACTER_FIELDS,
+  lieu: PLACE_FIELDS,
+  intrigue: PLOT_FIELDS,
+};
+export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number];
+export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
+
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
-export const SHORT_FIELDS: ReadonlySet<CharacterField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine"]);
+export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature"]);
 
 /** Ce que l'affiche d'un personnage montre sous son nom, dans cet ordre (idée reprise de la Bible du fork de NEO). */
 export const POSTER_FIELDS: readonly CharacterField[] = ["genre", "age", "metier", "role"];
@@ -42,10 +56,10 @@ const MAX_VALUE = 2000;
 const MAX_QUESTIONS = 200;
 
 /** Fiche lue sur disque : seules les clés connues et les textes sont gardés. */
-export function readFiche(raw: unknown): Record<string, string> | undefined {
+export function readFiche(raw: unknown, type: CardType = "personnage"): Record<string, string> | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const out: Record<string, string> = {};
-  for (const key of CHARACTER_FIELDS) {
+  for (const key of sheetFields(type)) {
     const value = (raw as Record<string, unknown>)[key];
     if (typeof value === "string" && value.trim()) out[key] = value.slice(0, MAX_VALUE);
   }
@@ -60,7 +74,7 @@ export function readQuestions(raw: unknown): string[] | undefined {
 }
 
 /** Fiche après modification d'un champ (vidé : retiré). undefined quand plus rien n'est rempli. */
-export function setFicheField(fiche: Record<string, string> | undefined, key: CharacterField, value: string): Record<string, string> | undefined {
+export function setFicheField(fiche: Record<string, string> | undefined, key: SheetField, value: string): Record<string, string> | undefined {
   const next = { ...(fiche ?? {}) };
   if (value.trim()) next[key] = value;
   else delete next[key];

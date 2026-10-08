@@ -79,13 +79,15 @@ export const OLLAMA_CONTEXT = 16384;
 
 export interface ChatOptions {
   maxTokens?: number;
+  /** Images jointes au message (modèle qui lit les images), en base64. */
+  images?: { mime: string; data: string }[];
   /** La réponse attendue est un objet JSON (Ollama le garantit alors avec `format: "json"`). */
   json?: boolean;
 }
 
 /** Requête de complétion : une consigne (system) et un message de l'auteur (user). */
 export function chatRequest(config: AiConfig, system: string, user: string, options: ChatOptions | number = {}): HttpRequest {
-  const { maxTokens = 1500, json = false } = typeof options === "number" ? { maxTokens: options } : options;
+  const { maxTokens = 1500, json = false, images = [] } = typeof options === "number" ? { maxTokens: options } : options;
   const model = config.model.trim();
   if (config.provider === "ollama") {
     return {
@@ -95,7 +97,7 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
       body: JSON.stringify({
         model,
         stream: false,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        messages: [{ role: "system", content: system }, { role: "user", content: user, ...(images.length > 0 ? { images: images.map((i) => i.data) } : {}) }],
         options: { num_ctx: OLLAMA_CONTEXT, temperature: 0.3 },
         ...(json ? { format: "json" } : {}),
       }),
@@ -106,14 +108,40 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
       url: `${base(config)}/v1/messages`,
       method: "POST",
       headers: headers(config),
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        system,
+        messages: [
+          {
+            role: "user",
+            content:
+              images.length > 0
+                ? [...images.map((i) => ({ type: "image", source: { type: "base64", media_type: i.mime, data: i.data } })), { type: "text", text: user }]
+                : user,
+          },
+        ],
+      }),
     };
   }
   return {
     url: `${base(config)}/v1/chat/completions`,
     method: "POST",
     headers: headers(config),
-    body: JSON.stringify({ model, stream: false, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
+    body: JSON.stringify({
+      model,
+      stream: false,
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content:
+            images.length > 0
+              ? [{ type: "text", text: user }, ...images.map((i) => ({ type: "image_url", image_url: { url: `data:${i.mime};base64,${i.data}` } }))]
+              : user,
+        },
+      ],
+    }),
   };
 }
 

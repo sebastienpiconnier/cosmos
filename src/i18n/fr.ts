@@ -7,6 +7,7 @@ export const fr = {
   meta: { name: "Français" },
 
   app: {
+    tagline: "Du chaos au monde ordonné",
     loading: "Ouverture du projet…",
     openFailed: "Le dossier de ton projet n’a pas pu être ouvert. Choisis-le à nouveau avec « Ouvrir un dossier » : tes fichiers n’ont pas été modifiés.",
     saveFailed: "L’enregistrement a échoué. Tes dernières modifications ne sont pas encore sur le disque.",
@@ -59,8 +60,6 @@ export const fr = {
 
   views: {
     aria: "Vues du projet",
-    chaos: "Chaos",
-    order: "Ordre",
     toile: "Canevas",
     plan: "Plan",
     bible: "Bible",
@@ -101,6 +100,7 @@ export const fr = {
     personnage: { label: "Personnage", section: "Personnages", titlePlaceholder: "Nom du personnage" },
     lieu: { label: "Lieu", section: "Lieux", titlePlaceholder: "Nom du lieu" },
     scene: { label: "Scène", section: "Scènes", titlePlaceholder: "Titre de la scène" },
+    intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
     theme: { label: "Thème", section: "Thèmes", titlePlaceholder: "Thème" },
     question: { label: "Question ouverte", section: "Questions ouvertes", titlePlaceholder: "La question" },
   },
@@ -110,6 +110,7 @@ export const fr = {
     titleAria: "Titre de la carte",
     bodyAria: "Contenu de la carte",
     delete: "Supprimer la carte",
+    moreDetails: "Plus de détails",
     addImage: "Ajouter une image",
     changeImage: "Changer l’image",
     removeImage: "Retirer l’image",
@@ -154,6 +155,13 @@ export const fr = {
     bodyAria: "Texte de la fiche « {title} »",
     bodyAriaUntitled: "Texte de la fiche",
     linkedTo: "Relié à",
+    arrange: "Choisir et ranger les rubriques",
+    arrangeDone: "Terminé",
+    arrangeReset: "Rétablir",
+    arrangeAria: "Rubriques de la bible : cocher pour afficher, flèches pour déplacer",
+    moveUp: "Monter la rubrique « {section} »",
+    moveDown: "Descendre la rubrique « {section} »",
+    sectionEmpty: "Aucune fiche dans cette rubrique pour l’instant.",
     untitled: "Sans titre",
     emptyTitle: "La bible est vide",
     emptyBody: "Crée une première fiche ci-dessous, ou des cartes sur le canevas : elles apparaîtront ici, rangées.",
@@ -626,6 +634,56 @@ export const fr = {
     enterHint: "Entrée deux fois : nouvelle scène · trois fois : nouveau chapitre · Retour arrière dans la scène vide : annuler la coupure",
     newScene: "Nouvelle scène, la suite du texte y est passée.",
     newChapter: "Nouveau chapitre.",
+  },
+
+  // Galerie de photos d'une fiche de la Bible.
+  gallery: {
+    aria: "Photos de {name}",
+    add: "Ajouter des photos",
+    hint: "Ajoute des photos de référence, ou dépose-les ici.",
+    photoAlt: "Photo {n} de {name}",
+    useAsPortrait: "En faire le portrait",
+    useAsMain: "En faire l’image principale",
+    remove: "Retirer de la fiche",
+    close: "Fermer",
+    describe: "Décrire avec l’IA",
+    describeHintLocal: "Agrandis une photo : l’IA peut relever ce qu’elle montre, en notes. Le modèle doit savoir lire les images.",
+    describeHintCloud: "Agrandis une photo : l’IA peut relever ce qu’elle montre, en notes. La photo est alors envoyée au service choisi.",
+    visionModel: "Ce modèle ne lit pas les images. Choisis-en un qui le fait (par exemple gemma3, qwen2.5vl ou llava avec Ollama).",
+    notesHeading: "D’après la photo",
+    notesProposal: "Ce que l’IA voit sur la photo, en notes. Rien n’est ajouté sans ton accord.",
+    notesKeep: "Ajouter à la fiche",
+  },
+
+  // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
+  fiche: {
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue" },
+    fields: {
+      epoque: "Époque",
+      ambiance: "Ambiance",
+      evenements: "Ce qui s’y passe",
+      importance: "Pourquoi il compte",
+      nature: "Nature",
+      question: "Question dramatique",
+      enjeu: "Enjeu",
+      declencheur: "Déclencheur",
+      obstacles: "Obstacles",
+      tournant: "Point de bascule",
+      resolution: "Résolution",
+    },
+    placeholders: {
+      epoque: "Aujourd’hui, 1912, l’an 3000…",
+      ambiance: "Sons, odeurs, lumière",
+      evenements: "Les scènes qui s’y jouent",
+      importance: "Ce qu’il représente dans l’histoire",
+      nature: "Principale, secondaire, sentimentale…",
+      question: "Inès retrouvera-t-elle son frère ?",
+      enjeu: "Ce qui sera perdu si elle échoue",
+      declencheur: "L’événement qui la lance",
+      obstacles: "Ce qui se met en travers",
+      tournant: "Le moment où tout bascule",
+      resolution: "Comment elle se termine",
+    },
   },
 
   // Chapitres du plan d'un roman.

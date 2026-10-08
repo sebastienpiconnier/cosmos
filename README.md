@@ -38,7 +38,8 @@ Cosmos est en cours de développement (version 0.1).
 ### Le canevas
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et tu écris directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
-- **Six types de carte :** Idée, Personnage, Lieu, Scène, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
+- **Sept types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
+- **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Fils étiquetés :** tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Double-clic sur le fil (ou simple appui au doigt) pour le renommer.
 - **Mentions :** tape `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si tu renommes la carte, et tu peux créer la carte citée sans quitter ta phrase.
 - **Images :** dépose une image sur une carte ou sur le canevas, ou utilise le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
@@ -51,7 +52,7 @@ Cosmos est en cours de développement (version 0.1).
 
 ### La Bible
 
-Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Tout s'y modifie sur place, titre et texte, et un personnage a son portrait dans un cercle et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, ce qu'il veut, ce dont il a besoin, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
+Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Toutes les rubriques sont affichées, même vides ; tu choisis lesquelles garder et dans quel ordre. Tout s'y modifie sur place, titre et texte. Personnages et lieux ont une galerie de photos (ajout par bouton ou par dépôt, agrandissement, choix de l'image principale), lieux et intrigues ont aussi leur fiche (ambiance, époque ; question dramatique, enjeu, déclencheur, obstacles, résolution), et un personnage a son portrait dans un cercle et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, ce qu'il veut, ce dont il a besoin, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
 
 ### Le plan
 
@@ -121,6 +122,7 @@ Elle questionne, elle n'écrit pas : aucune action ne modifie ton projet sans to
 - **Ranger les idées :** propose un type (Personnage, Lieu, Scène…) pour tes idées en vrac. Tu appliques ou tu ignores, une par une, puis « Organiser le canevas » range tout en cadres.
 - **Questions sur mesure :** dans l'assistant personnage, une question posée d'après ce que dit déjà la fiche. C'est toi qui réponds.
 - **Synthèse d'un personnage :** remet en ordre ce que tu as écrit, sans rien ajouter.
+- **Décrire un lieu d'après une photo :** si tu le demandes, l'IA relève en notes ce que montre la photo (lumière, matières, ambiance), sans rien inventer. Il faut un modèle qui lit les images.
 - **Vérifier la cohérence :** relève les contradictions possibles entre tes cartes (un âge, une date, un lieu), sous forme de questions que tu peux garder pour plus tard.
 
 Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md](docs/prompts-ia.md).

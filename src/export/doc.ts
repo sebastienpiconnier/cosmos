@@ -5,7 +5,7 @@
 import type { CardData, CardType, Link } from "../types";
 import { BIBLE_ORDER } from "../types";
 import { isBlank, type Manuscript } from "../manuscript";
-import { CHARACTER_FIELDS } from "../character";
+import { sheetFields } from "../character";
 
 export interface Run {
   text: string;
@@ -175,7 +175,7 @@ export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "so
       blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }] });
       // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
       if (strings.fields && card.fiche) {
-        for (const key of CHARACTER_FIELDS) {
+        for (const key of sheetFields(card.type)) {
           const value = card.fiche[key]?.trim();
           if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: value }] });
         }

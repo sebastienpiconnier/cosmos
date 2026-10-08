@@ -6,7 +6,7 @@ import type { Paper } from "./screenplay/layout";
 import type { Plan } from "./plan";
 import type { Goals, Progress } from "./stats";
 
-export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
+export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question";
 
 /**
  * Nature du projet. Change le vocabulaire (Lieu → Décor, Plan → Séquencier…), le style des
@@ -18,10 +18,10 @@ export const PROJECT_KINDS: ProjectKind[] = ["roman", "scenario"];
 export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || v === "scenario";
 
 /** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
-export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "theme", "question"];
+export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "theme", "question"];
 
 /** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
-export const BIBLE_ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
+export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "scene", "theme", "question", "idee"];
 
 /** Couleur d'un type, en variable CSS (s'adapte au mode clair/sombre). */
 export const typeColor = (t: CardType) => `var(--type-${t})`;
@@ -35,7 +35,9 @@ export interface CardData {
   html: string;
   /** Image de la carte : nom d'un fichier du dossier medias/ du projet. */
   image?: string;
-  /** Personnage : caractéristiques standard (clés fixes, voir CHARACTER_FIELDS dans character.ts). Absent : rien de rempli. */
+  /** Photos supplémentaires de la fiche (galerie de la Bible), noms de fichiers de medias/. */
+  images?: string[];
+  /** Personnage, lieu, intrigue : caractéristiques standard (clés fixes, voir SHEET_FIELDS dans character.ts). Absent : rien de rempli. */
   fiche?: Record<string, string>;
   /** Carte Scène : page hors récit du livre (page de titre, dédicace, prologue…), voir book.ts. Absent : une scène. */
   page?: string;

@@ -114,6 +114,12 @@ export const tauriStorage: Storage = {
     return { name: baseName(path), data: await readFile(path) };
   },
 
+  async pickImages(label) {
+    const picked = await open({ multiple: true, directory: false, filters: [{ name: label, extensions: IMAGE_EXTENSIONS }] });
+    const paths = Array.isArray(picked) ? picked : typeof picked === "string" ? [picked] : [];
+    return Promise.all(paths.map(async (path) => ({ name: baseName(path), data: await readFile(path) })));
+  },
+
   async readAll() {
     const dir = await projectFolder();
     if (!dir) return null;

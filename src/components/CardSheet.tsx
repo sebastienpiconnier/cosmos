@@ -1,16 +1,23 @@
-// Fiche d'identité d'un personnage, dans la Bible : des caractéristiques standard (rôle, genre, âge,
-// métier, surnoms, apparence, objectif, faille, relations…). Tout est facultatif. Comme dans la Bible
-// du fork de NEO, seuls les champs remplis restent sous les yeux ; « Plus de détails » montre les autres.
-// Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
+// Fiche d'une carte dans la Bible : des caractéristiques standard, facultatives, selon le type.
+// Personnage : rôle, genre, âge, métier, surnoms, apparence, objectif, faille, relations…
+// Lieu : époque, ambiance, ce qui s'y passe, pourquoi il compte.
+// Intrigue : nature, question dramatique, enjeu, déclencheur, obstacles, point de bascule, résolution.
+// Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; « Plus de détails »
+// montre les autres. Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
 import { useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
-import { CHARACTER_FIELDS, SHORT_FIELDS, ficheCount, type CharacterField } from "../character";
+import { SHORT_FIELDS, ficheCount, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 
-export function CharacterSheet({ card }: { card: CardData }) {
-  const t = useT().character;
+export function CardSheet({ card }: { card: CardData }) {
+  const all = useT();
+  const t = all.character;
+  const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields };
+  const placeholders: Record<string, string> = { ...all.character.placeholders, ...all.fiche.placeholders };
+  const title = all.fiche.titles[card.type as keyof typeof all.fiche.titles] ?? t.sheet;
+  const fields = sheetFields(card.type);
   const setFiche = useCosmos((s) => s.setFiche);
   const filled = ficheCount(card);
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
@@ -18,18 +25,18 @@ export function CharacterSheet({ card }: { card: CardData }) {
   // Champs vides affichés. Une fiche vide les montre tous.
   const [more, setMore] = useState(false);
   // Un champ qu'on vient de vider reste à l'écran le temps de la saisie.
-  const [touched, setTouched] = useState<Set<CharacterField>>(new Set());
+  const [touched, setTouched] = useState<Set<SheetField>>(new Set());
   const id = useId();
-  const all = more || filled === 0;
-  const shown = CHARACTER_FIELDS.filter((key) => all || (card.fiche?.[key] ?? "").trim() || touched.has(key));
-  const empty = CHARACTER_FIELDS.length - filled;
+  if (fields.length === 0) return null;
+  const showAll = more || filled === 0;
+  const shown = fields.filter((key) => showAll || (card.fiche?.[key] ?? "").trim() || touched.has(key));
+  const empty = fields.length - filled;
 
-  const field = (key: CharacterField) => {
-    const value = card.fiche?.[key] ?? "";
+  const field = (key: SheetField) => {
     const props = {
       id: `${id}-${key}`,
-      value,
-      placeholder: t.placeholders[key],
+      value: card.fiche?.[key] ?? "",
+      placeholder: placeholders[key],
       onChange: (e: { target: { value: string } }) => {
         if (!touched.has(key)) setTouched(new Set(touched).add(key));
         setFiche(card.id, key, e.target.value);
@@ -37,17 +44,17 @@ export function CharacterSheet({ card }: { card: CardData }) {
     };
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) ? " is-short" : ""}`}>
-        <label htmlFor={props.id}>{t.fields[key]}</label>
+        <label htmlFor={props.id}>{labels[key]}</label>
         {SHORT_FIELDS.has(key) ? <input type="text" autoComplete="off" {...props} /> : <textarea rows={1} {...props} />}
       </div>
     );
   };
 
   return (
-    <section className="sheet" aria-label={t.sheet}>
+    <section className="sheet" aria-label={title}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
-        <span>{t.sheet}</span>
-        <span className="sheet-count">{fmt(t.filled, { n: filled, total: CHARACTER_FIELDS.length })}</span>
+        <span>{title}</span>
+        <span className="sheet-count">{fmt(t.filled, { n: filled, total: fields.length })}</span>
         <span aria-hidden="true" className="sheet-chevron">{open ? "▴" : "▾"}</span>
       </button>
       {open && (

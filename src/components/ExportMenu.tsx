@@ -113,7 +113,7 @@ export function ExportMenu() {
       { ...base, title: fmt(x.bibleName, { title: base.title }) },
       nodes.map((n) => n.data),
       edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
-      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo, fields: all.character.fields },
+      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo, fields: { ...all.character.fields, ...all.fiche.fields } },
     );
     return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
   };

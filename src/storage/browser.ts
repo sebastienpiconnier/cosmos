@@ -95,6 +95,21 @@ export const browserStorage: Storage = {
     });
   },
 
+  pickImages() {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.multiple = true;
+      input.accept = IMAGE_EXTENSIONS.map((ext) => `.${ext}`).join(",");
+      input.addEventListener("cancel", () => resolve([]));
+      input.addEventListener("change", async () => {
+        const files = [...(input.files ?? [])];
+        resolve(await Promise.all(files.map(async (file) => ({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) }))));
+      });
+      input.click();
+    });
+  },
+
   async readAll() {
     const files = load();
     return Object.keys(files).length ? files : null;

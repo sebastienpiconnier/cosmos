@@ -23,7 +23,7 @@ export interface TimelineGroup {
 }
 
 /** Types de cartes qui font une ligne : les intrigues (thèmes) d'abord. */
-export const TIMELINE_TYPES: CardType[] = ["theme", "personnage", "lieu"];
+export const TIMELINE_TYPES: CardType[] = ["intrigue", "theme", "personnage", "lieu"];
 
 export function timeline(
   cards: CardData[],

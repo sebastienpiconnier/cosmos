@@ -20,6 +20,9 @@ import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
 import { MentionNode } from "./MentionNode";
 import { canCreateMention, mentionCandidates, mentionQuery, type MentionCandidate } from "../mentions";
 
+/** Hauteur du texte d'une carte au-delà de laquelle elle se replie (px). */
+const CARD_BODY_MAX = 220;
+
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Menu ouvert par "/" (avec la plage de texte à effacer) ou par l'étiquette du type. */
@@ -245,6 +248,33 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     // La largeur compte : un titre sur deux lignes peut tenir sur une seule dans une carte élargie.
   }, [data.title, slugline, width]);
 
+  // Texte trop long : la carte se replie (hauteur mesurée, suit les modifications et la largeur).
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [tall, setTall] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [writing, setWriting] = useState(false);
+  useEffect(() => {
+    const el = bodyRef.current?.querySelector<HTMLElement>(".card-editor");
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const check = () => setTall(el.scrollHeight > CARD_BODY_MAX + 40);
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    check();
+    return () => observer.disconnect();
+  }, [editor]);
+  useEffect(() => {
+    if (!editor) return;
+    const on = () => setWriting(true);
+    const off = () => setWriting(false);
+    editor.on("focus", on);
+    editor.on("blur", off);
+    return () => {
+      editor.off("focus", on);
+      editor.off("blur", off);
+    };
+  }, [editor]);
+  const clamped = tall && !expanded && !writing;
+
   // Pendant qu'on tire un fil, toute la carte devient une cible de dépôt.
   const connection = useConnection();
   const isDropTarget = connection.inProgress && connection.fromNode?.id !== id;
@@ -369,9 +399,16 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         }}
       />
 
-      <div className="nodrag nowheel nopan">
+      {/* Texte long : replié au-delà de CARD_BODY_MAX, « Plus de détails » le déplie. Pendant l'écriture,
+          il reste déplié. Un état d'affichage, rien n'est enregistré. */}
+      <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>
         <EditorContent editor={editor} />
       </div>
+      {tall && !writing && (
+        <button type="button" className="card-more nodrag" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+          {expanded ? t.character.fewerDetails : t.card.moreDetails}
+        </button>
+      )}
 
       {/* Questions gardées pour plus tard : un simple lien vers la fiche, pas de cartes sur le canevas. */}
       {data.type === "personnage" && (data.questions?.length ?? 0) > 0 && (

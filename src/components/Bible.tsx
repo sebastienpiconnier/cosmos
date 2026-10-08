@@ -6,16 +6,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
-import { BIBLE_ORDER as ORDER, typeColor, type CardData, type CardType } from "../types";
+import { typeColor, type CardData, type CardType } from "../types";
 import { fmt, useT } from "../i18n";
 import { POSTER_FIELDS } from "../character";
 import { mentionsIn } from "../manuscript";
 import { bookOrder } from "../book";
+import { DEFAULT_SECTIONS, moveSection, sectionOrder, toggleSection, visibleSections } from "../bibleSections";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
 import { CharacterAssistant } from "./CharacterAssistant";
-import { CharacterSheet } from "./CharacterSheet";
+import { CardSheet } from "./CardSheet";
+import { Gallery } from "./Gallery";
 import { BibleBody } from "./BibleBody";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
@@ -88,19 +90,30 @@ export function Bible() {
     if (fresh) mainRef.current?.querySelector<HTMLInputElement>(`input[data-card="${fresh}"]`)?.focus();
   }, [fresh]);
 
+  // Rubriques : toutes affichées (même vides, pour y créer une fiche), dans l'ordre choisi, sauf celles
+  // que l'auteur a décochées. Réglage de l'appareil (bibleSections.ts).
+  const prefs = useSettings((s) => s.bibleSections);
+  const setPrefs = useSettings((s) => s.setBibleSections);
+  const [arranging, setArranging] = useState(false);
   const sections = useMemo(
     () =>
-      ORDER.map((type) => ({
+      visibleSections(prefs).map((type) => ({
         type,
         cards: nodes
           .filter((n) => n.data.type === type)
           .map((n) => n.data)
           .sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : a.title.localeCompare(b.title, lang))),
-      })).filter((s) => s.cards.length > 0),
-    [nodes, lang, fresh],
+      })),
+    [nodes, lang, fresh, prefs],
   );
+  const counts = useMemo(() => {
+    const out = new Map<CardType, number>();
+    for (const n of nodes) out.set(n.data.type, (out.get(n.data.type) ?? 0) + 1);
+    return out;
+  }, [nodes]);
   const [current, setCurrent] = useState<CardType | null>(null);
-  const shown = sections.find((s) => s.type === current) ?? sections[0];
+  // Par défaut, la première rubrique qui a des fiches.
+  const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
   useEffect(() => {
@@ -108,6 +121,9 @@ export function Bible() {
     const card = nodes.find((n) => n.id === target.id)?.data;
     clearTarget();
     if (!card) return;
+    // Fiche d'une rubrique masquée : la rubrique revient, sinon on n'arriverait nulle part.
+    const { bibleSections, setBibleSections } = useSettings.getState();
+    if (bibleSections.hidden.includes(card.type)) setBibleSections(toggleSection(bibleSections, card.type));
     setCurrent(card.type);
     if (target.assistant) setAssisted(card.id);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${card.id}"]`)?.scrollIntoView({ block: "start" }));
@@ -131,7 +147,7 @@ export function Bible() {
   const adders = (
     <div className="bible-add">
       <div className="eyebrow">{t.bible.add}</div>
-      {ORDER.map((type) => (
+      {visibleSections(prefs).map((type) => (
         <button
           key={type}
           type="button"
@@ -160,6 +176,30 @@ export function Bible() {
     <div className="bible">
       <nav className="bible-toc" aria-label={t.bible.tocAria}>
         <div className="eyebrow">{t.bible.tocTitle}</div>
+        {arranging ? (
+          <ul className="toc-arrange" aria-label={t.bible.arrangeAria}>
+            {sectionOrder(prefs).map((type, i, all) => {
+              const label = types[type].section;
+              const visible = !prefs.hidden.includes(type);
+              return (
+                <li key={type}>
+                  <label className="toc-check">
+                    <input type="checkbox" checked={visible} onChange={() => setPrefs(toggleSection(prefs, type))} />
+                    <span className="card-dot" style={{ background: typeColor(type) }} />
+                    <span>{label}</span>
+                    <span className="toc-count">{counts.get(type) ?? 0}</span>
+                  </label>
+                  <button type="button" className="icon-button" disabled={i === 0} aria-label={fmt(t.bible.moveUp, { section: label })} onClick={() => setPrefs(moveSection(prefs, type, "up"))}>
+                    <span aria-hidden="true">↑</span>
+                  </button>
+                  <button type="button" className="icon-button" disabled={i === all.length - 1} aria-label={fmt(t.bible.moveDown, { section: label })} onClick={() => setPrefs(moveSection(prefs, type, "down"))}>
+                    <span aria-hidden="true">↓</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
         <ul>
           {sections.map((s) => (
             <li key={s.type}>
@@ -178,11 +218,31 @@ export function Bible() {
             </li>
           ))}
         </ul>
+        )}
+        <div className="toc-tools">
+          <button type="button" className="link-button" aria-expanded={arranging} onClick={() => setArranging(!arranging)}>
+            {arranging ? t.bible.arrangeDone : t.bible.arrange}
+          </button>
+          {arranging && (
+            <button type="button" className="link-button" onClick={() => setPrefs(DEFAULT_SECTIONS)}>
+              {t.bible.arrangeReset}
+            </button>
+          )}
+        </div>
         {adders}
       </nav>
 
       <section className="bible-main" aria-label={types[shown.type].section} ref={mainRef}>
         <h1>{types[shown.type].section}</h1>
+        {shown.cards.length === 0 && (
+          <div className="bible-empty-section">
+            <p className="muted">{t.bible.sectionEmpty}</p>
+            <button type="button" className="ghost-button" onClick={() => create(shown.type)}>
+              <span className="card-dot" style={{ background: typeColor(shown.type) }} />
+              {fmt(t.bible.addType, { type: types[shown.type].label })}
+            </button>
+          </div>
+        )}
         {shown.cards.map((card) => {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
           return (
@@ -225,7 +285,8 @@ export function Bible() {
                   {t.bible.seeOnCanvas}
                 </button>
               </header>
-              {shown.type === "personnage" && <CharacterSheet card={card} />}
+              {(shown.type === "personnage" || shown.type === "lieu") && <Gallery card={card} />}
+              <CardSheet card={card} />
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
               <BibleBody card={card} />
               {shown.type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
