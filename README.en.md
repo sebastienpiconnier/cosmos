@@ -42,6 +42,7 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **Writing from the outline**: a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
 - **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
 - **List or index cards**: the outline shows as a list or as index cards, like the step outline.
+- **Timeline by storyline**: a table of scenes where each storyline (a Theme card), character and place has its row. You see at a glance where a storyline goes missing for too long, and you link a card to a scene by tapping a cell.
 
 ### The character assistant
 
@@ -116,7 +117,6 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 | Step | Content |
 |---|---|
-| Outline | Timeline by storyline |
 | Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |

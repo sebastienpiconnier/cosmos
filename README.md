@@ -42,6 +42,7 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Écrire depuis le plan** : une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés.
 - **Changer d'avis** : passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
 - **Liste ou fiches** : le plan s'affiche en liste ou en fiches, comme le séquencier.
+- **Chronologie par intrigue** : un tableau des scènes où chaque intrigue (une carte Thème), chaque personnage et chaque lieu a sa ligne. Tu vois d'un coup d'œil où une intrigue disparaît trop longtemps, et tu relies une carte à une scène en touchant une case.
 
 ### L'assistant personnage
 
@@ -116,7 +117,6 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 
 | Étape | Contenu |
 |---|---|
-| Plan | Chronologie par intrigue |
 | Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |

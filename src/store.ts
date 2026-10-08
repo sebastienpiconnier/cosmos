@@ -175,6 +175,8 @@ interface CosmosState {
   addCard: (pos: { x: number; y: number }, type?: CardType, height?: number) => string;
   /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
+  /** Tire un fil entre deux cartes s'il n'y en a pas, sinon retire celui (ou ceux) qui les relie. */
+  toggleLink: (a: string, b: string) => void;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
   linkCards: (source: string, target: string, label: string) => void;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
@@ -833,6 +835,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
       touch();
       return card.id;
+    },
+    toggleLink: (a, b) => {
+      const between = (e: Edge) => (e.source === a && e.target === b) || (e.source === b && e.target === a);
+      if (!get().edges.some(between)) return get().linkCards(a, b, "");
+      record();
+      set({ edges: get().edges.filter((e) => !between(e)) });
+      touch();
     },
     linkCards: (source, target, label) => {
       const linked = get().edges.some(

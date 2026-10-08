@@ -116,6 +116,7 @@ src/
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
   manuscript.ts         Manuscrit d'un roman : mots, cartes citées dans le texte, textes sans carte (fonctions pures)
+  timeline.ts           Chronologie par intrigue : présence des thèmes, personnages et lieux dans les scènes (fonction pure)
   plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
@@ -145,6 +146,7 @@ src/
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
     Plan.tsx            Vue Plan d'un roman, en liste ou en fiches : gabarit au choix, cases où ranger les scènes, scènes à placer
+    Timeline.tsx        Chronologie par intrigue (troisième présentation du Plan) : scènes en colonnes, cartes en lignes
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
     AiMenu.tsx          Bouton « IA » (si un service est branché) : Ranger les idées, Vérifier la cohérence
     ExportMenu.tsx      Bouton « Exporter » : scénario (PDF, Fountain, FDX) ou manuscrit (PDF, Word, EPUB, Markdown), et bible
@@ -251,6 +253,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Touche N** : ignorée dans un champ, un titre ou une carte en cours d'écriture (comme Suppr).
 - **Plan d'un roman** : `plan` dans `cosmos.json` vaut `{ template, beats }`, où `beats` associe une clé de case à la liste ordonnée des identifiants de cartes Scène. Les clés de case (`a_setup`, `c_opening`, `h_call`…) et de gabarit (`libre`, `troisActes`, `saveTheCat`, `voyageHeros`) sont écrites dans le fichier : ne jamais les renommer ni les traduire. Elles sont propres à chaque gabarit, donc changer de gabarit ne perd aucun rangement.
 - **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
+- **Chronologie par intrigue, sans donnée propre** : une intrigue est une carte Thème. Une case est « reliée » s'il y a un fil entre la carte et la scène, « citée » si la scène la nomme (mention `@`, notes de la carte, texte du manuscrit). Toucher une case tire ou retire le fil (`toggleLink`) : c'est le fil du canevas, rien d'autre n'est enregistré. La chronologie montre toutes les scènes, rangées puis à placer.
 - **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
 - **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
 - **IA : elle propose, l'auteur décide** : aucune action IA ne modifie le projet d'elle-même. « Ranger » liste des changements de type à appliquer ou ignorer un par un, la cohérence rend des questions (qu'on peut garder en carte Question), l'interview pose une question à laquelle l'auteur répond. Les consignes (`tasks.ts`) interdisent au modèle de réécrire, compléter ou répondre : ne pas les assouplir.
@@ -323,7 +326,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
-4. (fait, sauf la chronologie) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case. Reste : chronologie par intrigue
+4. (fait) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case, chronologie par intrigue. Reste : la chronologie dans le séquencier d'un scénario
 5. (fait) **Manuscrit** : une scène à la fois dans l'ordre du Plan, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée

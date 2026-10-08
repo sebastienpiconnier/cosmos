@@ -9,6 +9,7 @@ import { useSettings, type SequencerMode } from "../settings";
 import { fmt, useT } from "../i18n";
 import { NOVEL_TEMPLATES, arrange, isPlanTemplate, type PlanBeat, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
+import { Timeline } from "./Timeline";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
@@ -47,6 +48,8 @@ export function Plan() {
   };
   const [over, setOver] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
+  // Chronologie par intrigue : une troisième lecture du plan, non mémorisée.
+  const [timeline, setTimeline] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   // Après un déplacement au clavier, le focus suit la scène.
@@ -187,7 +190,7 @@ export function Plan() {
 
   return (
     <div className="sequencer" ref={rootRef}>
-      <div className={`sq-inner${asCards ? " is-cards" : ""}`}>
+      <div className={`sq-inner${asCards || timeline ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{p.title}</h1>
           <label className="plan-template">
@@ -202,10 +205,21 @@ export function Plan() {
           </label>
           <div className="sq-modes" role="group" aria-label={p.modeAria}>
             {MODES.map((m) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>
+              <button
+                key={m}
+                type="button"
+                aria-pressed={!timeline && mode === m}
+                onClick={() => {
+                  setMode(m);
+                  setTimeline(false);
+                }}
+              >
                 {sq[m]}
               </button>
             ))}
+            <button type="button" aria-pressed={timeline} onClick={() => setTimeline(true)}>
+              {p.timeline}
+            </button>
           </div>
           {sceneIds.length > 0 && (
             <p className="sq-total">
@@ -214,6 +228,10 @@ export function Plan() {
             </p>
           )}
         </header>
+        {timeline ? (
+          <Timeline order={[...order, ...arranged.unplaced]} />
+        ) : (
+          <>
         <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>
 
         {arranged.beats.map((beat) => (
@@ -255,6 +273,8 @@ export function Plan() {
           </section>
         )}
 
+          </>
+        )}
         <div className="sr-only" aria-live="polite">
           {announce}
         </div>
