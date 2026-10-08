@@ -4,6 +4,7 @@ import { Settings } from "./Settings";
 import { ExportMenu } from "./ExportMenu";
 import { AiMenu } from "./AiMenu";
 import { Search } from "./Search";
+import { TodoPanel } from "./TodoPanel";
 import { fmt } from "../i18n";
 import { useSettings } from "../settings";
 import { minutesFor, usePagination } from "./usePagination";
@@ -93,6 +94,7 @@ export function TopBar() {
         </button>
         <AiMenu />
         <ExportMenu />
+        <TodoPanel />
         <Search />
         <Settings />
       </div>

@@ -3,7 +3,8 @@
 
 import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { richTextExtensions } from "./editorKit";
+import { FormatBar } from "./FormatBar";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
 import { fmt, getT } from "../i18n";
@@ -20,7 +21,7 @@ export function BibleBody({ card }: { card: CardData }) {
   const lang = useSettings((s) => s.lang);
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
+      ...richTextExtensions({ link: false }),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
       Placeholder.configure({ placeholder: () => getT().bible.toDig }),
       MentionNode,
@@ -48,6 +49,7 @@ export function BibleBody({ card }: { card: CardData }) {
   return (
     <div className="bible-body">
       <EditorContent editor={editor} />
+      {editor && <FormatBar editor={editor} />}
     </div>
   );
 }

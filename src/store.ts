@@ -46,6 +46,7 @@ import {
 } from "./plan";
 import { organize } from "./organize";
 import { storyScenes } from "./book";
+import { toggleTask } from "./todos";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -125,6 +126,16 @@ interface CosmosState {
   setFiche: (id: string, field: SheetField, value: string) => void;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
   openInBible: (id: string, assistant?: boolean) => void;
+  /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
+  dialog: "shortcuts" | "about" | null;
+  setDialog: (dialog: "shortcuts" | "about" | null) => void;
+  /** Ouvre une scène dans le manuscrit. */
+  openInManuscript: (id: string) => void;
+  /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
+  manuscriptTarget: string | null;
+  clearManuscriptTarget: () => void;
+  /** Coche ou décoche la n-ième case d'une carte ou d'une scène du manuscrit. */
+  toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
   /** Fiche à montrer en arrivant dans la Bible, puis remise à null. */
   bibleTarget: { id: string; assistant: boolean } | null;
   /** Demande au canevas de cadrer tout le projet (après un rangement). */
@@ -588,6 +599,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     bibleTarget: null,
     clearBibleTarget: () => set({ bibleTarget: null }),
+    dialog: null,
+    setDialog: (dialog) => set({ dialog }),
+    openInManuscript: (id) => set({ view: "manuscrit", manuscriptTarget: id }),
+    manuscriptTarget: null,
+    clearManuscriptTarget: () => set({ manuscriptTarget: null }),
+    toggleTodo: (id, where, index) => {
+      if (where === "manuscript") {
+        const html = get().manuscript[id];
+        if (html) get().setManuscriptText(id, toggleTask(html, index));
+        return;
+      }
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card) return;
+      const html = toggleTask(card.html, index);
+      if (html !== card.html) get().updateCard(id, { html });
+    },
     fitRequest: 0,
     addQuestionAbout: (title, cardIds) => {
       const { nodes, edges } = get();

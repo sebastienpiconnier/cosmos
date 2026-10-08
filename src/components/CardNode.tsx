@@ -7,7 +7,8 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { richTextExtensions } from "./editorKit";
+import { FormatBar } from "./FormatBar";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
@@ -141,7 +142,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
+      ...richTextExtensions(),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
       Placeholder.configure({ placeholder: () => getT().card.bodyPlaceholder }),
       MentionNode,
@@ -403,6 +404,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           il reste déplié. Un état d'affichage, rien n'est enregistré. */}
       <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>
         <EditorContent editor={editor} />
+        {editor && <FormatBar editor={editor} />}
       </div>
       {tall && !writing && (
         <button type="button" className="card-more nodrag" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>

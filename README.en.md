@@ -39,7 +39,11 @@ Cosmos is under active development (version 0.1).
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Seven card types:** Idea, Character, Place, Scene, Plot, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Paste to keep a trace:** paste a link, a text or an image onto the canvas, a card is born.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
+- **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
+- **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
+- **Keyboard shortcuts** for everything that matters; Ctrl/Cmd+/ lists them.
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Double-click the thread (or tap it with a finger) to rename it.
 - **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
 - **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
@@ -76,6 +80,7 @@ A table of contents and reference sheets generated automatically from your cards
 - **Chapters as you write, as in NEO:** Enter twice on an empty line breaks the scene, the rest goes into a new scene; Enter a third time starts a new chapter. Backspace undoes it. The chapter title is written at the top of the page.
 - **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story.
 - **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter.
+- **Focus mode:** the page alone on screen, typewriter-style if you like (the current line stays at eye level), with the sentence, line or paragraph in full ink and the rest faded. Ctrl/Cmd+Shift+X marks a passage “to revisit”.
 - **Statistics and goals:** words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **In this scene:** characters and places mentioned in the text show up beside it, along with the card’s notes.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.

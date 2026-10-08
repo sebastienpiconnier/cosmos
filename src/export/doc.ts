@@ -87,6 +87,13 @@ export function htmlToBlocks(html: string | undefined): Block[] {
       else if (/^H[1-6]$/.test(tag)) {
         const runs = trimRuns(runsOf(child));
         if (runs.length > 0) blocks.push({ kind: "heading", runs });
+      } else if (tag === "LI" && child.getAttribute("data-type") === "taskItem") {
+        // Case à cocher : ☐ ou ☑ devant le texte.
+        const done = child.getAttribute("data-checked") === "true";
+        const body = child.querySelector(":scope > div") ?? child;
+        const first = body.querySelector(":scope > p") ?? body;
+        const runs = trimRuns(runsOf(first));
+        if (runs.length > 0) blocks.push({ kind: "paragraph", runs: [{ text: done ? "☑ " : "☐ " }, ...runs], ...(context.quote ? { quote: true } : {}) });
       } else if (tag === "P" || tag === "LI" || tag === "PRE" || tag === "DIV") {
         // L'éditeur écrit <li><p>…</p></li> : le premier paragraphe est le texte de l'élément de liste.
         const inner = tag === "LI" && child.firstElementChild?.tagName === "P" ? child.firstElementChild : null;

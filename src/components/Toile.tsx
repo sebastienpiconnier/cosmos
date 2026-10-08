@@ -22,6 +22,9 @@ import { useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
 import { imageExtension } from "../media";
+import { clipFromText } from "../clip";
+import { markdownToHtml } from "../storage/markdown";
+import { markHighlights } from "../markdownText";
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
@@ -136,6 +139,37 @@ export function Toile() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Coller hors d'un champ : un lien, un texte ou une image devient une carte (traces de recherche).
+  const createInCenterPos = () => {
+    const rect = wrapper.current?.getBoundingClientRect();
+    return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 60 }) : { x: 0, y: 0 };
+  };
+  const centerRef = useRef(createInCenterPos);
+  centerRef.current = createInCenterPos;
+  useEffect(() => {
+    const onPaste = async (e: ClipboardEvent) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
+      const data = e.clipboardData;
+      if (!data) return;
+      const store = useCosmos.getState();
+      const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
+      if (image) {
+        e.preventDefault();
+        const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
+        await store.addImageCard(centerRef.current(), { name, data: new Uint8Array(await image.arrayBuffer()) });
+        return;
+      }
+      const clip = clipFromText(data.getData("text/plain"));
+      if (!clip) return;
+      e.preventDefault();
+      const id = store.addCard(centerRef.current());
+      store.updateCard(id, { title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) });
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
   }, []);
 
   // Appui long sur la toile (écran tactile ou stylet) : nouvelle carte à cet endroit.

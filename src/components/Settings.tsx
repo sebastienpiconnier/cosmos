@@ -263,6 +263,14 @@ export function Settings({ project = true }: { project?: boolean }) {
               </p>
             </>
           )}
+          <div className="settings-links">
+            <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("shortcuts"); }}>
+              {t.shortcuts.open}
+            </button>
+            <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("about"); }}>
+              {t.about.open}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -29,6 +29,18 @@ turndown.addRule("mention", {
   replacement: (content, node) => `[${content}](${MENTION_SCHEME}${(node as HTMLElement).getAttribute("data-mention")})`,
 });
 
+// Case à cocher de l'éditeur (<li data-type="taskItem" data-checked>) : la case standard du Markdown.
+turndown.addRule("taskItem", {
+  filter: (node) => node.nodeName === "LI" && (node as HTMLElement).getAttribute("data-type") === "taskItem",
+  replacement: (content, node) => {
+    const checked = (node as HTMLElement).getAttribute("data-checked") === "true";
+    const text = content.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n    ");
+    return `- [${checked ? "x" : " "}] ${text}\n`;
+  },
+});
+// « À reprendre » : gardé en HTML (<mark>), lisible dans tout éditeur Markdown.
+turndown.keep(["mark"]);
+
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
   return turndown.turndown(html).trim();
@@ -43,8 +55,30 @@ export function markdownToHtml(md: string): string {
 // pour qu'un fichier piégé ne puisse pas injecter de script dans l'app.
 const ALLOWED = new Set([
   "P", "BR", "HR", "STRONG", "B", "EM", "I", "S", "DEL", "CODE", "PRE", "BLOCKQUOTE",
-  "UL", "OL", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "A",
+  "UL", "OL", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "A", "MARK",
 ]);
+
+/**
+ * Case à cocher venue du Markdown (`- [ ] …` donne <li><input type="checkbox">…</li>) : elle devient la case
+ * de l'éditeur (<li data-type="taskItem" data-checked>, dans <ul data-type="taskList">). Rend vrai si c'en était une.
+ */
+function adoptCheckbox(li: Element): boolean {
+  const input = li.querySelector(":scope > input[type='checkbox'], :scope > p > input[type='checkbox']");
+  if (!input) return false;
+  const checked = input.hasAttribute("checked");
+  input.remove();
+  li.setAttribute("data-type", "taskItem");
+  li.setAttribute("data-checked", checked ? "true" : "false");
+  li.parentElement?.setAttribute("data-type", "taskList");
+  return true;
+}
+
+/** Attributs gardés : uniquement les marques des cases à cocher, avec leurs valeurs connues. */
+const keepAttribute = (el: Element, name: string, value: string) =>
+  (el.tagName === "A" && name === "href" && /^https?:\/\//i.test(value)) ||
+  (el.tagName === "UL" && name === "data-type" && value === "taskList") ||
+  (el.tagName === "LI" && name === "data-type" && value === "taskItem") ||
+  (el.tagName === "LI" && name === "data-checked" && (value === "true" || value === "false"));
 
 export function sanitizeHtml(html: string): string {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
@@ -63,14 +97,14 @@ export function sanitizeHtml(html: string): string {
         child.replaceWith(span);
         continue;
       }
+      if (child.tagName === "LI") adoptCheckbox(child);
       clean(child); // descendants d'abord, puis l'élément lui-même
       if (!ALLOWED.has(child.tagName)) {
         child.replaceWith(...Array.from(child.childNodes));
         continue;
       }
       for (const attr of Array.from(child.attributes)) {
-        const keep = child.tagName === "A" && attr.name === "href" && /^https?:\/\//i.test(attr.value);
-        if (!keep) child.removeAttribute(attr.name);
+        if (!keepAttribute(child, attr.name, attr.value)) child.removeAttribute(attr.name);
       }
     }
   };

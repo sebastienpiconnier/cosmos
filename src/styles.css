@@ -35,6 +35,8 @@
   --type-theme: #b03a78;
   --type-intrigue: #b3392c;
   --backdrop: rgb(20 22 34 / 0.6); /* fond derrière une photo agrandie */
+  --revisit: #ffe58a; /* « à reprendre » */
+  --page-ink-dim: #9a9eae; /* texte hors focus (mode focus) */
   --type-question: #6b7085;
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
@@ -76,6 +78,8 @@
   --type-theme: #ec85bd;
   --type-intrigue: #f2887c;
   --backdrop: rgb(0 0 0 / 0.7);
+  --revisit: #6b5a12;
+  --page-ink-dim: #6c7083;
   --type-question: #8e93a8;
 }
 
@@ -324,6 +328,36 @@ button { font: inherit; color: inherit; }
 .history-buttons { position: absolute; left: 20px; bottom: 80px; z-index: 5; display: flex; gap: 6px; }
 .history-buttons .icon-button { width: 44px; height: 44px; box-shadow: var(--shadow-card); }
 .history-buttons .icon-button:disabled { opacity: 0.45; cursor: default; }
+
+/* Barre de mise en forme (texte sélectionné) */
+.format-bar { z-index: 40; }
+.format-bar [role="toolbar"] { display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.format-bar button { min-width: 32px; height: 32px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: 600 14px var(--font-text); cursor: pointer; }
+.format-bar button:hover { background: var(--ground); }
+.format-bar button.is-active { background: var(--accent-soft); color: var(--accent-ink); }
+.format-bar .format-italic span { font-style: italic; }
+.format-bar .format-strike span { text-decoration: line-through; }
+/* À reprendre : le passage surligné, dans le texte. */
+mark { background: var(--revisit); color: inherit; border-radius: 2px; padding: 0 1px; }
+/* Cases à cocher dans les textes */
+ul[data-type="taskList"] { list-style: none; padding-left: 2px; }
+ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; }
+ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 0.2em; }
+ul[data-type="taskList"] li > label input { width: 1em; height: 1em; accent-color: var(--accent); cursor: pointer; }
+ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-through; color: var(--ink-2); }
+/* « À faire » */
+.todo-button { position: relative; }
+.todo-count { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: var(--strong-bg); color: var(--strong-fg); font: 700 11px/18px var(--font-ui); text-align: center; }
+.todo-panel { width: min(400px, calc(100vw - 32px)); max-height: min(70vh, 640px); overflow: auto; }
+.todo-group h3 { display: flex; align-items: center; gap: 6px; margin: 12px 0 4px; font: 600 12px var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.todo-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.todo-group li { display: flex; align-items: flex-start; gap: 8px; }
+.todo-group li > input { width: 18px; height: 18px; margin-top: 12px; flex-shrink: 0; accent-color: var(--accent); }
+.todo-item { flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+.todo-item:hover { background: var(--accent-soft); }
+.todo-text { font-size: 14px; }
+.todo-where { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
 
 /* Recherche */
 .search-panel { width: min(360px, calc(100vw - 32px)); }
@@ -867,6 +901,22 @@ button { font: inherit; color: inherit; }
 .plan-chapter-number { flex-shrink: 0; font: 600 12px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
 .plan-chapter-title.bible-title { flex: 1; min-height: 36px; font: 500 16px var(--font-display); margin-left: 0; }
 
+/* ---------- Mode focus du manuscrit ---------- */
+.manuscript.is-focus { grid-template-columns: minmax(0, 1fr); }
+.manuscript.is-focus .ms-scenes, .manuscript.is-focus .sp-side, .manuscript.is-focus .ms-meta, .manuscript.is-focus .ms-hint { display: none; }
+.manuscript.is-typewriter .ms-main { padding-top: 40vh; padding-bottom: 60vh; }
+.ms-focus-bar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); opacity: 0.35; transition: opacity 0.2s; }
+.ms-focus-bar:hover, .ms-focus-bar:focus-within { opacity: 1; }
+.ms-focus-bar button, .ms-focus-bar select { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.ms-focus-bar button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: transparent; }
+.ms-focus-bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+/* Mise en valeur : le texte s'estompe, la phrase ou le paragraphe en cours garde sa pleine encre. */
+.ms-page.is-dimmed .ms-editor { color: var(--page-ink-dim); transition: color 0.2s; }
+.ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--page-ink); }
+/* Ligne : un voile au-dessus et au-dessous de la ligne du curseur. */
+.ms-veil { position: absolute; left: 0; right: 0; background: var(--page); opacity: 0.65; pointer-events: none; z-index: 2; }
+@media (pointer: coarse) { .ms-focus-bar { opacity: 1; } .ms-focus-bar button, .ms-focus-bar select { min-height: 44px; } }
+
 /* ---------- Pages du livre et chapitrage dans le manuscrit ---------- */
 .ms-chapter-edit { display: flex; align-items: center; gap: 8px; }
 .ms-chapter-input { flex: 1; min-width: 0; min-height: 36px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 500 16px var(--font-display); }
@@ -889,3 +939,24 @@ button { font: inherit; color: inherit; }
 .ms-page[data-page="dedicace"] .ms-editor, .ms-page[data-page="epigraphe"] .ms-editor { padding-top: 16em; font-style: italic; }
 .ms-page[data-page="epigraphe"] .ms-editor p { text-align: right; }
 .ms-page[data-page="copyright"] .ms-editor { padding-top: 34em; font-size: 0.8em; }
+
+/* ---------- Raccourcis clavier et À propos ---------- */
+.settings-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.settings-links .link-button { min-height: 36px; }
+.app-dialog { width: min(760px, calc(100vw - 32px)); max-height: 88vh; padding: 22px 26px; border: 0; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); overflow: auto; }
+.app-dialog::backdrop { background: var(--backdrop); }
+.app-dialog h2 { margin: 0 0 12px; font: 700 22px var(--font-display); }
+.app-dialog h3 { margin: 16px 0 6px; font: 600 12px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.app-dialog-actions { justify-content: flex-end; margin-top: 18px; }
+.shortcut-groups { columns: 2 300px; column-gap: 28px; }
+.shortcut-groups section { break-inside: avoid; }
+.shortcut-groups dl { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.shortcut-groups dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.shortcut-groups dt { color: var(--ink); }
+.shortcut-groups dd { margin: 0; display: flex; gap: 3px; flex-shrink: 0; }
+kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 5px; background: var(--ground); color: var(--ink); font: 600 12px/1.5 var(--font-ui); text-align: center; }
+.about { font: 16px/1.6 var(--font-text); }
+.about-version { font: 500 14px var(--font-ui); color: var(--ink-2); }
+.about-tagline { margin: -6px 0 12px; color: var(--accent-ink); font: 500 15px var(--font-ui); }
+.about ul { padding-left: 20px; }
+.about-link { font-family: var(--font-ui); font-size: 14px; user-select: all; overflow-wrap: anywhere; }

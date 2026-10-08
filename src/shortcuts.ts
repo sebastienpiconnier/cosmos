@@ -1,0 +1,50 @@
+// Raccourcis clavier de Cosmos, rassemblés pour la fenêtre d'aide (Cmd/Ctrl + /). Ce fichier décrit, il
+// n'écoute rien : chaque raccourci est géré là où il agit. Le garder à jour quand on en ajoute un.
+// « Mod » vaut Cmd sur Mac et Ctrl ailleurs.
+
+export const SHORTCUT_GROUPS = {
+  everywhere: [
+    ["help", ["Mod", "/"]],
+    ["views", ["Mod", "1…4"]],
+    ["search", ["Mod", "F"]],
+    ["todos", ["Mod", "Shift", "L"]],
+    ["save", ["Mod", "S"]],
+    ["undo", ["Mod", "Z"]],
+    ["redo", ["Mod", "Shift", "Z"]],
+  ],
+  canvas: [
+    ["newCard", ["N"]],
+    ["newFrame", ["C"]],
+    ["changeType", ["/"]],
+    ["mention", ["@"]],
+    ["width", ["Alt", "← →"]],
+    ["delete", ["Suppr"]],
+    ["paste", ["Mod", "V"]],
+  ],
+  text: [
+    ["bold", ["Mod", "B"]],
+    ["italic", ["Mod", "I"]],
+    ["strike", ["Mod", "Shift", "S"]],
+    ["heading", ["Mod", "Alt", "1…3"]],
+    ["bullet", ["Mod", "Shift", "8"]],
+    ["ordered", ["Mod", "Shift", "7"]],
+    ["task", ["Mod", "Shift", "9"]],
+    ["quote", ["Mod", "Shift", "B"]],
+    ["revisit", ["Mod", "Shift", "X"]],
+    ["markdown", ["**", "*", "#", "-", "[ ]"]],
+  ],
+  manuscript: [
+    ["sceneBreak", ["Entrée", "Entrée"]],
+    ["chapterBreak", ["Entrée", "Entrée", "Entrée"]],
+    ["focus", ["Mod", "Shift", "F"]],
+    ["exitFocus", ["Échap"]],
+  ],
+  screenplay: [
+    ["elementType", ["Tab"]],
+    ["nextElement", ["Entrée"]],
+    ["elementBar", ["Échap"]],
+  ],
+} as const;
+
+export type ShortcutGroup = keyof typeof SHORTCUT_GROUPS;
+export type ShortcutItem = (typeof SHORTCUT_GROUPS)[ShortcutGroup][number][0];

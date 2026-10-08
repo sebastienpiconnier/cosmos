@@ -115,6 +115,11 @@ src/
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
+  todos.ts              « À faire » : cases non cochées, passages à reprendre, questions en attente, cartes Question (fonctions pures)
+  markdownText.ts       Reconnaître un texte collé en Markdown, ==à reprendre== → <mark> (fonctions pures)
+  focusText.ts          Mode focus : bornes de la phrase du curseur, modes de mise en valeur (fonctions pures)
+  clip.ts               Coller un lien ou un texte sur le canevas : la carte proposée (fonction pure)
+  shortcuts.ts          Liste des raccourcis clavier, pour la fenêtre d'aide (décrit, n'écoute rien)
   bibleSections.ts      Rubriques de la Bible : ordre et rubriques masquées (réglage de l'appareil)
   character.ts          Fiches (SHEET_FIELDS par type) et fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
   organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
@@ -135,7 +140,7 @@ src/
   App.tsx               Accueil ou projet ouvert, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
   components/
     Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
-    TopBar.tsx          Logo, titre du projet, curseur de vues Chaos → Ordre, statut, bouton « Projets »
+    TopBar.tsx          Logo et slogan, titre du projet, vues, statut, « À faire », bouton « Projets »
     Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence, nom d'auteur, service d'IA
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
@@ -147,6 +152,11 @@ src/
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     Bible.tsx           Sommaire auto par type + fiches (titre et texte modifiables) + liens + création d'une fiche ; portrait rond des personnages
     BibleBody.tsx       Texte d'une fiche de la Bible, modifiable sur place (le corps de la carte)
+    editorKit.ts        Extensions communes des éditeurs de texte : Markdown à la frappe et au collage, cases à cocher, « à reprendre »
+    FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
+    focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
+    TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
+    Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
     CardSheet.tsx       Fiche d'une carte selon son type : personnage (rôle, genre, âge…), lieu (époque, ambiance…), intrigue (question dramatique, enjeu…)
     Gallery.tsx         Photos d'un personnage ou d'un lieu dans la Bible : ajout, agrandissement, image principale, description par l'IA (lieu)
     CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
@@ -399,4 +409,11 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **IA et photos** : l'image est lue par une balise `<img>` (adresse `blob:` permise par `img-src`) puis réduite sur un canvas, jamais par `fetch` (la CSP refuse `blob:` dans `connect-src`). Format par service : bloc `image` (Claude), `image_url` en data URL (OpenAI, OpenRouter, LM Studio), `images` en base64 (Ollama natif). Une erreur 400/404 signifie le plus souvent que le modèle ne lit pas les images : message dédié (`gallery.visionModel`). La description n'est demandée que sur un clic, rendue en notes, et n'entre dans la fiche que sur un autre clic.
 - **Cartes repliées** : au-delà de 220 px de texte, la carte se replie avec « Plus de détails » (état d'affichage, non enregistré) ; elle reste dépliée pendant l'écriture. Le bouton est aligné à gauche pour ne pas passer sous le point d'accroche du bas.
 - **Barre du haut** : « Cosmos » et son slogan (« Du chaos au monde ordonné », celui du README) à gauche ; plus de pôles Chaos/Ordre autour des vues.
+- **Éditeurs de texte** : cartes, Bible et manuscrit partagent `richTextExtensions()` (editorKit.ts). Ne pas configurer StarterKit à part dans un nouvel éditeur : on perdrait les cases, le Markdown collé et « à reprendre ». Titres de niveau 1 à 3 (le `# ` du Markdown marche).
+- **Markdown sur disque** : une case à cocher s'écrit `- [ ]` / `- [x]` (règle turndown `taskItem`) ; à la relecture, `sanitizeHtml` transforme le `<input type="checkbox">` de marked en `<li data-type="taskItem" data-checked>` dans `<ul data-type="taskList">`. Seuls ces attributs, avec ces valeurs, passent le nettoyage. « À reprendre » reste en `<mark>` dans le fichier.
+- **Collage de Markdown** : seulement un texte brut (`text/plain` sans `text/html`) qui ressemble à du Markdown (`looksLikeMarkdown`) ; le HTML collé garde le chemin de TipTap.
+- **« À faire »** n'a pas de données propres : tout est relu dans les textes (`collectTodos`). Cocher depuis le panneau réécrit le HTML de la carte ou de la scène (`toggleTodo`) ; l'éditeur de la scène se resynchronise sur le store.
+- **Mode focus du manuscrit** : `focusMode` du store, comme pour le scénario (la barre du haut s'efface). Réglages de l'appareil `settings.writing` (machine à écrire, mise en valeur). Phrase et paragraphe : décorations (`is-focus-on`) sur un texte estompé (`--page-ink-dim`) ; ligne : deux voiles posés au-dessus et au-dessous du curseur, sans toucher au texte. Échap ou Cmd/Ctrl+Maj+F en sortent ; quitter la vue aussi.
+- **Raccourcis globaux** (App.tsx) : Cmd/Ctrl+1 à 4 pour les vues, Cmd/Ctrl+/ pour la liste. Tout nouveau raccourci s'ajoute aussi dans `shortcuts.ts` et ses libellés dans `t.shortcuts.items`, sinon la fenêtre d'aide ment (un test le vérifie).
+- **Coller sur le canevas** : hors d'un champ, un lien devient une carte (titre = le site), un texte une citation, une image une carte image. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
 

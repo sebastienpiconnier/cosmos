@@ -11,7 +11,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { richTextExtensions } from "./editorKit";
+import { FormatBar } from "./FormatBar";
+import { FocusWriting, focusKey } from "./focusWriting";
+import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -78,7 +81,7 @@ function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { 
   onPagesRef.current = onPages;
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
+      ...richTextExtensions({ link: false }),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
       Placeholder.configure({ placeholder: () => getT().manuscript.placeholder }),
       // Vraies pages, comme dans un livre : la hauteur des paragraphes est mesurée à l'écran.
@@ -94,6 +97,8 @@ function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { 
         onLayout: (n) => onPagesRef.current(n),
       }),
       BookKeys.configure({ handlers }),
+      // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
+      FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
     ],
     // Scène née d'une coupure : on continue d'écrire au début, sans quitter le clavier.
     autofocus: focusStart ? "start" : false,
@@ -112,7 +117,65 @@ function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { 
     editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang));
   }, [lang, title, editor]);
 
-  return <EditorContent editor={editor} />;
+  // Texte changé hors de l'éditeur (case cochée depuis « À faire ») : l'éditeur suit.
+  const stored = useCosmos((s) => s.manuscript[id] ?? "");
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || stored === editor.getHTML() || (stored === "" && editor.isEmpty)) return;
+    editor.commands.setContent(stored, { emitUpdate: false });
+  }, [stored, editor]);
+
+  // Mode focus : mise en valeur redessinée quand le réglage change ; machine à écrire et voile de la ligne.
+  const focusMode = useCosmos((s) => s.focusMode);
+  const writing = useSettings((s) => s.writing);
+  const [veil, setVeil] = useState<{ top: number; bottom: number } | null>(null);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(editor.state.tr.setMeta(focusKey, Date.now()));
+    const follow = () => {
+      if (!focusMode || editor.isDestroyed) return setVeil(null);
+      const { view } = editor;
+      const page = view.dom.closest<HTMLElement>(".ms-page");
+      const main = view.dom.closest<HTMLElement>(".ms-main");
+      if (!page || !main) return;
+      let caret: { top: number; bottom: number };
+      try {
+        caret = view.coordsAtPos(view.state.selection.head);
+      } catch {
+        return;
+      }
+      // Machine à écrire : la ligne du curseur se tient aux deux cinquièmes de la hauteur.
+      if (writing.typewriter) {
+        const box = main.getBoundingClientRect();
+        main.scrollTop += caret.top - (box.top + box.height * 0.4);
+        caret = view.coordsAtPos(view.state.selection.head);
+      }
+      if (writing.highlight !== "line") return setVeil(null);
+      const top = page.getBoundingClientRect().top;
+      setVeil({ top: caret.top - top - 2, bottom: caret.bottom - top + 2 });
+    };
+    follow();
+    editor.on("selectionUpdate", follow);
+    editor.on("update", follow);
+    editor.on("focus", follow);
+    return () => {
+      editor.off("selectionUpdate", follow);
+      editor.off("update", follow);
+      editor.off("focus", follow);
+    };
+  }, [editor, focusMode, writing]);
+
+  return (
+    <>
+      <EditorContent editor={editor} />
+      {editor && <FormatBar editor={editor} revisit />}
+      {veil && (
+        <>
+          <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />
+          <div className="ms-veil" aria-hidden="true" style={{ top: veil.bottom, bottom: 0 }} />
+        </>
+      )}
+    </>
+  );
 }
 
 export function Manuscript() {
@@ -131,6 +194,11 @@ export function Manuscript() {
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   const deleteCard = useCosmos((s) => s.deleteCard);
   const b = t.book;
+  const focusMode = useCosmos((s) => s.focusMode);
+  const setFocusMode = useCosmos((s) => s.setFocusMode);
+  const writing = useSettings((s) => s.writing);
+  const setWriting = useSettings((s) => s.setWriting);
+  const target = useCosmos((s) => s.manuscriptTarget);
   const revealCard = useCosmos((s) => s.revealCard);
   const restoreScene = useCosmos((s) => s.restoreScene);
 
@@ -148,6 +216,31 @@ export function Manuscript() {
   const [fresh, setFresh] = useState<{ id: string; from: string } | null>(null);
   const [said, setSaid] = useState("");
   const handlers = useRef<BreakHandlers | null>(null);
+
+  // Arrivée depuis « À faire » : la bonne scène.
+  useEffect(() => {
+    if (!target) return;
+    useCosmos.getState().clearManuscriptTarget();
+    setChosen(target);
+    mainRef.current?.scrollTo(0, 0);
+  }, [target]);
+
+  // Mode focus : Cmd/Ctrl+Maj+F le bascule, Échap le quitte ; quitter la vue le termine.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setFocusMode(!useCosmos.getState().focusMode);
+      } else if (e.key === "Escape" && useCosmos.getState().focusMode && !useCosmos.getState().dialog) {
+        setFocusMode(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      setFocusMode(false);
+    };
+  }, [setFocusMode]);
   // Pages de la scène à l'écran, mesurées par l'éditeur (0 : feuille continue).
   const [measured, setMeasured] = useState(0);
 
@@ -254,7 +347,27 @@ export function Manuscript() {
   const sceneWords = countWords(manuscript[current]);
 
   return (
-    <div className="manuscript">
+    <div className={`manuscript${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
+      {focusMode && (
+        <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
+          <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
+            {t.focus.typewriter}
+          </button>
+          <label>
+            <span>{t.focus.highlight}</span>
+            <select value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+              {FOCUS_HIGHLIGHTS.map((h) => (
+                <option key={h} value={h}>
+                  {t.focus.highlights[h]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={() => setFocusMode(false)}>
+            {t.focus.exit}
+          </button>
+        </div>
+      )}
       <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
@@ -350,6 +463,9 @@ export function Manuscript() {
                 ))}
               </select>
             </label>
+            <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
+              {t.focus.enter}
+            </button>
             {!pageKind && !opensChapter && (
               <button type="button" className="ghost-button ms-start-chapter" onClick={() => startChapterAt(current)}>
                 {b.startChapter}
@@ -357,7 +473,7 @@ export function Manuscript() {
             )}
           </div>
           <div
-            className={`ms-page${opensChapter ? " opens-chapter" : ""}${pageKind && QUIET_PAGES.has(pageKind) ? " is-quiet" : ""}${!pageKind && !opensChapter && at > 0 ? " follows-scene" : ""}`}
+            className={`ms-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}${opensChapter ? " opens-chapter" : ""}${pageKind && QUIET_PAGES.has(pageKind) ? " is-quiet" : ""}${!pageKind && !opensChapter && at > 0 ? " follows-scene" : ""}`}
             data-page={pageKind ?? undefined}
             style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}
           >

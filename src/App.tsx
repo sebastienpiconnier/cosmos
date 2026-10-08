@@ -9,6 +9,7 @@ import { Sequencier } from "./components/Sequencier";
 import { Plan } from "./components/Plan";
 import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
+import { Dialogs } from "./components/Dialogs";
 import { useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
@@ -58,8 +59,24 @@ export function App() {
   // Cmd/Ctrl + S : sauvegarde immédiate. Cmd/Ctrl + Z, Maj + Z ou Y : annuler, rétablir.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || useCosmos.getState().screen !== "project") return;
+      if (!(e.metaKey || e.ctrlKey)) return;
       const key = e.key.toLowerCase();
+      // Cmd/Ctrl + / : la liste des raccourcis, partout (accueil compris).
+      if (key === "/" || e.code === "Slash") {
+        e.preventDefault();
+        const { dialog, setDialog } = useCosmos.getState();
+        setDialog(dialog === "shortcuts" ? null : "shortcuts");
+        return;
+      }
+      if (useCosmos.getState().screen !== "project") return;
+      // Cmd/Ctrl + 1 à 4 : Canevas, Plan, Bible, Manuscrit.
+      const views = ["toile", "plan", "bible", "manuscrit"] as const;
+      const digit = /^Digit([1-4])$/.exec(e.code)?.[1] ?? (/^[1-4]$/.test(key) ? key : null);
+      if (digit && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        useCosmos.getState().setView(views[Number(digit) - 1]);
+        return;
+      }
       if (key === "s") {
         e.preventDefault();
         save();
@@ -77,13 +94,19 @@ export function App() {
   }, [save]);
 
   if (!loaded) return <div className="loading">{t.app.loading}</div>;
-  if (screen === "home") return <Home />;
+  if (screen === "home")
+    return (
+      <>
+        <Home />
+        <Dialogs />
+      </>
+    );
 
   return (
     <ReactFlowProvider>
       <div className="app">
-        {/* Mode focus du scénario : la barre du haut s'efface, la feuille prend la place. */}
-        {!(focusMode && view === "manuscrit" && kind === "scenario") && <TopBar />}
+        {/* Mode focus (scénario ou manuscrit) : la barre du haut s'efface, la page prend la place. */}
+        {!(focusMode && view === "manuscrit") && <TopBar />}
         {status === "erreur" && (
           <div className="app-alert" role="alert">
             <span>{storage.canPickFolder ? t.app.saveFailedFolder : t.app.saveFailed}</span>
@@ -105,6 +128,7 @@ export function App() {
           {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Manuscript />)}
         </main>
       </div>
+      <Dialogs />
     </ReactFlowProvider>
   );
 }

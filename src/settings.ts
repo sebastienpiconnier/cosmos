@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { isFocusHighlight, type FocusHighlight } from "./focusText";
 import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
@@ -44,6 +45,18 @@ export function aiConfig(ai: AiSettings): AiConfig | null {
 }
 
 const KEY = "cosmos:reglages";
+
+export interface WritingSettings {
+  /** La ligne en cours reste à mi-hauteur de l'écran, comme sur une machine à écrire. */
+  typewriter: boolean;
+  /** Ce qui reste en pleine encre ; le reste s'estompe. */
+  highlight: FocusHighlight;
+}
+
+function readWriting(raw: unknown): WritingSettings {
+  const w = (raw ?? {}) as Partial<Record<keyof WritingSettings, unknown>>;
+  return { typewriter: w.typewriter === true, highlight: isFocusHighlight(w.highlight) ? w.highlight : "off" };
+}
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
 
 interface SettingsState {
@@ -60,12 +73,15 @@ interface SettingsState {
   setAuthor: (author: string) => void;
   ai: AiSettings;
   setAi: (ai: AiSettings) => void;
+  /** Mode focus du manuscrit : machine à écrire, et ce qui reste en pleine encre. */
+  writing: WritingSettings;
+  setWriting: (writing: WritingSettings) => void;
   /** Rubriques de la Bible : ordre et rubriques masquées. */
   bibleSections: BibleSections;
   setBibleSections: (sections: BibleSections) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -92,19 +108,21 @@ export const useSettings = create<SettingsState>((set) => ({
   setAuthor: (author) => set({ author }),
   ai: readAi(saved.ai),
   setAi: (ai) => set({ ai }),
+  writing: readWriting(saved.writing),
+  setWriting: (writing) => set({ writing }),
   bibleSections: readSections(saved.bibleSections),
   setBibleSections: (bibleSections) => set({ bibleSections }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

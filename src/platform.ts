@@ -16,3 +16,6 @@ export const isMobileOS = () => {
 /** Pointeur principal imprécis (doigt) : pas de survol, cibles plus grandes. */
 export const isTouch = () =>
   typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+
+/** Clavier Apple (⌘, ⌥, ⇧) : seulement pour écrire les raccourcis comme l'auteur les voit sur ses touches. */
+export const isAppleKeyboard = () => typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
