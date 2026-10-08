@@ -1,0 +1,214 @@
+// @vitest-environment happy-dom
+// IA facultative : requêtes vers chaque service, lecture des réponses, consignes et relecture des propositions.
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig } from "../ai/providers";
+import { coherencePrompt, extractJson, interviewPrompt, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
+import { aiConfig } from "../settings";
+import { useCosmos } from "../store";
+import { useSettings } from "../settings";
+import { EMPTY_PLAN } from "../plan";
+import { fr } from "../i18n/fr";
+import { en } from "../i18n/en";
+import type { CardData } from "../types";
+
+const card = (id: string, type: CardData["type"], title: string, html = ""): CardData => ({ id, type, title, html });
+const config = (provider: AiConfig["provider"], extra: Partial<AiConfig> = {}): AiConfig => ({ provider, key: "sk-test", model: "modele", url: "", ...extra });
+
+describe("services", () => {
+  it("cinq services, tous nommés ; les deux locaux n'ont pas besoin de clé", () => {
+    expect(AI_PROVIDERS).toEqual(["anthropic", "openai", "openrouter", "ollama", "lmstudio"]);
+    for (const p of AI_PROVIDERS) expect(fr.ai.providers[p] && en.ai.providers[p]).toBeTruthy();
+    expect(AI_PROVIDERS.filter((p) => PROVIDERS[p].local)).toEqual(["ollama", "lmstudio"]);
+    expect(isReady(config("ollama", { key: "" }))).toBe(true);
+    expect(isReady(config("openai", { key: " " }))).toBe(false);
+    expect(isReady(config("anthropic", { model: "" }))).toBe(false);
+    expect(isReady(null)).toBe(false);
+  });
+
+  it("Claude : API Messages, clé dans x-api-key, consigne à part", () => {
+    const req = chatRequest(config("anthropic"), "Consigne", "Texte", 200);
+    expect(req.url).toBe("https://api.anthropic.com/v1/messages");
+    expect(req.headers).toMatchObject({ "x-api-key": "sk-test", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" });
+    expect(JSON.parse(req.body!)).toEqual({ model: "modele", max_tokens: 200, system: "Consigne", messages: [{ role: "user", content: "Texte" }] });
+  });
+
+  it("OpenAI et OpenRouter : complétions de conversation, clé en Bearer", () => {
+    const openai = chatRequest(config("openai"), "Consigne", "Texte");
+    expect(openai.url).toBe("https://api.openai.com/v1/chat/completions");
+    expect(openai.headers.authorization).toBe("Bearer sk-test");
+    expect(JSON.parse(openai.body!)).toEqual({ model: "modele", stream: false, messages: [{ role: "system", content: "Consigne" }, { role: "user", content: "Texte" }] });
+    const router = chatRequest(config("openrouter"), "c", "t");
+    expect(router.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(router.headers).toMatchObject({ authorization: "Bearer sk-test", "x-title": "Cosmos" });
+  });
+
+  it("Ollama et LM Studio : serveur local, sans clé, adresse modifiable", () => {
+    const ollama = chatRequest(config("ollama"), "c", "t");
+    expect(ollama.url).toBe("http://localhost:11434/v1/chat/completions");
+    expect(ollama.headers).not.toHaveProperty("authorization");
+    expect(chatRequest(config("lmstudio"), "c", "t").url).toBe("http://localhost:1234/v1/chat/completions");
+    expect(chatRequest(config("lmstudio", { url: "http://127.0.0.1:5000/" }), "c", "t").url).toBe("http://127.0.0.1:5000/v1/chat/completions");
+    // Une adresse saisie ne détourne jamais un service en ligne (la clé partirait ailleurs).
+    expect(chatRequest(config("openai", { url: "http://pirate.example" }), "c", "t").url).toBe("https://api.openai.com/v1/chat/completions");
+  });
+
+  it("lecture des réponses, quelle que soit leur forme", () => {
+    expect(readReply("anthropic", { content: [{ type: "text", text: " Bonjour " }, { type: "tool_use" }, { type: "text", text: "!" }] })).toBe("Bonjour !");
+    expect(readReply("openai", { choices: [{ message: { content: " Salut " } }] })).toBe("Salut");
+    expect(readReply("ollama", { choices: [] })).toBe("");
+    expect(readReply("anthropic", null)).toBe("");
+    expect(readReply("openai", { choices: [{ message: { content: [{ type: "text" }] } }] })).toBe("");
+  });
+
+  it("liste des modèles", () => {
+    expect(modelsRequest(config("ollama"))).toMatchObject({ url: "http://localhost:11434/v1/models", method: "GET" });
+    expect(modelsRequest(config("anthropic")).headers["x-api-key"]).toBe("sk-test");
+    expect(readModels({ data: [{ id: "mistral" }, { id: "llama3" }, { id: 3 }, {}] })).toEqual(["llama3", "mistral"]);
+    expect(readModels({ models: [] })).toEqual([]);
+  });
+
+  it("erreurs traduites en causes compréhensibles, toutes expliquées dans les deux langues", () => {
+    expect([401, 403, 404, 400, 429, 402, 500].map(errorCode)).toEqual(["auth", "auth", "model", "model", "limit", "limit", "other"]);
+    for (const code of ["network", "auth", "model", "limit", "empty", "other"] as const) expect(fr.ai.errors[code] && en.ai.errors[code]).toBeTruthy();
+  });
+});
+
+describe("appels", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const answer = (status: number, body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
+
+  it("complétion : la requête part vers le service, le texte revient", async () => {
+    const fetchMock = answer(200, { choices: [{ message: { content: "Une question ?" } }] });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await complete(config("lmstudio"), "c", "t")).toBe("Une question ?");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://localhost:1234/v1/chat/completions");
+    expect(init.method).toBe("POST");
+  });
+
+  it("clé refusée, serveur éteint, réponse vide", async () => {
+    vi.stubGlobal("fetch", answer(401, { error: "bad key" }));
+    await expect(complete(config("openai"), "c", "t")).rejects.toMatchObject({ code: "auth" });
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
+    await expect(complete(config("ollama"), "c", "t")).rejects.toMatchObject({ code: "network" });
+    await expect(listModels(config("ollama"))).rejects.toBeInstanceOf(AiError);
+    vi.stubGlobal("fetch", answer(200, { choices: [{ message: { content: "  " } }] }));
+    await expect(complete(config("openai"), "c", "t")).rejects.toMatchObject({ code: "empty" });
+  });
+
+  it("modèles du service", async () => {
+    vi.stubGlobal("fetch", answer(200, { data: [{ id: "b" }, { id: "a" }] }));
+    expect(await listModels(config("openrouter"))).toEqual(["a", "b"]);
+  });
+});
+
+describe("réglages de l'IA", () => {
+  it("désactivée par défaut ; chaque service garde sa clé, son modèle et son adresse", () => {
+    expect(aiConfig({ provider: null, keys: {}, models: {}, urls: {} })).toBeNull();
+    const ai = { provider: "anthropic" as const, keys: { anthropic: "sk-a", openai: "sk-o" }, models: { openai: "gpt" }, urls: { ollama: "http://127.0.0.1:9" } };
+    expect(aiConfig(ai)).toEqual({ provider: "anthropic", key: "sk-a", model: PROVIDERS.anthropic.model, url: "" });
+    expect(aiConfig({ ...ai, provider: "openai" })).toEqual({ provider: "openai", key: "sk-o", model: "gpt", url: "" });
+    expect(aiConfig({ ...ai, provider: "ollama" })).toEqual({ provider: "ollama", key: "", model: "", url: "http://127.0.0.1:9" });
+  });
+});
+
+describe("relecture des réponses", () => {
+  it("JSON entouré de texte ou de balises de code", () => {
+    expect(extractJson('Voici :\n```json\n[{"id":"a"}]\n```\nVoilà.')).toEqual([{ id: "a" }]);
+    expect(extractJson('{"suggestions":[{"id":"a"}]} fin]')).toEqual({ suggestions: [{ id: "a" }] });
+    expect(extractJson("Rien à signaler.")).toBeNull();
+    expect(extractJson("[oups")).toBeNull();
+  });
+});
+
+describe("Ranger", () => {
+  const cards = [card("i1", "idee", "Inès Morvan", "<p>Gardienne remplaçante.</p>"), card("i2", "idee", "", "<p>Un phare sur un îlot.</p>"), card("i3", "idee", "", ""), card("p1", "personnage", "Yann")];
+
+  it("ne regarde que les idées en vrac qui ont un contenu ; la consigne interdit de réécrire", () => {
+    expect(tidyCandidates(cards).map((c) => c.id)).toEqual(["i1", "i2"]);
+    const prompt = tidyPrompt(cards, "fr", "roman");
+    expect(JSON.parse(prompt.user)).toEqual([{ id: "i1", title: "Inès Morvan", text: "Gardienne remplaçante." }, { id: "i2", title: "", text: "Un phare sur un îlot." }]);
+    expect(prompt.system).toMatch(/Never rewrite/);
+    expect(prompt.system).toContain("français");
+    expect(tidyPrompt(cards, "en", "scenario").system).toMatch(/screenplay[\s\S]*English/);
+  });
+
+  it("propositions gardées : carte connue, type valable, une fois par carte", () => {
+    const reply = JSON.stringify([
+      { id: "i1", type: "personnage", reason: "C'est quelqu'un." },
+      { id: "i1", type: "lieu", reason: "doublon" },
+      { id: "i2", type: "lieu" },
+      { id: "p1", type: "theme", reason: "déjà typée" },
+      { id: "zz", type: "scene", reason: "inconnue" },
+      { id: "i2", type: "dragon", reason: "type inventé" },
+      "n'importe quoi",
+    ]);
+    expect(parseTidy(reply, cards)).toEqual([{ id: "i1", type: "personnage", reason: "C'est quelqu'un." }, { id: "i2", type: "lieu", reason: "" }]);
+    expect(parseTidy("Je ne sais pas.", cards)).toEqual([]);
+    expect(parseTidy('{"suggestions":[{"id":"i2","type":"idee"}]}', cards)).toEqual([]);
+  });
+});
+
+describe("interview", () => {
+  const ines = card("p1", "personnage", "Inès Morvan", "<p>Gardienne remplaçante.</p>");
+  const cards = [ines, card("l1", "lieu", "Phare", "<p>Îlot.</p>"), card("p2", "personnage", "Yann")];
+
+  it("la consigne demande une seule question et interdit d'y répondre", () => {
+    const prompt = interviewPrompt(ines, cards, [{ source: "p1", target: "l1", label: "y travaille" }], "fr", ["Déjà posée ?"]);
+    expect(prompt.system).toMatch(/ONE open question/);
+    expect(prompt.system).toMatch(/Do not answer it/);
+    const sent = JSON.parse(prompt.user);
+    expect(sent.character).toMatchObject({ title: "Inès Morvan", text: "Gardienne remplaçante." });
+    expect(sent.related).toEqual([{ id: "l1", type: "lieu", title: "Phare", text: "Îlot.", link: "y travaille" }]);
+    expect(sent.alreadyAsked).toEqual(["Déjà posée ?"]);
+  });
+
+  it("la question est débarrassée de ce qui l'entoure", () => {
+    expect(parseQuestion('Voici ma question :\n\n« Que fuit-elle en venant ici ? »')).toBe("Que fuit-elle en venant ici ?");
+    expect(parseQuestion("1. Question : Pourquoi le phare ?\nParce que…")).toBe("Pourquoi le phare ?");
+    expect(parseQuestion('"What is she running from?"')).toBe("What is she running from?");
+    expect(parseQuestion("  ")).toBe("");
+  });
+});
+
+describe("cohérence", () => {
+  const cards = [card("p1", "personnage", "Inès", "<p>Elle a 34 ans.</p>"), card("s1", "scene", "Arrivée", "<p>Inès, 41 ans, débarque.</p>"), card("i1", "idee", "", "")];
+
+  it("la consigne demande des contradictions réelles, sous forme de questions, sans correction", () => {
+    const prompt = coherencePrompt(cards, [{ source: "p1", target: "s1", label: "" }, { source: "p1", target: "i1", label: "" }], "fr");
+    expect(prompt.system).toMatch(/Do not propose fixes/);
+    const sent = JSON.parse(prompt.user);
+    expect(sent.cards.map((c: { id: string }) => c.id)).toEqual(["p1", "s1"]);
+    expect(sent.links).toEqual([{ source: "p1", target: "s1", label: "" }]);
+  });
+
+  it("alertes gardées : au moins une carte connue et une question", () => {
+    const reply = '```json\n[{"cards":["p1","s1","zz","p1"],"question":"Inès a-t-elle 34 ou 41 ans ?"},{"cards":["zz"],"question":"?"},{"cards":["p1"],"question":""}]\n```';
+    expect(parseCoherence(reply, cards)).toEqual([{ cards: ["p1", "s1"], question: "Inès a-t-elle 34 ou 41 ans ?" }]);
+    expect(parseCoherence("[]", cards)).toEqual([]);
+  });
+});
+
+describe("alerte gardée pour plus tard", () => {
+  const state = () => useCosmos.getState();
+  beforeEach(async () => {
+    localStorage.clear();
+    useSettings.setState({ lang: "fr" });
+    useCosmos.setState({ loaded: false, screen: "home", projects: [], nodes: [], frames: [], edges: [], screenplay: null, savedScreenplay: null, plan: EMPTY_PLAN, manuscript: {}, lastFiles: {}, past: [], future: [] });
+    await state().start();
+    await state().createProject({ title: "Kerlaouen", kind: "roman" });
+  });
+
+  it("une carte Question reliée aux cartes concernées, en une seule étape", () => {
+    const a = state().addTitledCard("personnage", "Inès");
+    const b = state().addTitledCard("scene", "Arrivée");
+    const id = state().addQuestionAbout(" Inès a-t-elle 34 ou 41 ans ? ", [a, b, a, "inconnue"]);
+    expect(state().nodes.find((n) => n.id === id)!.data).toMatchObject({ type: "question", title: "Inès a-t-elle 34 ou 41 ans ?" });
+    expect(state().edges.map((e) => [e.source, e.target])).toEqual([[id, a], [id, b]]);
+    state().undo();
+    expect(state().nodes).toHaveLength(2);
+    expect(state().edges).toHaveLength(0);
+  });
+});

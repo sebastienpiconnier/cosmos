@@ -55,6 +55,16 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **In this scene**: characters and places mentioned in the text show up beside it, along with the card’s notes.
 - **Your files**: every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
 
+### AI, if you want it
+
+Cosmos works without AI. You can plug one in from Settings: Claude, OpenAI, OpenRouter, or a model running on your machine with Ollama or LM Studio (your texts then never leave it).
+
+- **It asks, it doesn’t write**: no action changes your project without your say.
+- **Tidy up ideas**: suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one.
+- **Tailored questions**: in the character assistant, a question based on what the entry already says. You do the answering.
+- **Check consistency**: points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
+- **Your key stays on your device**, never in the project.
+
 ### Exports
 
 - **Manuscript**: PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
@@ -108,7 +118,6 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 |---|---|
 | Outline | Timeline by storyline |
 | Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
-| Optional AI | “Tidy up” button, interview mode, consistency alerts |
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |
 

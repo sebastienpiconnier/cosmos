@@ -7,11 +7,37 @@ import { useSettings, type ThemePref } from "../settings";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
+import { AI_PROVIDERS, AiError, PROVIDERS, isAiProvider, listModels } from "../ai/providers";
+import { aiConfig } from "../settings";
+import { fmt } from "../i18n";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 export function Settings({ project = true }: { project?: boolean }) {
   const t = useT();
-  const { lang, themePref, setLang, setThemePref } = useSettings();
+  const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi } = useSettings();
+  const [models, setModels] = useState<string[]>([]);
+  const [aiStatus, setAiStatus] = useState("");
+  const [testing, setTesting] = useState(false);
+  const provider = ai.provider;
+  const config = aiConfig(ai);
+  const patchAi = (field: "keys" | "models" | "urls", value: string) => provider && setAi({ ...ai, [field]: { ...ai[field], [provider]: value } });
+  const test = async () => {
+    if (!config || testing) return;
+    setTesting(true);
+    setAiStatus(t.ai.testing);
+    try {
+      const list = await listModels(config);
+      setModels(list);
+      setAiStatus(fmt(t.ai.testOk, { n: list.length }));
+      // Pas encore de modèle choisi : on propose le premier de la liste.
+      if (!config.model.trim() && list[0]) patchAi("models", list[0]);
+    } catch (err) {
+      console.error(err);
+      setAiStatus(t.ai.errors[err instanceof AiError ? err.code : "other"]);
+    } finally {
+      setTesting(false);
+    }
+  };
   const kind = useCosmos((s) => s.kind);
   const setKind = useCosmos((s) => s.setKind);
   const paper = useCosmos((s) => s.paper);
@@ -21,7 +47,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiModels: useId(), aiHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -145,6 +171,64 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          <label htmlFor={ids.author}>{t.settings.author}</label>
+          <input id={ids.author} type="text" value={author} autoComplete="name" aria-describedby={ids.authorHint} onChange={(e) => setAuthor(e.target.value)} />
+          <p className="settings-hint" id={ids.authorHint}>
+            {t.settings.authorHint}
+          </p>
+
+          {/* IA facultative : un service au choix, en ligne ou sur la machine */}
+          <div className="eyebrow settings-sep">{t.ai.section}</div>
+          <label htmlFor={ids.ai}>{t.ai.provider}</label>
+          <select
+            id={ids.ai}
+            value={provider ?? ""}
+            aria-describedby={ids.aiHint}
+            onChange={(e) => {
+              setAi({ ...ai, provider: isAiProvider(e.target.value) ? e.target.value : null });
+              setModels([]);
+              setAiStatus("");
+            }}
+          >
+            <option value="">{t.ai.none}</option>
+            {AI_PROVIDERS.map((p) => (
+              <option key={p} value={p}>
+                {t.ai.providers[p]}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint" id={ids.aiHint}>
+            {!provider ? t.ai.hintNone : PROVIDERS[provider].local ? t.ai.hintLocal : t.ai.hintCloud}
+          </p>
+          {provider && config && (
+            <>
+              {PROVIDERS[provider].local ? (
+                <>
+                  <label htmlFor={ids.aiUrl}>{t.ai.url}</label>
+                  <input id={ids.aiUrl} type="url" value={config.url} placeholder={PROVIDERS[provider].url} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("urls", e.target.value)} />
+                </>
+              ) : (
+                <>
+                  <label htmlFor={ids.aiKey}>{t.ai.key}</label>
+                  <input id={ids.aiKey} type="password" value={config.key} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("keys", e.target.value)} />
+                  <p className="settings-hint">{t.ai.keyHint}</p>
+                </>
+              )}
+              <label htmlFor={ids.aiModel}>{t.ai.model}</label>
+              <input id={ids.aiModel} type="text" value={config.model} list={ids.aiModels} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("models", e.target.value)} />
+              <datalist id={ids.aiModels}>
+                {models.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+              <button type="button" className="ghost-button" disabled={testing} onClick={() => void test()}>
+                {t.ai.test}
+              </button>
+              <p className="settings-hint" role="status">
+                {aiStatus}
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

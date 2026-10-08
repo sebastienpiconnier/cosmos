@@ -130,7 +130,7 @@ src/
   components/
     Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
     TopBar.tsx          Logo, titre du projet, curseur de vues Chaos → Ordre, statut, bouton « Projets »
-    Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence
+    Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence, nom d'auteur, service d'IA
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     MentionNode.ts      Nœud TipTap d'une mention (insécable, porte l'identifiant de la carte citée)
@@ -146,6 +146,7 @@ src/
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
     Plan.tsx            Vue Plan d'un roman, en liste ou en fiches : gabarit au choix, cases où ranger les scènes, scènes à placer
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
+    AiMenu.tsx          Bouton « IA » (si un service est branché) : Ranger les idées, Vérifier la cohérence
     ExportMenu.tsx      Bouton « Exporter » : scénario (PDF, Fountain, FDX) ou manuscrit (PDF, Word, EPUB, Markdown), et bible
     usePagination.ts    Pagination du scénario courant (hook)
     Manuscript.tsx      Vue Manuscrit d'un roman : une scène à la fois dans l'ordre du Plan, panneau « Dans cette scène »
@@ -172,6 +173,9 @@ src/
       adopt.ts          Une scène ou un personnage écrits à l'instant reçoivent leur carte sur le canevas
       pages.ts          Découpage de la feuille en vraies pages (A4, Letter) par décorations ProseMirror
       index.ts          screenplayExtensions() : l'assemblage
+  ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
+    providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes, lecture des réponses, erreurs
+    tasks.ts            Consignes et relecture des réponses : Ranger, interview, cohérence (fonctions pures)
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -249,10 +253,15 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Le plan ne contient que des identifiants** : titre et texte restent dans la carte. `arrange()` ignore à l'affichage une carte disparue ou qui n'est plus une scène ; `prunePlan` ne retire du fichier que les cartes supprimées (une carte redevenue Scène retrouve sa place). Les scènes non rangées suivent l'ordre du canevas, de haut en bas.
 - **Plan libre** : une seule liste, sans « À placer ». L'ordre n'est écrit qu'au premier déplacement.
 - **Actions du plan** : elles ne font rien (ni étape d'historique ni projet « modifié ») quand la fonction pure rend le même objet. Le plan fait partie de l'historique d'annulation (`Snapshot.plan`).
+- **IA : elle propose, l'auteur décide** : aucune action IA ne modifie le projet d'elle-même. « Ranger » liste des changements de type à appliquer ou ignorer un par un, la cohérence rend des questions (qu'on peut garder en carte Question), l'interview pose une question à laquelle l'auteur répond. Les consignes (`tasks.ts`) interdisent au modèle de réécrire, compléter ou répondre : ne pas les assouplir.
+- **IA : réponses jamais crues sur parole** : tout ce qui revient d'un modèle passe par un `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Ne jamais insérer une réponse comme HTML.
+- **IA : réglage de l'appareil** : service, clés, modèles et adresses vivent dans `settings.ai` (localStorage), jamais dans le projet. Une clé est donc lisible par qui a accès au profil de l'appareil : pas de trousseau système pour l'instant. Une adresse saisie ne vaut que pour les services locaux, jamais pour un service en ligne (la clé partirait ailleurs).
+- **IA : appels directs depuis l'app** : `fetch` vers le service, sans serveur intermédiaire. Tout nouveau service doit être ajouté à `connect-src` dans la CSP de `tauri.conf.json`, sinon l'exe refuse l'appel alors que le navigateur l'accepte. Les serveurs locaux ne sont autorisés que sur `localhost` et `127.0.0.1`.
+- **Sélecteur Zustand** : `aiConfig(s.ai)` crée un objet à chaque appel. Sélectionner `s.ai` puis calculer dans un `useMemo`, sinon React boucle.
 - **Exports sans Pandoc** : le manuscrit et la bible sortent en Markdown, Word, EPUB et PDF par du code maison (`src/export/`), pour marcher aussi dans le navigateur et sur mobile. Un .docx et un .epub sont des ZIP de fichiers XML : `zip.ts` les écrit sans compression. Dans un EPUB, `mimetype` doit rester le premier fichier de l'archive.
 - **Un seul modèle pour tous les formats** : tout export part de `ExportDoc` (doc.ts). Ne pas convertir le HTML directement dans un format : ajouter le cas dans `htmlToBlocks`, les quatre formats en profitent. L'éditeur écrit `<li><p>…</p></li>` : le premier paragraphe est le texte de l'élément de liste.
 - **PDF en prose** : Courier Prime 12, marges d'un pouce, double interligne et alinéa pour le manuscrit, italique rendu par un soulignement (l'usage en Courier ; nous n'embarquons pas d'italique). La pagination se décide dans `prose.ts`, pas dans `pdf.ts`, qui n'est atteint que par `import()` dynamique.
-- **Nom d'auteur des exports** : celui de l'appareil (`settings.author`), saisi sur la page de titre d'un scénario. Un roman n'a pas encore d'endroit où le saisir.
+- **Nom d'auteur des exports** : celui de l'appareil (`settings.author`), saisi dans les Réglages ou sur la page de titre d'un scénario.
 - **Assistant personnage, sans format propre** : une réponse s'ajoute au texte de la fiche (la question en gras, la réponse dessous) et « Je ne sais pas encore » crée une carte Question reliée au personnage. L'assistant retrouve où l'on en est en relisant les cartes : question en gras dans la fiche = répondue, carte Question reliée dont le titre finit par la question = en attente. Reformuler une question dans `fr.ts` ou `en.ts` la fait donc réapparaître comme ouverte dans les projets existants, et changer de langue aussi : à éviter sans raison.
 - **L'assistant n'écrit jamais à la place de l'auteur** : il pose la question, rien d'autre. Pas de réponse proposée, pas de texte généré.
 - **Manuscrit d'un roman** : un fichier `manuscrit/<id>.md` par scène écrite, sans en-tête (le titre reste celui de la carte, les notes de la carte restent dans `cartes/`). Une scène sans texte n'a pas de fichier. L'ordre est celui du Plan (`planOrder`). Le texte lu sur disque passe par `markdownToHtml`, donc par `sanitizeHtml`, et le nom du fichier doit être un identifiant de carte valide.
@@ -318,8 +327,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 5. (fait) **Manuscrit** : une scène à la fois dans l'ordre du Plan, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée
-7. IA optionnelle : bouton « Ranger », mode interview, alertes de cohérence (API Claude, ou modèle local via Ollama)
-8. (fait) Export : manuscrit en PDF, Word, EPUB et Markdown, bible en PDF, Word et Markdown, sans outil externe. Reste : saisir le nom d'auteur dans un projet roman, EPUB de la bible
+7. (fait) IA optionnelle : « Ranger les idées », questions sur mesure dans l'assistant personnage, alertes de cohérence. Services : Claude, OpenAI, OpenRouter, Ollama, LM Studio. Reste : clé dans le trousseau du système, cohérence étendue au manuscrit
+8. (fait) Export : manuscrit en PDF, Word, EPUB et Markdown, bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur se saisit dans les Réglages. Reste : EPUB de la bible
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 

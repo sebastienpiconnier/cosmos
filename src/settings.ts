@@ -1,14 +1,46 @@
-// Réglages de l'appareil (pas du projet) : langue de l'interface et apparence.
+// Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
 import { isTauri } from "./platform";
+import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
 /** Présentation du séquencier : en liste ou en fiches. */
 export type SequencerMode = "outline" | "cards";
+
+/**
+ * IA facultative : service choisi, et pour chaque service sa clé, son modèle et son adresse.
+ * Réglage de l'appareil : une clé d'API ne va jamais dans un projet.
+ */
+export interface AiSettings {
+  provider: AiProvider | null;
+  keys: Partial<Record<AiProvider, string>>;
+  models: Partial<Record<AiProvider, string>>;
+  urls: Partial<Record<AiProvider, string>>;
+}
+
+const NO_AI: AiSettings = { provider: null, keys: {}, models: {}, urls: {} };
+
+function readAi(raw: unknown): AiSettings {
+  if (!raw || typeof raw !== "object") return NO_AI;
+  const { provider, keys, models, urls } = raw as Record<string, unknown>;
+  const strings = (value: unknown) => {
+    const out: Partial<Record<AiProvider, string>> = {};
+    if (value && typeof value === "object") for (const p of AI_PROVIDERS) if (typeof (value as Record<string, unknown>)[p] === "string") out[p] = (value as Record<string, string>)[p];
+    return out;
+  };
+  return { provider: isAiProvider(provider) ? provider : null, keys: strings(keys), models: strings(models), urls: strings(urls) };
+}
+
+/** Réglages du service choisi, prêts pour une requête ; null si l'IA est désactivée. */
+export function aiConfig(ai: AiSettings): AiConfig | null {
+  const p = ai.provider;
+  if (!p) return null;
+  return { provider: p, key: ai.keys[p] ?? "", model: ai.models[p] ?? PROVIDERS[p].model, url: ai.urls[p] ?? "" };
+}
 
 const KEY = "cosmos:reglages";
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
@@ -25,9 +57,11 @@ interface SettingsState {
   /** Nom d'auteur, proposé sur la page de titre des nouveaux scénarios. */
   author: string;
   setAuthor: (author: string) => void;
+  ai: AiSettings;
+  setAi: (ai: AiSettings) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -52,17 +86,19 @@ export const useSettings = create<SettingsState>((set) => ({
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   author: typeof saved.author === "string" ? saved.author : "",
   setAuthor: (author) => set({ author }),
+  ai: readAi(saved.ai),
+  setAi: (ai) => set({ ai }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author, ai }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

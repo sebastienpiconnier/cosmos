@@ -383,6 +383,28 @@ button { font: inherit; color: inherit; }
 .empty-view .bible-add { justify-content: center; border-top: 0; }
 .bible-body { font: 17px/1.6 var(--font-text); margin-top: 8px; }
 .bible-body p { margin: 0 0 10px; }
+/* Champs de texte du menu Réglages (nom d'auteur, clé d'API, modèle) */
+.settings-panel input[type="text"], .settings-panel input[type="password"], .settings-panel input[type="url"] { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.settings-panel { max-height: calc(100vh - 90px); overflow-y: auto; }
+/* Menu IA : propositions que l'auteur applique ou ignore */
+.ai-panel { width: min(380px, calc(100vw - 32px)); }
+.ai-panel .ghost-button { text-align: left; }
+.ai-message { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ai-message:empty { display: none; }
+.ai-error { margin: 0; font-size: 13px; font-weight: 600; color: var(--danger); }
+.ai-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ai-list li { padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); font-size: 14px; }
+.ai-list p { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ai-list p.ai-question { margin: 0; font-size: 14px; color: var(--ink); }
+.ai-card { padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; }
+.ai-cards { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+.ai-arrow { margin-left: 6px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.ai-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ai-actions button { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+@media (pointer: coarse) {
+  .ai-actions button, .settings-panel input { min-height: 44px; }
+  .ai-card { min-height: 44px; }
+}
 /* Menu Exporter : un groupe par document (manuscrit ou scénario, bible). */
 .export-group { display: flex; flex-direction: column; gap: 4px; }
 .export-group + .export-group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }

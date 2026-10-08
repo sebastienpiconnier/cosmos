@@ -55,6 +55,16 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Dans cette scène** : les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
 - **Tes fichiers** : chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte.
 
+### L'IA, si tu veux
+
+Cosmos fonctionne sans IA. Tu peux en brancher une dans les Réglages : Claude, OpenAI, OpenRouter, ou un modèle qui tourne sur ta machine avec Ollama ou LM Studio (tes textes n'en sortent alors pas).
+
+- **Elle questionne, elle n'écrit pas** : aucune action ne modifie ton projet sans ton accord.
+- **Ranger les idées** : propose un type (Personnage, Lieu, Scène…) pour tes idées en vrac. Tu appliques ou tu ignores, une par une.
+- **Questions sur mesure** : dans l'assistant personnage, une question posée d'après ce que dit déjà la fiche. C'est toi qui réponds.
+- **Vérifier la cohérence** : relève les contradictions possibles entre tes cartes (un âge, une date, un lieu), sous forme de questions que tu peux garder pour plus tard.
+- **Ta clé reste sur ton appareil**, jamais dans le projet.
+
 ### Les exports
 
 - **Manuscrit** : PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
@@ -108,7 +118,6 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 |---|---|
 | Plan | Chronologie par intrigue |
 | Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
-| IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |
 

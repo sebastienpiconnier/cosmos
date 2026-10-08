@@ -92,6 +92,8 @@ export const fr = {
     themeSystem: "Comme le système",
     themeLight: "Claire",
     themeDark: "Sombre",
+    author: "Nom d’auteur",
+    authorHint: "Sur la page de titre des scénarios et dans les exports.",
   },
 
   types: {
@@ -158,6 +160,47 @@ export const fr = {
 
   dialog: { pickFolder: "Choisir le dossier du projet" },
 
+  // IA facultative : elle questionne et propose, l'auteur décide.
+  ai: {
+    section: "IA (facultative)",
+    provider: "Service",
+    none: "Aucune",
+    providers: { anthropic: "Claude (Anthropic)", openai: "OpenAI", openrouter: "OpenRouter", ollama: "Ollama (sur cet ordinateur)", lmstudio: "LM Studio (sur cet ordinateur)" },
+    hintNone: "Cosmos fonctionne sans IA. Si tu en branches une, elle pose des questions et propose : elle n’écrit pas à ta place.",
+    hintCloud: "Tes cartes ne partent vers ce service que lorsque tu lances une action IA.",
+    hintLocal: "Le modèle tourne sur ta machine : tes textes n’en sortent pas.",
+    key: "Clé d’API",
+    keyHint: "Gardée sur cet appareil, jamais dans le projet.",
+    url: "Adresse du serveur",
+    model: "Modèle",
+    test: "Tester et lister les modèles",
+    testing: "Test en cours…",
+    testOk: "Connexion réussie, {n} modèles disponibles.",
+    button: "IA",
+    with: "Avec {provider}",
+    tidy: "Ranger les idées",
+    tidyHint: "Propose un type pour tes idées en vrac. Rien ne change sans ton accord.",
+    coherence: "Vérifier la cohérence",
+    coherenceHint: "Relève les contradictions possibles entre tes cartes, sous forme de questions.",
+    working: "L’IA réfléchit…",
+    tidyNone: "Rien à ranger : aucune idée en vrac.",
+    tidyEmpty: "Aucune proposition : tes idées peuvent rester des idées.",
+    coherenceNone: "Aucune contradiction relevée.",
+    apply: "Appliquer",
+    applyAll: "Tout appliquer",
+    applied: "Propositions appliquées. Tu peux annuler sur le canevas.",
+    ignore: "Ignorer",
+    toQuestion: "En faire une carte Question",
+    errors: {
+      network: "Service injoignable. Vérifie ta connexion, ou que le serveur local est lancé et accepte les appels de l’app.",
+      auth: "Clé d’API refusée. Vérifie-la dans les Réglages.",
+      model: "Modèle inconnu ou requête refusée. Vérifie le nom du modèle dans les Réglages.",
+      limit: "Limite ou crédit atteint chez ce service. Réessaie plus tard.",
+      empty: "L’IA n’a rien répondu d’utilisable. Réessaie, ou change de modèle.",
+      other: "L’action IA a échoué.",
+    },
+  },
+
   // Exports du manuscrit et de la bible (ceux du scénario sont dans screenplay.export).
   exports: {
     manuscript: "Manuscrit",
@@ -192,6 +235,9 @@ export const fr = {
     added: "Réponse ajoutée à la fiche.",
     parked: "Question gardée pour plus tard, sur le canevas.",
     linkLabel: "à creuser",
+    custom: "Sur mesure",
+    customHint: "Une question posée par l’IA d’après la fiche. Elle questionne, c’est toi qui réponds.",
+    ask: "Demander une question",
     questions: {
       want: "Que veut ce personnage, plus que tout ?",
       obstacle: "Qu’est-ce qui l’empêche de l’obtenir ?",

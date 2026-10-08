@@ -84,6 +84,8 @@ interface CosmosState {
   answerQuestion: (id: string, question: string, answer: string) => void;
   /** Assistant personnage, « Je ne sais pas encore » : crée une carte Question reliée au personnage. */
   parkQuestion: (id: string, question: string) => string | null;
+  /** Crée une carte Question reliée aux cartes citées (alerte de cohérence gardée pour plus tard). */
+  addQuestionAbout: (title: string, cardIds: string[]) => string;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte Scène. */
   manuscript: Manuscript;
   setManuscriptText: (id: string, html: string) => void;
@@ -471,6 +473,21 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const spot = firstFreeCell(boxes(nodes));
       const edge = { id: newId(), source: card.id, target: id, sourceHandle: null, targetHandle: null, label: getT().assistant.linkLabel, type: "floating" };
       set({ nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: addEdge(edge, edges) });
+      touch();
+      return card.id;
+    },
+    addQuestionAbout: (title, cardIds) => {
+      const { nodes, edges } = get();
+      // Une seule étape d'historique pour la carte et ses fils.
+      record();
+      const card: CardData = { id: newId(), type: "question", title: title.trim(), html: "" };
+      const spot = firstFreeCell(boxes(nodes));
+      let next = edges;
+      for (const target of new Set(cardIds)) {
+        if (!nodes.some((n) => n.id === target)) continue;
+        next = addEdge({ id: newId(), source: card.id, target, sourceHandle: null, targetHandle: null, label: "", type: "floating" }, next);
+      }
+      set({ nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: next });
       touch();
       return card.id;
     },
