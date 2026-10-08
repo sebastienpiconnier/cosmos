@@ -1,16 +1,23 @@
-// Bouton « Exporter » d'un projet scénario : PDF au format standard, Fountain, Final Draft (FDX).
+// Bouton « Exporter » : le scénario (PDF au format standard, Fountain, Final Draft) ou le manuscrit
+// d'un roman (PDF, Word, EPUB, Markdown), et la bible du projet dans les deux cas.
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useT } from "../i18n";
-import { useCosmos } from "../store";
+import { fmt, useT } from "../i18n";
+import { useVocab } from "../vocab";
+import { useCosmos, planScenes } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
-import { EXPORT_FORMATS, exportScreenplay, type ExportFormat } from "../screenplay/export";
+import { CARD_TYPES } from "../types";
+import { planOrder } from "../plan";
+import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
+import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
+import { bibleDoc, manuscriptDoc } from "../export/doc";
 
 export function ExportMenu() {
-  const t = useT().screenplay.export;
-  const strings = useT().screenplay;
+  const { t: all, types, kind } = useVocab();
+  const t = all.screenplay.export;
+  const x = useT().exports;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,22 +44,18 @@ export function ExportMenu() {
     };
   }, [open]);
 
-  const run = async (format: ExportFormat) => {
-    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers } = useCosmos.getState();
-    if (!screenplay || busy) return;
+  /** Fabrique le fichier, puis le fait enregistrer par le système. */
+  const run = async (label: string, build: () => Promise<ExportedFile | null>) => {
+    if (busy) return;
     setBusy(true);
     setMessage(t.working);
     try {
-      const file = await exportScreenplay(screenplay, format, {
-        title,
-        paper,
-        locale: useSettings.getState().lang,
-        strings: { more: strings.more, contd: strings.contd },
-        numberScenes: sceneNumbers,
-        // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
-        source: screenplay === savedScreenplay ? lastFiles[SCREENPLAY_FILE] : undefined,
-      });
-      const saved = await storage.saveAs(file, t[format]);
+      const file = await build();
+      if (!file) {
+        setMessage(x.emptyManuscript);
+        return;
+      }
+      const saved = await storage.saveAs(file, label);
       setMessage(saved ? t.done : "");
       if (saved) setOpen(false);
     } catch (err) {
@@ -62,6 +65,55 @@ export function ExportMenu() {
       setBusy(false);
     }
   };
+
+  const info = () => {
+    const { title } = useCosmos.getState();
+    const { lang, author } = useSettings.getState();
+    return { title: title.trim() || all.home.untitled, author: author.trim(), lang };
+  };
+
+  const screenplayFile = (format: ExportFormat) => async () => {
+    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers } = useCosmos.getState();
+    if (!screenplay) return null;
+    return exportScreenplay(screenplay, format, {
+      title,
+      paper,
+      locale: useSettings.getState().lang,
+      strings: { more: all.screenplay.more, contd: all.screenplay.contd },
+      numberScenes: sceneNumbers,
+      // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
+      source: screenplay === savedScreenplay ? lastFiles[SCREENPLAY_FILE] : undefined,
+    });
+  };
+
+  const manuscriptFile = (format: DocFormat) => async () => {
+    const { nodes, plan, manuscript, paper } = useCosmos.getState();
+    const cards = nodes.map((n) => n.data);
+    const doc = manuscriptDoc(info(), planOrder(plan, planScenes(nodes)), cards, manuscript, all.manuscript.untitled);
+    if (doc.chapters.length === 0) return null;
+    return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
+  };
+
+  const bibleFile = (format: DocFormat) => async () => {
+    const { nodes, edges, paper } = useCosmos.getState();
+    const sections = Object.fromEntries(CARD_TYPES.map((type) => [type, types[type].section])) as Record<(typeof CARD_TYPES)[number], string>;
+    const base = info();
+    const doc = bibleDoc(
+      { ...base, title: fmt(x.bibleName, { title: base.title }) },
+      nodes.map((n) => n.data),
+      edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
+      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo },
+    );
+    return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
+  };
+
+  const groups = [
+    kind === "scenario"
+      ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
+      : { title: x.manuscript, items: MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })) },
+    { title: x.bible, items: BIBLE_FORMATS.map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
+  ];
+  const failed = message === t.failed || message === x.emptyManuscript;
 
   return (
     <div className="settings" ref={rootRef}>
@@ -80,15 +132,20 @@ export function ExportMenu() {
       </button>
       {open && (
         <div className="settings-panel export-panel" id={panelId} role="group" aria-label={t.menuAria}>
-          {EXPORT_FORMATS.map((format) => (
-            <button key={format} type="button" className="ghost-button" disabled={busy} onClick={() => run(format)}>
-              {t[format]}
-            </button>
+          {groups.map((group) => (
+            <div key={group.title} className="export-group" role="group" aria-label={group.title}>
+              <span className="eyebrow">{group.title}</span>
+              {group.items.map((item) => (
+                <button key={item.key} type="button" className="ghost-button" disabled={busy} onClick={() => run(`${group.title}, ${item.label}`, item.build)}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}
       {/* Annoncé aux lecteurs d'écran ; visible seulement en cas d'échec. */}
-      <span className={message === t.failed ? "export-error" : "sr-only"} role="status">
+      <span className={failed ? "export-error" : "sr-only"} role="status">
         {message}
       </span>
     </div>

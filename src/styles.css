@@ -383,6 +383,10 @@ button { font: inherit; color: inherit; }
 .empty-view .bible-add { justify-content: center; border-top: 0; }
 .bible-body { font: 17px/1.6 var(--font-text); margin-top: 8px; }
 .bible-body p { margin: 0 0 10px; }
+/* Menu Exporter : un groupe par document (manuscrit ou scénario, bible). */
+.export-group { display: flex; flex-direction: column; gap: 4px; }
+.export-group + .export-group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.export-group .eyebrow { padding: 2px 4px; }
 /* Assistant personnage : une question à la fois, dans la fiche. */
 .assistant { margin-top: 14px; }
 .assistant-toggle { width: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); font-size: 14px; }

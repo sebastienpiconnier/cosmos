@@ -88,7 +88,7 @@ export function TopBar() {
             <path d="M8 4v5h7V4M8 20v-6h8v6" />
           </svg>
         </button>
-        {kind === "scenario" && pagination && <ExportMenu />}
+        <ExportMenu />
         <Search />
         <Settings />
       </div>

@@ -4,15 +4,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
-import { typeColor, type CardType } from "../types";
+import { BIBLE_ORDER as ORDER, typeColor, type CardType } from "../types";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
 import { CharacterAssistant } from "./CharacterAssistant";
 
-// Ordre de la bible : les personnages d'abord, les idées en vrac à la fin.
-const ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
 
 /** Image d'une fiche, en tête (la même que sur sa carte). */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {

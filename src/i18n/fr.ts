@@ -158,6 +158,20 @@ export const fr = {
 
   dialog: { pickFolder: "Choisir le dossier du projet" },
 
+  // Exports du manuscrit et de la bible (ceux du scénario sont dans screenplay.export).
+  exports: {
+    manuscript: "Manuscrit",
+    screenplay: "Scénario",
+    bible: "Bible",
+    pdf: "PDF, format manuscrit",
+    docx: "Word (.docx)",
+    epub: "EPUB (liseuse)",
+    md: "Markdown",
+    contents: "Sommaire",
+    bibleName: "{title}, bible",
+    emptyManuscript: "Rien à exporter : aucune scène n’est encore écrite.",
+  },
+
   // Assistant personnage : des questions pour creuser une fiche. Il questionne, il n'écrit pas.
   assistant: {
     open: "Questionner {name}",

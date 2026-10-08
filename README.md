@@ -55,6 +55,12 @@ Cosmos est en cours de développement (version 0.1). Voici ce qui fonctionne auj
 - **Dans cette scène** : les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
 - **Tes fichiers** : chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte.
 
+### Les exports
+
+- **Manuscrit** : PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
+- **Bible** : PDF, Word ou Markdown, avec les fiches rangées par type et leurs liens.
+- **Sans rien installer** : tout est fabriqué par l'app, sur ordinateur comme dans le navigateur.
+
 ### La Bible
 
 Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas.
@@ -103,7 +109,6 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma :
 | Plan | Chronologie par intrigue |
 | Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
 | IA optionnelle | Bouton « Ranger », mode interview, alertes de cohérence |
-| Export | Bible et manuscrit en PDF, docx, epub |
 | Mobile | Apps iOS et Android |
 | Synchronisation | Entre appareils, puis collaboration |
 

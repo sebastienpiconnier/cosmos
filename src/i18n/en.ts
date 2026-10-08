@@ -157,6 +157,19 @@ export const en: Messages = {
 
   dialog: { pickFolder: "Choose the project folder" },
 
+  exports: {
+    manuscript: "Manuscript",
+    screenplay: "Screenplay",
+    bible: "Bible",
+    pdf: "PDF, manuscript format",
+    docx: "Word (.docx)",
+    epub: "EPUB (e-reader)",
+    md: "Markdown",
+    contents: "Contents",
+    bibleName: "{title}, bible",
+    emptyManuscript: "Nothing to export: no scene is written yet.",
+  },
+
   assistant: {
     open: "Ask about {name}",
     openUnnamed: "Ask about this character",

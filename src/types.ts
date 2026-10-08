@@ -19,6 +19,9 @@ export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || 
 /** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
 export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "theme", "question"];
 
+/** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
+export const BIBLE_ORDER: CardType[] = ["personnage", "lieu", "scene", "theme", "question", "idee"];
+
 /** Couleur d'un type, en variable CSS (s'adapte au mode clair/sombre). */
 export const typeColor = (t: CardType) => `var(--type-${t})`;
 

@@ -55,6 +55,12 @@ Cosmos is under active development (version 0.1). Here is what works today.
 - **In this scene**: characters and places mentioned in the text show up beside it, along with the card’s notes.
 - **Your files**: every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
 
+### Exports
+
+- **Manuscript**: PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
+- **Bible**: PDF, Word or Markdown, with entries grouped by type and their links.
+- **Nothing to install**: everything is produced by the app, on desktop and in the browser alike.
+
 ### The Bible
 
 A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas.
@@ -103,7 +109,6 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 | Outline | Timeline by storyline |
 | Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
 | Optional AI | “Tidy up” button, interview mode, consistency alerts |
-| Export | Bible and manuscript as PDF, docx, epub |
 | Mobile | iOS and Android apps |
 | Sync | Across devices, then collaboration |
 
