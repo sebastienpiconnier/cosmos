@@ -1,5 +1,6 @@
-// Fiche d'identité d'un personnage, dans la Bible : des caractéristiques standard (rôle, âge, métier,
-// apparence, objectif, faille…). Tout est facultatif : on remplit ce qu'on sait, le reste attend.
+// Fiche d'identité d'un personnage, dans la Bible : des caractéristiques standard (rôle, genre, âge,
+// métier, surnoms, apparence, objectif, faille, relations…). Tout est facultatif. Comme dans la Bible
+// du fork de NEO, seuls les champs remplis restent sous les yeux ; « Plus de détails » montre les autres.
 // Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
 import { useId, useState } from "react";
@@ -14,7 +15,14 @@ export function CharacterSheet({ card }: { card: CardData }) {
   const filled = ficheCount(card);
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
   const [open, setOpen] = useState(filled > 0);
+  // Champs vides affichés. Une fiche vide les montre tous.
+  const [more, setMore] = useState(false);
+  // Un champ qu'on vient de vider reste à l'écran le temps de la saisie.
+  const [touched, setTouched] = useState<Set<CharacterField>>(new Set());
   const id = useId();
+  const all = more || filled === 0;
+  const shown = CHARACTER_FIELDS.filter((key) => all || (card.fiche?.[key] ?? "").trim() || touched.has(key));
+  const empty = CHARACTER_FIELDS.length - filled;
 
   const field = (key: CharacterField) => {
     const value = card.fiche?.[key] ?? "";
@@ -22,7 +30,10 @@ export function CharacterSheet({ card }: { card: CardData }) {
       id: `${id}-${key}`,
       value,
       placeholder: t.placeholders[key],
-      onChange: (e: { target: { value: string } }) => setFiche(card.id, key, e.target.value),
+      onChange: (e: { target: { value: string } }) => {
+        if (!touched.has(key)) setTouched(new Set(touched).add(key));
+        setFiche(card.id, key, e.target.value);
+      },
     };
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) ? " is-short" : ""}`}>
@@ -40,8 +51,13 @@ export function CharacterSheet({ card }: { card: CardData }) {
         <span aria-hidden="true" className="sheet-chevron">{open ? "▴" : "▾"}</span>
       </button>
       {open && (
-        <div id={`${id}-fields`} className="sheet-fields">
-          {CHARACTER_FIELDS.map(field)}
+        <div id={`${id}-fields`}>
+          <div className="sheet-fields">{shown.map(field)}</div>
+          {filled > 0 && empty > 0 && (
+            <button type="button" className="link-button sheet-more" aria-expanded={more} onClick={() => setMore(!more)}>
+              {more ? t.fewerDetails : fmt(t.moreDetails, { n: empty })}
+            </button>
+          )}
         </div>
       )}
     </section>

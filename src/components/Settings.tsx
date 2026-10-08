@@ -12,10 +12,15 @@ import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
+/** Valeur du choix « Autre modèle… » de la liste. */
+const OTHER_MODEL = "\u0000other";
+
 export function Settings({ project = true }: { project?: boolean }) {
   const t = useT();
   const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi } = useSettings();
   const [models, setModels] = useState<string[]>([]);
+  // Modèle saisi à la main (absent de la liste du service).
+  const [typing, setTyping] = useState(false);
   const [aiStatus, setAiStatus] = useState("");
   const [testing, setTesting] = useState(false);
   const provider = ai.provider;
@@ -28,6 +33,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     try {
       const list = await listModels(config);
       setModels(list);
+      setTyping(false);
       setAiStatus(fmt(t.ai.testOk, { n: list.length }));
       // Pas encore de modèle choisi : on propose le premier de la liste.
       if (!config.model.trim() && list[0]) patchAi("models", list[0]);
@@ -47,7 +53,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiModels: useId(), aiHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -68,6 +74,21 @@ export function Settings({ project = true }: { project?: boolean }) {
       document.removeEventListener("pointerdown", onDown);
     };
   }, [open]);
+
+  // Service local : à l'ouverture des réglages, la liste des modèles installés se charge d'elle-même.
+  const localUrl = provider && PROVIDERS[provider].local ? `${provider}|${config?.url ?? ""}` : "";
+  const listed = useRef("");
+  useEffect(() => {
+    if (!open || !localUrl || !config || listed.current === localUrl) return;
+    listed.current = localUrl;
+    listModels(config)
+      .then((list) => {
+        setModels(list);
+        if (!config.model.trim() && list[0]) patchAi("models", list[0]);
+      })
+      .catch(() => setModels([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, localUrl]);
 
   const themes: { value: ThemePref; label: string }[] = [
     { value: "system", label: t.settings.themeSystem },
@@ -215,12 +236,25 @@ export function Settings({ project = true }: { project?: boolean }) {
                 </>
               )}
               <label htmlFor={ids.aiModel}>{t.ai.model}</label>
-              <input id={ids.aiModel} type="text" value={config.model} list={ids.aiModels} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("models", e.target.value)} />
-              <datalist id={ids.aiModels}>
-                {models.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
+              {/* Une liste déroulante dès que les modèles sont connus : un champ avec suggestions n'aurait
+                  montré que ceux qui commencent comme le modèle déjà choisi (souvent un seul). */}
+              {models.length > 0 && !typing ? (
+                <select
+                  id={ids.aiModel}
+                  value={config.model}
+                  onChange={(e) => (e.target.value === OTHER_MODEL ? setTyping(true) : patchAi("models", e.target.value))}
+                >
+                  {!config.model.trim() && <option value="">{t.ai.chooseModel}</option>}
+                  {[...new Set([...(config.model.trim() ? [config.model] : []), ...models])].map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                  <option value={OTHER_MODEL}>{t.ai.otherModel}</option>
+                </select>
+              ) : (
+                <input id={ids.aiModel} type="text" value={config.model} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("models", e.target.value)} />
+              )}
               <button type="button" className="ghost-button" disabled={testing} onClick={() => void test()}>
                 {t.ai.test}
               </button>

@@ -3,16 +3,22 @@
 // pages comme un livre (la numérotation continue d'une scène à l'autre) ; à droite les statistiques
 // et objectifs, puis « Dans cette scène » : les personnages et lieux cités, et les notes de la carte.
 // Le titre reste celui de la carte ; le texte vit dans manuscrit/<id>.md.
+//
+// Chapitrage à la manière de NEO : Entrée deux fois (sur une ligne vide) coupe la scène, la suite du texte
+// part dans une nouvelle scène du même chapitre ; Entrée une troisième fois, au début de cette nouvelle
+// scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
+// la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useCosmos, planScenes } from "../store";
+import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, getT, useT } from "../i18n";
 import { typeColor } from "../types";
-import { chapterNumbers, chapterOf, groupByChapter, planOrder, type Chapter } from "../plan";
+import { chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
+import { PAGE_KINDS, QUIET_PAGES, bookOrder, isPageKind, type PageKind } from "../book";
 import { countWords, detectCards, orphanTexts } from "../manuscript";
 import { plainText } from "../search";
 import { Pages } from "../screenplay/editor/pages";
@@ -24,7 +30,47 @@ const PAGE = { width: 34, height: 51, marginTop: 5, marginBottom: 5, lineHeight:
 const PAGE_MIN_WIDTH = 460;
 
 /** Éditeur du texte d'une scène. Remonté à chaque changement de scène (`key`), pour repartir d'un historique vide. */
-function SceneEditor({ id, title, firstPage, onPages }: { id: string; title: string; firstPage: number; onPages: (n: number) => void }) {
+interface BreakHandlers {
+  /** Entrée sur une ligne vide (deuxième Entrée) : coupe la scène ; reçoit le HTML de la suite. Faux : Entrée normale. */
+  onSceneBreak: (rest: string) => boolean;
+  /** Entrée au début d'une scène tout juste coupée et encore vide (troisième Entrée). */
+  onChapterBreak: () => boolean;
+  /** Retour arrière dans une scène tout juste coupée et encore vide : on revient à la scène d'avant. */
+  onUndoBreak: () => boolean;
+}
+
+/** Entrée et Retour arrière du chapitrage (la logique vit dans Manuscript, passée par une ref). */
+const BookKeys = Extension.create<{ handlers: { current: BreakHandlers | null } }>({
+  name: "cosmosBookKeys",
+  addOptions: () => ({ handlers: { current: null } }),
+  addKeyboardShortcuts() {
+    const handlers = () => this.options.handlers.current;
+    const isEmptyDoc = () => this.editor.state.doc.childCount === 1 && this.editor.state.doc.textContent === "";
+    return {
+      Enter: () => {
+        const h = handlers();
+        const { state } = this.editor;
+        const { $from, empty } = state.selection;
+        if (!h || !empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph" || $from.parent.content.size > 0) return false;
+        if (isEmptyDoc()) return h.onChapterBreak();
+        if ($from.index(0) === 0) return false;
+        // Deuxième Entrée : la ligne vide disparaît, tout ce qui la suit part dans la nouvelle scène.
+        const start = $from.before(1);
+        const after = $from.after(1);
+        const rest = state.doc.content.size > after ? getHTMLFromFragment(state.doc.slice(after, state.doc.content.size).content, state.schema) : "";
+        if (!h.onSceneBreak(rest)) return false;
+        this.editor.chain().deleteRange({ from: start, to: state.doc.content.size }).run();
+        return true;
+      },
+      Backspace: () => {
+        const h = handlers();
+        return !!h && isEmptyDoc() && h.onUndoBreak();
+      },
+    };
+  },
+});
+
+function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { id: string; title: string; firstPage: number; onPages: (n: number) => void; handlers: { current: BreakHandlers | null }; focusStart: boolean }) {
   const lang = useSettings((s) => s.lang);
   const firstRef = useRef(firstPage);
   firstRef.current = firstPage;
@@ -47,7 +93,10 @@ function SceneEditor({ id, title, firstPage, onPages }: { id: string; title: str
         label: (page) => String(page),
         onLayout: (n) => onPagesRef.current(n),
       }),
+      BookKeys.configure({ handlers }),
     ],
+    // Scène née d'une coupure : on continue d'écrire au début, sans quitter le clavier.
+    autofocus: focusStart ? "start" : false,
     content: useCosmos.getState().manuscript[id] ?? "",
     immediatelyRender: true,
     editorProps: { attributes: { class: "ms-editor", "aria-label": fmt(getT().manuscript.editorAria, { title }) } },
@@ -75,19 +124,30 @@ export function Manuscript() {
   const manuscript = useCosmos((s) => s.manuscript);
   const updateCard = useCosmos((s) => s.updateCard);
   const addTitledCard = useCosmos((s) => s.addTitledCard);
+  const splitScene = useCosmos((s) => s.splitScene);
+  const startChapterAt = useCosmos((s) => s.startChapterAt);
+  const renamePlanChapter = useCosmos((s) => s.renamePlanChapter);
+  const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
+  const setSceneChapter = useCosmos((s) => s.setSceneChapter);
+  const deleteCard = useCosmos((s) => s.deleteCard);
+  const b = t.book;
   const revealCard = useCosmos((s) => s.revealCard);
   const restoreScene = useCosmos((s) => s.restoreScene);
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
-  const sceneIds = useMemo(() => planScenes(nodes), [nodes]);
-  const order = useMemo(() => planOrder(plan, sceneIds), [plan, sceneIds]);
-  const orphans = useMemo(() => orphanTexts(manuscript, sceneIds), [manuscript, sceneIds]);
+  // Tout le livre : pages de début, récit dans l'ordre du Plan, pages de fin.
+  const order = useMemo(() => bookOrder(nodes, plan), [nodes, plan]);
+  const orphans = useMemo(() => orphanTexts(manuscript, order), [manuscript, order]);
 
   const [chosen, setChosen] = useState<string | null>(null);
   const current = chosen && order.includes(chosen) ? chosen : (order[0] ?? null);
   const card = cards.find((c) => c.id === current);
   const [draft, setDraft] = useState("");
   const mainRef = useRef<HTMLDivElement>(null);
+  // Scène tout juste née d'une coupure (deux fois Entrée) : une Entrée de plus en fait un chapitre.
+  const [fresh, setFresh] = useState<{ id: string; from: string } | null>(null);
+  const [said, setSaid] = useState("");
+  const handlers = useRef<BreakHandlers | null>(null);
   // Pages de la scène à l'écran, mesurées par l'éditeur (0 : feuille continue).
   const [measured, setMeasured] = useState(0);
 
@@ -127,13 +187,70 @@ export function Manuscript() {
     );
   }
 
+  const pageKind: PageKind | null = isPageKind(card.page) ? card.page : null;
+  const isFresh = fresh?.id === current;
+  handlers.current = {
+    onSceneBreak: (rest) => {
+      // Une page hors récit (dédicace, titre…) garde ses lignes vides.
+      if (pageKind) return false;
+      const next = splitScene(current, rest);
+      if (!next) return false;
+      setFresh({ id: next, from: current });
+      go(next);
+      setSaid(b.newScene);
+      return true;
+    },
+    onChapterBreak: () => {
+      if (!isFresh) return false;
+      startChapterAt(current);
+      setFresh(null);
+      setSaid(b.newChapter);
+      return true;
+    },
+    onUndoBreak: () => {
+      if (!isFresh || card.title.trim() || plainText(card.html)) return false;
+      const back = fresh!.from;
+      setFresh(null);
+      deleteCard(current);
+      go(back);
+      return true;
+    },
+  };
+  const story = order.filter((id) => !isPageKind(cards.find((c) => c.id === id)?.page));
+  const storyNumber = (id: string) => story.indexOf(id) + 1;
+  const pageLabel = (id: string) => {
+    const kind = cards.find((c) => c.id === id)?.page;
+    return isPageKind(kind) ? b.kinds[kind] : null;
+  };
+  const setPageKind = (value: string) => {
+    if (isPageKind(value)) {
+      setSceneChapter(current, null);
+      // Page de titre encore vide : elle reçoit le titre du projet et le nom de l'auteur.
+      if (value === "titre" && !plainText(manuscript[current] ?? "")) {
+        const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const { title: projectTitle } = useCosmos.getState();
+        const author = useSettings.getState().author.trim();
+        useCosmos.getState().setManuscriptText(current, `<h2>${esc(projectTitle)}</h2>${author ? `<p>${esc(author)}</p>` : ""}`);
+      }
+      updateCard(current, { page: value, ...(card.title.trim() ? {} : { title: b.kinds[value] }) });
+    } else {
+      updateCard(current, { page: undefined });
+    }
+  };
+  const addPage = (value: string) => {
+    if (!isPageKind(value)) return;
+    const id = addTitledCard("scene", b.kinds[value]);
+    updateCard(id, { page: value });
+    go(id);
+  };
+
   const at = order.indexOf(current);
   const title = card.title.trim() || m.untitled;
   const detected = detectCards(manuscript[current], cards);
   const before = order.slice(0, at).reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0);
   const chapter = chapterOf(plan, current);
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
-  const opensChapter = !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);
+  const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);
   const sceneWords = countWords(manuscript[current]);
 
   return (
@@ -149,7 +266,7 @@ export function Manuscript() {
                 <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
               </h3>
             )}
-            <ol className="sp-scene-list" start={order.indexOf(group.ids[0]) + 1}>
+            <ol className="sp-scene-list">
               {group.ids.map((id) => {
                 const c = cards.find((x) => x.id === id);
                 const count = stats.perScene.get(id) ?? 0;
@@ -157,7 +274,13 @@ export function Manuscript() {
                   <li key={id}>
                     <button type="button" className={id === current ? "is-current" : ""} aria-current={id === current ? "true" : undefined} onClick={() => go(id)}>
                       <span className="ms-name">
-                        {order.indexOf(id) + 1}. {c?.title.trim() || m.untitled}
+                        {pageLabel(id) ? (
+                          <em>{c?.title.trim() && c.title.trim() !== pageLabel(id) ? `${pageLabel(id)} · ${c.title.trim()}` : pageLabel(id)}</em>
+                        ) : (
+                          <>
+                            {storyNumber(id)}. {c?.title.trim() || m.untitled}
+                          </>
+                        )}
                       </span>
                       {count > 0 && <span className="ms-words">{num(count)}</span>}
                     </button>
@@ -167,12 +290,38 @@ export function Manuscript() {
             </ol>
           </div>
         ))}
+        <label className="ms-add-page">
+          <span className="sr-only">{b.addPage}</span>
+          <select value="" onChange={(e) => addPage(e.target.value)}>
+            <option value="">{b.addPage}</option>
+            {PAGE_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {b.kinds[k]}
+              </option>
+            ))}
+          </select>
+        </label>
         <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
       </nav>
 
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
-          {opensChapter && chapter && <p className="ms-chapter-heading">{chapterName(chapter)}</p>}
+          {pageKind && <p className="ms-chapter-heading">{b.kinds[pageKind]}</p>}
+          {opensChapter && chapter && (
+            <div className="ms-chapter-edit">
+              <span className="ms-chapter-heading">{fmt(t.chapters.numbered, { n: numbers.get(chapter.id) ?? 0 })}</span>
+              <input
+                className="ms-chapter-input"
+                value={chapter.title}
+                placeholder={t.chapters.titlePlaceholder}
+                aria-label={b.chapterTitle}
+                onChange={(e) => renamePlanChapter(chapter.id, e.target.value)}
+              />
+              <button type="button" className="icon-button" aria-label={b.removeChapter} title={b.removeChapter} onClick={() => deletePlanChapter(chapter.id)}>
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+          )}
           <input
             className="ms-title"
             value={card.title}
@@ -187,12 +336,44 @@ export function Manuscript() {
             <button type="button" className="icon-button" disabled={at === order.length - 1} aria-label={m.next} title={m.next} onClick={() => go(order[at + 1])}>
               <span aria-hidden="true">→</span>
             </button>
-            <span>{fmt(m.position, { n: at + 1, total: order.length })}</span>
+            <span>{pageKind ? b.kinds[pageKind] : fmt(m.position, { n: storyNumber(current), total: story.length })}</span>
             <span aria-live="polite">{words(sceneWords)}</span>
             {measured > 0 && <span>{fmt(t.stats.pagesFrom, { first: firstPageOf(before), last: firstPageOf(before) + measured - 1 })}</span>}
+            <label className="ms-kind">
+              <span className="sr-only">{b.pageKind}</span>
+              <select value={pageKind ?? ""} onChange={(e) => setPageKind(e.target.value)} title={b.pageKind}>
+                <option value="">{b.scene}</option>
+                {PAGE_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {b.kinds[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {!pageKind && !opensChapter && (
+              <button type="button" className="ghost-button ms-start-chapter" onClick={() => startChapterAt(current)}>
+                {b.startChapter}
+              </button>
+            )}
           </div>
-          <div className={`ms-page${opensChapter ? " opens-chapter" : ""}`} style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}>
-            <SceneEditor key={current} id={current} title={title} firstPage={firstPageOf(before)} onPages={(n) => setMeasured((prev) => (prev === n ? prev : n))} />
+          <div
+            className={`ms-page${opensChapter ? " opens-chapter" : ""}${pageKind && QUIET_PAGES.has(pageKind) ? " is-quiet" : ""}${!pageKind && !opensChapter && at > 0 ? " follows-scene" : ""}`}
+            data-page={pageKind ?? undefined}
+            style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}
+          >
+            <SceneEditor
+              key={current}
+              id={current}
+              title={title}
+              firstPage={firstPageOf(before)}
+              onPages={(n) => setMeasured((prev) => (prev === n ? prev : n))}
+              handlers={handlers}
+              focusStart={isFresh}
+            />
+          </div>
+          {!pageKind && <p className="ms-hint">{b.enterHint}</p>}
+          <div className="sr-only" aria-live="polite">
+            {said}
           </div>
         </div>
       </div>

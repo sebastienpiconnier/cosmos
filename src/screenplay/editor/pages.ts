@@ -4,7 +4,7 @@
 // La coupe se fait d'après la hauteur réelle des éléments à l'écran, pas d'après une estimation.
 
 import { Extension } from "@tiptap/react";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey, Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 export interface PageItem {
@@ -112,7 +112,23 @@ export const Pages = Extension.create<PagesOptions>({
             return next ? DecorationSet.create(tr.doc, next) : set.map(tr.mapping, tr.doc);
           },
         },
-        props: { decorations: (state) => pagesKey.getState(state) },
+        props: {
+          decorations: (state) => pagesKey.getState(state),
+          handleDOMEvents: {
+            // Clic dans le blanc sous le texte (le bas de la dernière page) : le curseur va à la fin du
+            // dernier paragraphe. Sans cela ProseMirror le posait après lui, et la frappe créait un paragraphe vide.
+            mousedown(view, event) {
+              if (event.button !== 0 || event.target !== view.dom) return false;
+              const blocks = Array.from(view.dom.children).filter((el) => !el.classList.contains("sp-pagebreak"));
+              const last = blocks[blocks.length - 1];
+              if (!last || event.clientY <= last.getBoundingClientRect().bottom) return false;
+              event.preventDefault();
+              view.dispatch(view.state.tr.setSelection(Selection.atEnd(view.state.doc)).scrollIntoView());
+              view.focus();
+              return true;
+            },
+          },
+        },
         view(view) {
           let frame = 0;
           let signature = "";

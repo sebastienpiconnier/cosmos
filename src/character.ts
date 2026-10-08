@@ -11,8 +11,10 @@ import type { CardData, Link } from "./types";
 /** Caractéristiques standard, dans l'ordre de la fiche. Libellés : `t.character.fields`. */
 export const CHARACTER_FIELDS = [
   "role",
+  "genre",
   "age",
   "metier",
+  "surnoms",
   "origine",
   "apparence",
   "personnalite",
@@ -21,12 +23,20 @@ export const CHARACTER_FIELDS = [
   "faille",
   "peur",
   "secret",
+  "relations",
   "arc",
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
-export const SHORT_FIELDS: ReadonlySet<CharacterField> = new Set(["role", "age", "metier", "origine"]);
+export const SHORT_FIELDS: ReadonlySet<CharacterField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine"]);
+
+/** Ce que l'affiche d'un personnage montre sous son nom, dans cet ordre (idée reprise de la Bible du fork de NEO). */
+export const POSTER_FIELDS: readonly CharacterField[] = ["genre", "age", "metier", "role"];
+
+/** Surnoms d'un personnage, séparés par des virgules dans la fiche. */
+export const nicknames = (card: Pick<CardData, "fiche">) =>
+  (card.fiche?.surnoms ?? "").split(/[,;]/).map((n) => n.trim()).filter(Boolean);
 
 const MAX_VALUE = 2000;
 const MAX_QUESTIONS = 200;

@@ -51,7 +51,7 @@ Cosmos is under active development (version 0.1).
 
 ### The Bible
 
-A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Everything can be edited in place, title and text, and a character has a round portrait and a **character sheet**: role, age, occupation, background, appearance, personality, what they want, what they need, flaw, fear, secret, arc. All optional.
+A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Everything can be edited in place, title and text, and a character has a round portrait and a **character sheet**: role, gender, age, occupation, nicknames, background, appearance, personality, what they want, what they need, flaw, fear, secret, relationships, arc. All optional: only filled fields stay on screen. Under the name, the poster sums up gender, age, occupation and role, and says how often the text names them and from which scene.
 
 ### The outline
 
@@ -72,7 +72,9 @@ A table of contents and reference sheets generated automatically from your cards
 
 ### The manuscript
 
-- **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter.
+- **Chapters as you write, as in NEO:** Enter twice on an empty line breaks the scene, the rest goes into a new scene; Enter a third time starts a new chapter. Backspace undoes it. The chapter title is written at the top of the page.
+- **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story.
+- **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter.
 - **Statistics and goals:** words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **In this scene:** characters and places mentioned in the text show up beside it, along with the card’s notes.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.

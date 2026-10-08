@@ -8,6 +8,7 @@
 import { CARD_TYPES, type CardData, type CardType, type Link } from "../types";
 import { plainText } from "../search";
 import { CHARACTER_FIELDS } from "../character";
+import { splitAnswers } from "../assistant";
 
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
@@ -125,14 +126,23 @@ export function synthesisPrompt(character: CardData, cards: CardData[], links: P
     return card && card.title.trim() ? [{ title: card.title.trim(), type: card.type, link: l.label }] : [];
   });
   const sheet = Object.fromEntries(CHARACTER_FIELDS.flatMap((key) => (character.fiche?.[key]?.trim() ? [[fieldLabels[key] ?? key, character.fiche[key].trim()]] : [])));
+  // Les réponses aux questions de l'assistant, à part : noyées dans les notes, un petit modèle les ignorait.
+  const { notes, answers } = splitAnswers(character.html);
   return {
     system:
-      `You help a writer see their character clearly. Write a synthesis of the character using ONLY what the writer's notes say: the sheet, the notes and the answers to interview questions. ` +
-      `Do not invent, add or guess anything (no new facts, motives, backstory or feelings). Do not judge or advise. Keep the writer's own words where you can. ` +
-      `Structure: one short paragraph per aspect that the notes actually cover (who they are, what they want and what stops them, their inner life, their relationships, how they change). Skip aspects the notes do not cover. ` +
-      `If two notes contradict each other, end with one line starting with "?" that asks the writer which is right. ` +
-      `Plain text, no title, no lists, no Markdown, in ${language(lang)}, third person, present tense, at most 180 words.`,
-    user: JSON.stringify({ name: character.title.trim(), sheet, notes: clip(plainText(character.html), 6000), related: related.slice(0, 30) }),
+      `You help a writer see their character clearly. Write a synthesis of the character from three sources written by the writer: "sheet" (standard traits), "answers" (the writer's answers to interview questions about the character) and "notes". ` +
+      `The answers are the richest source: use every one of them, they must all be reflected in the synthesis. ` +
+      `Use ONLY what these sources say. Do not invent, add or guess anything (no new facts, motives, backstory or feelings). Do not judge or advise. Keep the writer's own words where you can. ` +
+      `Structure: one short paragraph per aspect that the sources actually cover (who they are, what they want and what stops them, their inner life and secrets, their relationships, how they change). Skip aspects the sources do not cover. ` +
+      `If two statements contradict each other, end with one line starting with "?" that asks the writer which is right. ` +
+      `Plain text, no title, no lists, no Markdown, in ${language(lang)}, third person, present tense, at most 220 words.`,
+    user: JSON.stringify({
+      name: character.title.trim(),
+      sheet,
+      answers: answers.map((a) => ({ question: a.question, answer: clip(a.answer, 1200) })).slice(0, 40),
+      notes: clip(notes, 4000),
+      related: related.slice(0, 30),
+    }),
   };
 }
 

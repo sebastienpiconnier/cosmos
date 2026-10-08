@@ -8,6 +8,7 @@
 // image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
 // fiche: {"age":"34"}       (facultatif, personnage : caractéristiques standard, voir character.ts)
 // questions: ["…"]          (facultatif : questions gardées pour plus tard)
+// page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 // Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
@@ -18,6 +19,7 @@ import { CARD_TYPES, type CardData, type CardType } from "../types";
 import { isMediaName } from "../media";
 import { MENTION_SCHEME, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
+import { isPageKind } from "../book";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 // Une mention s'écrit comme un lien Markdown vers la carte citée.
@@ -82,6 +84,7 @@ export function cardToFile(card: CardData): string {
     `type: ${card.type}`,
     `title: ${JSON.stringify(card.title)}`,
     ...(card.image ? [`image: ${card.image}`] : []),
+    ...(card.type === "scene" && isPageKind(card.page) ? [`page: ${card.page}`] : []),
     ...(card.fiche && Object.keys(card.fiche).length > 0 ? [`fiche: ${JSON.stringify(card.fiche)}`] : []),
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
     "---",
@@ -110,6 +113,7 @@ export function fileToCard(text: string): CardData | null {
   const card: CardData = { id: fields.id, type, title, html: markdownToHtml(m[2]) };
   // Le nom vient du disque : on n'accepte qu'un simple nom de fichier image, jamais un chemin.
   if (isMediaName(fields.image)) card.image = fields.image;
+  if (isPageKind(fields.page)) card.page = fields.page;
   const fiche = readFiche(parseJson(fields.fiche));
   if (fiche) card.fiche = fiche;
   const questions = readQuestions(parseJson(fields.questions));

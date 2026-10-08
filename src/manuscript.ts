@@ -28,14 +28,39 @@ const hasWord = (text: string, word: string) => new RegExp(`(?<![\\p{L}\\p{N}])$
 export function detectCards(html: string | undefined, cards: CardData[]): CardData[] {
   const text = fold(html ? plainText(html) : "");
   if (!text) return [];
-  return cards.filter((card) => {
-    if (card.type !== "personnage" && card.type !== "lieu") return false;
-    const title = fold(card.title).trim();
-    if (!title) return false;
-    if (hasWord(text, title)) return true;
+  return cards.filter((card) => (card.type === "personnage" || card.type === "lieu") && namesOf(card).some((name) => hasWord(text, name)));
+}
+
+/** Les façons dont le texte peut nommer une carte : titre entier, prénom, surnoms (personnage). Repliées. */
+export function namesOf(card: CardData): string[] {
+  const title = fold(card.title).trim();
+  if (!title) return [];
+  const names = [title];
+  if (card.type === "personnage") {
     const first = title.split(/\s+/)[0];
-    return card.type === "personnage" && first.length >= 3 && first !== title && hasWord(text, first);
-  });
+    if (first.length >= 3 && first !== title) names.push(first);
+    for (const nick of (card.fiche?.surnoms ?? "").split(/[,;]/)) if (nick.trim().length >= 2) names.push(fold(nick).trim());
+  }
+  return [...new Set(names)];
+}
+
+/**
+ * Présence d'une carte dans le manuscrit (idée reprise de la Bible du fork de NEO) : nombre de fois où le
+ * texte la nomme, et première scène où elle apparaît, dans l'ordre du récit.
+ */
+export function mentionsIn(card: CardData, manuscript: Manuscript, order: string[]): { count: number; first: string | null } {
+  const names = namesOf(card);
+  if (names.length === 0) return { count: 0, first: null };
+  // Le nom le plus long d'abord : « Inès Morvan » ne compte pas aussi pour « Inès ».
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])(?:${names.sort((a, b) => b.length - a.length).map(escape).join("|")})(?![\\p{L}\\p{N}])`, "gu");
+  let count = 0;
+  let first: string | null = null;
+  for (const id of order) {
+    const n = fold(plainText(manuscript[id] ?? "")).match(re)?.length ?? 0;
+    if (n > 0 && first === null) first = id;
+    count += n;
+  }
+  return { count, first };
 }
 
 /** Textes dont la carte Scène n'existe plus : ils restent dans le projet, jamais effacés par l'app. */

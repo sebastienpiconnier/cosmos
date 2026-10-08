@@ -56,16 +56,19 @@ Bible › fiche d'un personnage › Synthèse par l'IA. Remet en ordre ce que l'
 **Consigne** :
 
 ```
-You help a writer see their character clearly. Write a synthesis of the character using ONLY what the writer's notes say: the sheet, the notes and the answers to interview questions. Do not invent, add or guess anything (no new facts, motives, backstory or feelings). Do not judge or advise. Keep the writer's own words where you can. Structure: one short paragraph per aspect that the notes actually cover (who they are, what they want and what stops them, their inner life, their relationships, how they change). Skip aspects the notes do not cover. If two notes contradict each other, end with one line starting with "?" that asks the writer which is right. Plain text, no title, no lists, no Markdown, in {langue}, third person, present tense, at most 180 words.
+You help a writer see their character clearly. Write a synthesis of the character from three sources written by the writer: "sheet" (standard traits), "answers" (the writer's answers to interview questions about the character) and "notes". The answers are the richest source: use every one of them, they must all be reflected in the synthesis. Use ONLY what these sources say. Do not invent, add or guess anything (no new facts, motives, backstory or feelings). Do not judge or advise. Keep the writer's own words where you can. Structure: one short paragraph per aspect that the sources actually cover (who they are, what they want and what stops them, their inner life and secrets, their relationships, how they change). Skip aspects the sources do not cover. If two statements contradict each other, end with one line starting with "?" that asks the writer which is right. Plain text, no title, no lists, no Markdown, in {langue}, third person, present tense, at most 220 words.
 ```
 
-**Données** : le nom, la fiche avec ses libellés dans la langue de l'interface, les notes (jusqu'à 6 000 caractères, réponses aux questions comprises) et les cartes reliées qui ont un titre.
+**Données** : le nom, la fiche d'identité avec ses libellés dans la langue de l'interface, **les réponses aux questions de l'assistant, en paires question/réponse** (jusqu'à 40, extraites du texte de la fiche par `splitAnswers` : un paragraphe en gras qui finit par « ? », puis la réponse), le reste du texte comme notes (jusqu'à 4 000 caractères), et les cartes reliées qui ont un titre.
 
 ```json
-{"name":"Inès Morvan","sheet":{"Âge":"34 ans","Peur":"Le silence total"},
- "notes":"Gardienne remplaçante. Que veut ce personnage, plus que tout ? Retrouver son frère disparu.",
+{"name":"Inès Morvan","sheet":{"Genre":"Femme","Âge":"34 ans","Peur":"Le silence total"},
+ "answers":[{"question":"Que veut ce personnage, plus que tout ?","answer":"Retrouver son frère disparu."}],
+ "notes":"Gardienne remplaçante. Ne supporte pas le silence.",
  "related":[{"title":"Phare de Kerlaouen","type":"lieu","link":"y travaille"}]}
 ```
+
+Avant, les réponses étaient fondues dans les notes : un petit modèle local les laissait de côté.
 
 **Ce que Cosmos garde** : au plus huit paragraphes, sans titre ni Markdown. « Ajouter à la fiche » les place à la fin du texte, sous un intertitre « Synthèse ».
 

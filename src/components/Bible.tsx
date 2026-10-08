@@ -6,8 +6,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
-import { BIBLE_ORDER as ORDER, typeColor, type CardType } from "../types";
-import { fmt } from "../i18n";
+import { BIBLE_ORDER as ORDER, typeColor, type CardData, type CardType } from "../types";
+import { fmt, useT } from "../i18n";
+import { POSTER_FIELDS } from "../character";
+import { mentionsIn } from "../manuscript";
+import { bookOrder } from "../book";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
@@ -24,6 +27,36 @@ function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
       <img className="bible-image-backdrop" src={url} alt="" aria-hidden="true" />
       <img className="bible-image-main" src={url} alt={alt} />
     </div>
+  );
+}
+
+/**
+ * Sous le nom : genre, âge, métier, rôle (personnage), puis la présence dans le manuscrit
+ * (« cité 12 fois, dès la scène 3 »). Idées reprises de la Bible du fork de NEO.
+ */
+function Poster({ card }: { card: CardData }) {
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  const nodes = useCosmos((s) => s.nodes);
+  const plan = useCosmos((s) => s.plan);
+  const manuscript = useCosmos((s) => s.manuscript);
+  const order = useMemo(() => bookOrder(nodes, plan), [nodes, plan]);
+  const seen = useMemo(() => mentionsIn(card, manuscript, order), [card, manuscript, order]);
+  const traits = card.type === "personnage" ? POSTER_FIELDS.map((key) => card.fiche?.[key]?.trim()).filter(Boolean) : [];
+  const firstTitle = seen.first ? nodes.find((n) => n.id === seen.first)?.data.title.trim() || t.manuscript.untitled : "";
+  const num = new Intl.NumberFormat(lang).format(seen.count);
+  if (traits.length === 0 && seen.count === 0 && !Object.keys(manuscript).length) return null;
+  return (
+    <p className="bible-poster">
+      {traits.length > 0 && <span className="bible-traits">{traits.join(" · ")}</span>}
+      {Object.keys(manuscript).length > 0 && (
+        <span className="bible-mentions">
+          {seen.count === 0
+            ? t.character.notInText
+            : fmt(seen.count === 1 ? t.character.mentionsOne : t.character.mentionsMany, { n: num, scene: order.indexOf(seen.first!) + 1, title: firstTitle })}
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -168,6 +201,7 @@ export function Bible() {
                       <span aria-hidden="true">{(card.title.trim()[0] ?? "?").toUpperCase()}</span>
                     </button>
                   ))}
+                <div className="bible-heading">
                 <h2>
                   {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
                   <input
@@ -185,6 +219,8 @@ export function Bible() {
                     }}
                   />
                 </h2>
+                {(shown.type === "personnage" || shown.type === "lieu") && <Poster card={card} />}
+                </div>
                 <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
                   {t.bible.seeOnCanvas}
                 </button>

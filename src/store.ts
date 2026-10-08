@@ -28,6 +28,7 @@ import { appendAnswer, isParked } from "./assistant";
 import { addQuestion, legacyParkedCards, removeQuestion, setFicheField, type CharacterField } from "./character";
 import {
   EMPTY_PLAN,
+  arrange,
   assignChapter,
   chapterOf,
   isEmptyPlan,
@@ -44,6 +45,7 @@ import {
   type PlanTemplate,
 } from "./plan";
 import { organize } from "./organize";
+import { storyScenes } from "./book";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -99,6 +101,11 @@ interface CosmosState {
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string, chapterId?: string | null) => string;
+  /**
+   * Manuscrit, deux fois Entrée : une nouvelle scène juste après `afterId`, dans la même case du plan et le
+   * même chapitre, avec le texte `html` (la suite de la scène coupée). Rend son identifiant.
+   */
+  splitScene: (afterId: string, html: string) => string | null;
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
   startChapterAt: (sceneId: string) => string | null;
   /** Range une scène dans un chapitre, ou l'en sort (null). */
@@ -267,7 +274,8 @@ const toNode = (card: CardData, x: number, y: number, width = CARD_WIDTH): CardN
   position: { x, y },
   data: card,
   style: { width },
-  dragHandle: ".card-handle",
+  // L'en-tête et l'image déplacent la carte (le titre et le texte restent des zones d'écriture).
+  dragHandle: ".card-handle, .card-image",
 });
 
 function fromProject(p: Project) {
@@ -303,8 +311,11 @@ function sceneCards(nodes: CardNode[]): SceneCard[] {
     .map((n) => ({ id: n.id, title: n.data.title }));
 }
 
-/** Cartes Scène dans l'ordre par défaut du plan (celui du canevas), pour les fonctions de plan.ts. */
-export const planScenes = (nodes: CardNode[]): string[] => sceneCards(nodes).map((s) => s.id);
+/**
+ * Cartes Scène du récit dans l'ordre par défaut du plan (celui du canevas), pour les fonctions de plan.ts.
+ * Les pages hors récit (dédicace, prologue…) n'y sont pas : voir book.ts.
+ */
+export const planScenes = (nodes: CardNode[]): string[] => storyScenes(nodes);
 
 /** Premier scénario d'un projet : la page de titre porte aussi l'auteur connu de l'appareil. */
 function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
@@ -655,6 +666,28 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       if (chapter) plan = assignChapter(plan, card.id, chapter);
       set({ nodes, plan });
+      touch();
+      return card.id;
+    },
+    splitScene: (afterId, html) => {
+      const { nodes, plan } = get();
+      const after = nodes.find((n) => n.id === afterId);
+      if (!after || after.data.type !== "scene") return null;
+      record();
+      const card: CardData = { id: newId(), type: "scene", title: "", html: "" };
+      // Sur le canevas, juste sous la scène coupée : l'ordre par défaut (de haut en bas) reste juste.
+      const [box] = boxes([after]);
+      const spot = freeSpot({ x: box.x, y: box.y + box.height + 24 }, boxes(nodes), { width: CARD_SIZE.width, height: CARD_SIZE.height });
+      const next = [...nodes, toNode(card, spot.x, spot.y)];
+      const ids = planScenes(next);
+      const { beats } = arrange(plan, ids);
+      const beat = beats.find((b) => b.ids.includes(afterId));
+      let nextPlan = beat ? placeScene(plan, ids, card.id, beat.key, beat.ids.indexOf(afterId) + 1) : plan;
+      const chapter = chapterOf(plan, afterId);
+      if (chapter) nextPlan = assignChapter(nextPlan, card.id, chapter.id);
+      const manuscript = { ...get().manuscript };
+      if (!isBlank(html)) manuscript[card.id] = html;
+      set({ nodes: next, plan: nextPlan, manuscript });
       touch();
       return card.id;
     },

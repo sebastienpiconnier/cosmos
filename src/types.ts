@@ -37,6 +37,8 @@ export interface CardData {
   image?: string;
   /** Personnage : caractéristiques standard (clés fixes, voir CHARACTER_FIELDS dans character.ts). Absent : rien de rempli. */
   fiche?: Record<string, string>;
+  /** Carte Scène : page hors récit du livre (page de titre, dédicace, prologue…), voir book.ts. Absent : une scène. */
+  page?: string;
   /** Questions gardées pour plus tard (« Je ne sais pas encore »). Elles vivent dans la carte, pas sur le canevas. */
   questions?: string[];
   [key: string]: unknown; // requis par React Flow pour data

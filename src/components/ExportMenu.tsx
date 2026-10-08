@@ -5,11 +5,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
-import { useCosmos, planScenes } from "../store";
+import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { CARD_TYPES } from "../types";
-import { chapterNumbers, chapterOf, planOrder } from "../plan";
+import { chapterNumbers, chapterOf } from "../plan";
+import { bookOrder, isPageKind } from "../book";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
 import { bibleDoc, manuscriptDoc } from "../export/doc";
@@ -89,9 +90,12 @@ export function ExportMenu() {
   const manuscriptFile = (format: DocFormat) => async () => {
     const { nodes, plan, manuscript, paper } = useCosmos.getState();
     const cards = nodes.map((n) => n.data);
-    const order = planOrder(plan, planScenes(nodes));
+    const order = bookOrder(nodes, plan);
     const numbers = chapterNumbers(plan, order);
     const doc = manuscriptDoc(info(), order, cards, manuscript, all.manuscript.untitled, (id) => {
+      // Page du livre (dédicace, prologue…) : un chapitre à elle seule, sous son nom.
+      const page = cards.find((c) => c.id === id)?.page;
+      if (isPageKind(page)) return { id: `page:${id}`, title: all.book.kinds[page] };
       const chapter = chapterOf(plan, id);
       if (!chapter) return null;
       const n = numbers.get(chapter.id) ?? 0;

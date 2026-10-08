@@ -81,3 +81,36 @@ export function nextOpen(questions: AskedQuestion[], after: string | null): Aske
   }
   return null;
 }
+
+export interface Answered {
+  question: string;
+  answer: string;
+}
+
+const unescape = (text: string) => text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "’").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+const textOf = (html: string) => unescape(html.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+
+/**
+ * Le texte d'une fiche séparé en deux : les notes libres, et les réponses aux questions de l'assistant
+ * (un paragraphe tout en gras qui finit par « ? », suivi des paragraphes de réponse jusqu'au gras suivant).
+ */
+export function splitAnswers(html: string): { notes: string; answers: Answered[] } {
+  const blocks = html.match(/<(p|h[1-6]|li|blockquote)\b[^>]*>[\s\S]*?<\/\1>/gi) ?? [];
+  const notes: string[] = [];
+  const answers: Answered[] = [];
+  let current: Answered | null = null;
+  for (const block of blocks) {
+    const question = block.match(/^<p[^>]*>\s*<strong>([\s\S]*?)<\/strong>\s*<\/p>$/i);
+    const asked = question ? textOf(question[1]) : "";
+    if (asked.endsWith("?")) {
+      current = { question: asked, answer: "" };
+      answers.push(current);
+      continue;
+    }
+    const text = textOf(block);
+    if (!text) continue;
+    if (current) current.answer = current.answer ? `${current.answer}\n${text}` : text;
+    else notes.push(text);
+  }
+  return { notes: notes.join("\n"), answers: answers.filter((a) => a.answer) };
+}

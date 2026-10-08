@@ -117,6 +117,7 @@ src/
   assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
   character.ts          Fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
   organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
+  book.ts               Pages du livre (titre, dédicace, prologue…) et ordre de lecture du manuscrit (bookOrder)
   stats.ts              Statistiques du manuscrit (mots, pages, lecture) et objectifs d'écriture (fonctions pures)
   manuscript.ts         Manuscrit d'un roman : mots, cartes citées dans le texte, textes sans carte (fonctions pures)
   timeline.ts           Chronologie par intrigue : présence des thèmes, personnages et lieux dans les scènes (fonction pure)
@@ -219,14 +220,14 @@ id: k3x9a7bq2m
 type: personnage
 title: "Inès Morvan"
 image: k3x9a7bq2m.jpg
-fiche: {"age":"34 ans","metier":"Gardienne de phare"}
+fiche: {"genre":"Femme","age":"34 ans","metier":"Gardienne de phare"}
 questions: ["Que cache-t-elle aux autres ?"]
 ---
 Gardienne remplaçante. Ne supporte pas le **silence**.
 Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 ```
 
-`fiche` (personnage : caractéristiques standard, clés fixes de `CHARACTER_FIELDS`) et `questions` (questions gardées pour plus tard) sont facultatifs, en JSON sur une ligne.
+`page` (carte Scène : page hors récit, `titre`, `copyright`, `dedicace`, `epigraphe`, `prologue`, `epilogue`, `remerciements`, `auteur`), `fiche` (personnage : caractéristiques standard, clés fixes de `CHARACTER_FIELDS`) et `questions` (questions gardées pour plus tard) sont facultatifs, en JSON sur une ligne.
 
 Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
@@ -382,3 +383,11 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **IA et CORS** : dans l'app, les requêtes passent par `@tauri-apps/plugin-http` (permission `http:default` dans `capabilities/default.json`). Sans cela, LM Studio refuse l'appel par défaut (CORS). Le plugin ajoute pourtant l'en-tête Origin de l'app, qu'Ollama refuse sous Windows (`http://tauri.localhost`, réponse 403) : pour un serveur local on envoie `origin: ""`, que le plugin retire (fonction `unsafe-headers` dans Cargo.toml). Sans ces deux points, l'IA locale semblait « ne rien faire ».
 - **Ollama** : API native `/api/chat` avec `num_ctx` 16 384 (l'API compatible OpenAI tronquait le projet à quelques milliers de jetons, sans erreur) et `format: "json"` pour Ranger et Cohérence. Le raisonnement `<think>…</think>` des modèles locaux est retiré avant lecture (`stripThinking`).
 - **Pages du manuscrit** : l'extension `Pages` (screenplay/editor/pages.ts) sert aux deux éditeurs ; le manuscrit lui passe ses propres règles (`item`, `firstPage`, `label`). Les pages des scènes précédentes sont estimées à 250 mots par page (`stats.ts`), ce qui correspond à la page affichée.
+- **Chapitrage dans le manuscrit** (extension `BookKeys` de Manuscript.tsx) : Entrée sur une ligne vide qui n'est pas la première coupe la scène (`splitScene` : carte juste sous la précédente sur le canevas, même case du plan, même chapitre, la suite du texte y passe) ; Entrée dans la scène qui vient de naître, encore vide, appelle `startChapterAt` ; Retour arrière dans cette scène vide la supprime et revient à la précédente. Une page hors récit garde ses lignes vides (pas de coupure).
+- **Pages hors récit** : une carte Scène avec `page` n'est ni dans le Plan ni dans un chapitre (`planScenes` = `storyScenes`, book.ts). Le manuscrit et l'export suivent `bookOrder` : pages de début, récit, pages de fin. Ne jamais lire l'ordre du manuscrit avec `planOrder` seul.
+- **Clic sous le texte** (extension `Pages`) : le curseur va à la fin du dernier paragraphe. Sinon ProseMirror le posait après lui et la frappe créait un paragraphe vide en tête du texte.
+- **Choix du modèle d'IA** : une liste déroulante dès que les modèles sont connus (chargés d'eux-mêmes pour un service local, `/api/tags` pour Ollama). Pas de `<datalist>` : le navigateur n'y propose que les modèles qui commencent comme le texte déjà saisi, donc un seul.
+- **Barre du haut** : grille en trois colonnes (`1fr auto 1fr`) pour que les vues soient au centre exact de la fenêtre, quelle que soit la largeur du titre ou des actions.
+- **Une carte se déplace aussi par son image** (`dragHandle: ".card-handle, .card-image"`) ; le bouton de retrait de l'image garde `nodrag`.
+- **Page du manuscrit** : la taille du texte suit la largeur disponible (`clamp(12px, 100cqw / 34, 23px)`), la page garde ses proportions.
+

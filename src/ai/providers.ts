@@ -150,10 +150,15 @@ export function modelsRequest(config: AiConfig): HttpRequest {
   return { url: `${base(config)}/v1/models`, method: "GET", headers: headers(config) };
 }
 
+/** Modèles d'une réponse `/v1/models` (`data[].id`) ou de la liste native d'Ollama `/api/tags` (`models[].name`). */
 export function readModels(json: unknown): string[] {
-  const data = (json as { data?: { id?: unknown }[] } | null)?.data;
-  if (!Array.isArray(data)) return [];
-  return data.map((m) => m?.id).filter((id): id is string => typeof id === "string" && id !== "").sort((a, b) => a.localeCompare(b));
+  const body = json as { data?: { id?: unknown }[]; models?: { name?: unknown; model?: unknown }[] } | null;
+  const ids = Array.isArray(body?.data)
+    ? body.data.map((m) => m?.id)
+    : Array.isArray(body?.models)
+      ? body.models.map((m) => m?.name ?? m?.model)
+      : [];
+  return [...new Set(ids.filter((id): id is string => typeof id === "string" && id !== ""))].sort((a, b) => a.localeCompare(b));
 }
 
 /** Ce qui a empêché une action IA, pour un message compréhensible. */
@@ -214,5 +219,15 @@ export async function complete(config: AiConfig, system: string, user: string, o
 }
 
 export async function listModels(config: AiConfig): Promise<string[]> {
-  return readModels(await send(modelsRequest(config), PROVIDERS[config.provider].local));
+  const local = PROVIDERS[config.provider].local;
+  // Ollama : sa liste native donne tous les modèles installés ; la liste compatible OpenAI en secours.
+  if (config.provider === "ollama") {
+    try {
+      const list = readModels(await send({ ...modelsRequest(config), url: `${base(config)}/api/tags` }, local));
+      if (list.length > 0) return list;
+    } catch {
+      /* ancienne version d'Ollama : on essaie /v1/models */
+    }
+  }
+  return readModels(await send(modelsRequest(config), local));
 }

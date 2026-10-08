@@ -12,15 +12,18 @@ Les deux outils se complètent : NEO est centré sur la page (on écrit le livre
 | Lettrine en ouverture de chapitre | Première lettre de la première scène d'un chapitre |
 | Chapitres numérotés automatiquement | Numéro tiré de la place dans le récit, jamais écrit dans le fichier |
 | Objectif du jour, objectif du livre, compte des mots par jour | Panneau Statistiques : mots du jour, jours d'affilée, barres de progression, objectifs enregistrés dans `cosmos.json` |
+| Entrée, Entrée, Entrée | Deux fois Entrée sur une ligne vide coupe la scène (nouvelle carte Scène, même chapitre) ; une troisième, au début de la nouvelle scène, ouvre un chapitre ; Retour arrière annule |
+| Les pages d'un livre publié | Type de page d'une scène : page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements, à propos de l'auteur ; placées avant ou après le récit, hors chapitres |
+| Bible du fork (`bible.js`, branche `pr-story-bible`) | Genre, surnoms et relations dans la fiche ; champs remplis seuls visibles, « Plus de détails » pour les autres ; surnoms reconnus dans le texte ; « Cité N fois, dès la scène X » sous le nom |
 
 ## À reprendre ensuite, par ordre d'intérêt
 
 1. **Typographie automatique** (`app.js`, à partir de la ligne 4173 environ, fonction `smartKeys`) : tiret cadratin à partir de deux traits d'union, points de suspension, guillemets courbes et, en français, guillemets « » avec espaces insécables et espace fine avant `; : ! ?`. C'est le code le plus directement réutilisable : il est indépendant de l'éditeur (il travaille sur le texte autour du curseur) et Sébastien l'a déjà adapté au français dans son fork. À brancher comme règles de saisie TipTap dans le manuscrit et les cartes.
-2. **Entrée, Entrée, Entrée** : une Entrée, un paragraphe ; deux, un saut de section `***` ; trois, un nouveau chapitre. Dans Cosmos, le troisième Entrée créerait une nouvelle carte Scène et couperait le chapitre (`startChapterAt`), ce qui garde le canevas et le plan à jour sans quitter la page.
-3. **Le Chutier** (« Darlings ») : glisser un passage sur un onglet pour le retirer du texte sans le perdre, et le remettre plus tard à sa place exacte. Dans Cosmos, un passage chuté pourrait aussi devenir une carte Idée sur le canevas, ce qui prolonge naturellement la logique du chaos vers l'ordre.
-4. **Marques à reprendre** (⌘⇧X) : un repère dans le texte et une note en marge (« vérifier la date »), un point rouge sur la scène dans la liste. Proche des questions « à creuser » des personnages : les deux pourraient partager le même panneau.
-5. **Note de plan en paragraphe fantôme** : la note d'une scène (le texte de sa carte) s'affiche en gris dans la page vide et suit le curseur pendant qu'on écrit. Dans Cosmos, c'est le lien le plus direct entre la carte Scène et son texte.
-6. **Sprints d'écriture** : un objectif de mots en temps limité, avec le compte en direct.
+2. **Le Chutier** (« Darlings ») : glisser un passage sur un onglet pour le retirer du texte sans le perdre, et le remettre plus tard à sa place exacte. Dans Cosmos, un passage chuté pourrait aussi devenir une carte Idée sur le canevas, ce qui prolonge naturellement la logique du chaos vers l'ordre.
+3. **Marques à reprendre** (⌘⇧X) : un repère dans le texte et une note en marge (« vérifier la date »), un point rouge sur la scène dans la liste. Proche des questions « à creuser » des personnages : les deux pourraient partager le même panneau.
+4. **Note de plan en paragraphe fantôme** : la note d'une scène (le texte de sa carte) s'affiche en gris dans la page vide et suit le curseur pendant qu'on écrit. Dans Cosmos, c'est le lien le plus direct entre la carte Scène et son texte.
+5. **Sprints d'écriture** : un objectif de mots en temps limité, avec le compte en direct.
+6. **Bible du fork, encore à reprendre** : types de fiches du monde avec leurs champs (objet : à qui il appartient, pourquoi il compte ; groupe : membres, but ; indice : ce qu'il révèle, qui le sait ; système : principe, limites et prix à payer ; événement : quand, ce qui s'est passé, conséquences ; lieu : ambiance), galerie de plusieurs images par fiche, « renommer aussi dans le texte » quand on renomme un personnage, synopsis de toute l'histoire en tête du Plan, import de fiches d'un autre projet, export des fiches en un seul fichier HTML.
 7. **Paragraphes « poésie » et « sans alinéa »** (⌘⇧Entrée, Maj+Entrée) : citations, chansons, lettres, panneaux dans le récit.
 8. **Prologue et épilogue** : un chapitre qui sort de la numérotation.
 9. **Correcteur à la demande** (⌘;) plutôt que des soulignements pendant l'écriture.

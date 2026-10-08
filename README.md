@@ -51,7 +51,7 @@ Cosmos est en cours de développement (version 0.1).
 
 ### La Bible
 
-Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Tout s'y modifie sur place, titre et texte, et un personnage a son portrait dans un cercle et sa **fiche d'identité** : rôle, âge, métier, origine, apparence, personnalité, ce qu'il veut, ce dont il a besoin, faille, peur, secret, évolution. Tout est facultatif.
+Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Tout s'y modifie sur place, titre et texte, et un personnage a son portrait dans un cercle et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, ce qu'il veut, ce dont il a besoin, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
 
 ### Le plan
 
@@ -72,7 +72,9 @@ Un sommaire et des fiches générés automatiquement à partir des cartes, class
 
 ### Le manuscrit
 
-- **Une scène à la fois, en pages :** tu écris le texte de chaque scène dans l'ordre du plan, sur des pages au format livre (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre.
+- **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Retour arrière annule. Le titre du chapitre s'écrit en tête de page.
+- **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit.
+- **Une scène à la fois, en pages :** tu écris le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre.
 - **Statistiques et objectifs :** mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
 - **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
 - **Tes fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte.
