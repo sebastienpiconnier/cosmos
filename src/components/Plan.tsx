@@ -2,17 +2,22 @@
 // (trois actes, Save the Cat, voyage du héros) ou dans une liste libre. Rien n'est recopié :
 // le plan ne retient que l'ordre, le titre et le texte restent ceux de la carte.
 // Trois chemins pour ranger une scène : la glisser, les flèches, ou le menu « Ranger dans ».
+// Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
+// la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
 import { fmt, useT } from "../i18n";
-import { NOVEL_TEMPLATES, arrange, isPlanTemplate, type PlanBeat, type PlanTemplate } from "../plan";
+import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanBeat, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 import { Timeline } from "./Timeline";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
+/** Valeurs du menu « Chapitre » : aucun, ou un nouveau qui commence à cette scène. */
+const NO_CHAPTER = "";
+const NEW_CHAPTER = "+";
 const MODES: SequencerMode[] = ["outline", "cards"];
 
 export function Plan() {
@@ -32,6 +37,12 @@ export function Plan() {
   const addPlanScene = useCosmos((s) => s.addPlanScene);
   const updateCard = useCosmos((s) => s.updateCard);
   const revealCard = useCosmos((s) => s.revealCard);
+  const startChapterAt = useCosmos((s) => s.startChapterAt);
+  const setSceneChapter = useCosmos((s) => s.setSceneChapter);
+  const renamePlanChapter = useCosmos((s) => s.renamePlanChapter);
+  const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
+  const organizeCanvas = useCosmos((s) => s.organizeCanvas);
+  const c = t.chapters;
 
   const sceneIds = useMemo(() => planScenes(nodes), [nodes]);
   const arranged = useMemo(() => arrange(plan, sceneIds), [plan, sceneIds]);
@@ -96,6 +107,12 @@ export function Plan() {
   };
 
   const order = arranged.beats.flatMap((b) => b.ids);
+  const numbers = useMemo(() => chapterNumbers(plan, [...order, ...arranged.unplaced]), [plan, order, arranged.unplaced]);
+  const chapterName = (chapter: Chapter) => {
+    const n = numbers.get(chapter.id) ?? 0;
+    return chapter.title.trim() ? fmt(c.numberedTitle, { n, title: chapter.title.trim() }) : fmt(c.numbered, { n });
+  };
+  const chapters = [...(plan.chapters ?? [])].sort((a, b) => (numbers.get(a.id) ?? 0) - (numbers.get(b.id) ?? 0));
   const plural = (n: number) => fmt(new Intl.PluralRules(lang).select(n) === "one" ? p.summaryOne : p.summaryMany, { n });
 
   const dropOn = (key: string, beat: string | null, index?: number) => ({
@@ -167,6 +184,28 @@ export function Plan() {
           />
           {text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
         </div>
+        {beat !== null && (
+          <label className="plan-to">
+            <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
+            <span aria-hidden="true">{c.short}</span>
+            <select
+              value={chapterOf(plan, id)?.id ?? NO_CHAPTER}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === NEW_CHAPTER) startChapterAt(id);
+                else setSceneChapter(id, value === NO_CHAPTER ? null : value);
+              }}
+            >
+              <option value={NO_CHAPTER}>{c.none}</option>
+              {chapters.map((ch) => (
+                <option key={ch.id} value={ch.id}>
+                  {chapterName(ch)}
+                </option>
+              ))}
+              <option value={NEW_CHAPTER}>{c.startHere}</option>
+            </select>
+          </label>
+        )}
         {!free && (
           <label className="plan-to">
             <span className="sr-only">{fmt(p.moveTo, { title })}</span>
@@ -221,6 +260,9 @@ export function Plan() {
               {p.timeline}
             </button>
           </div>
+          <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
+            {t.organize.button}
+          </button>
           {sceneIds.length > 0 && (
             <p className="sq-total">
               <strong>{plural(sceneIds.length)}</strong>
@@ -241,7 +283,31 @@ export function Plan() {
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
             <p className="plan-beat-hint">{p.beats[beat.key as PlanBeat].hint}</p>
-            {beat.ids.length > 0 && <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{beat.ids.map((id, i) => scene(id, beat.key, i))}</ol>}
+            {groupByChapter(plan, beat.ids).map((group) => {
+              const list = <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{group.ids.map((id) => scene(id, beat.key, beat.ids.indexOf(id)))}</ol>;
+              if (!group.chapter) return <div key={`loose-${group.ids[0]}`}>{list}</div>;
+              const ch = group.chapter;
+              const name = chapterName(ch);
+              return (
+                <div key={`${ch.id}-${group.ids[0]}`} className="plan-chapter" role="group" aria-label={name}>
+                  <div className="plan-chapter-head">
+                    <span className="plan-chapter-number">{fmt(c.numbered, { n: numbers.get(ch.id) ?? 0 })}</span>
+                    <input
+                      className="bible-title plan-chapter-title"
+                      value={ch.title}
+                      placeholder={c.titlePlaceholder}
+                      aria-label={fmt(c.titleAria, { name })}
+                      onChange={(e) => renamePlanChapter(ch.id, e.target.value)}
+                    />
+                    <span className="plan-count">{group.ids.length}</span>
+                    <button type="button" className="icon-button" aria-label={fmt(c.remove, { name })} title={fmt(c.remove, { name })} onClick={() => deletePlanChapter(ch.id)}>
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                  {list}
+                </div>
+              );
+            })}
             <form
               className="plan-add"
               onSubmit={(e) => {

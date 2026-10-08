@@ -9,6 +9,9 @@ pub fn run() {
     // hors du dossier personnel (autre disque, OneDrive déplacé) est refusé au redémarrage.
     // À déclarer après le plugin fs.
     .plugin(tauri_plugin_persisted_scope::init())
+    // Appels aux services d'IA (Claude, OpenAI, Ollama, LM Studio…) depuis le système, sans CORS :
+    // un serveur local répond sans avoir à autoriser l'origine de l'app.
+    .plugin(tauri_plugin_http::init())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

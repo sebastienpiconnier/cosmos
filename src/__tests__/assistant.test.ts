@@ -122,20 +122,32 @@ describe("assistant dans le projet", () => {
     expect(state().past.length).toBe(past);
   });
 
-  it("« Je ne sais pas encore » : une carte Question reliée au personnage, une seule fois, en une étape", () => {
-    const id = state().parkQuestion(ines, q.secret)!;
-    expect(state().nodes.find((n) => n.id === id)!.data).toMatchObject({ type: "question", title: `Inès Morvan : ${q.secret}` });
-    expect(state().edges).toMatchObject([{ source: id, target: ines, label: "à creuser", type: "floating" }]);
-    expect(state().parkQuestion(ines, q.secret)).toBeNull();
-    expect(state().nodes).toHaveLength(2);
-    state().undo();
+  it("« Je ne sais pas encore » : la question reste dans la carte du personnage, une seule fois, en une étape", () => {
+    expect(state().parkQuestion(ines, q.secret)).toBe(true);
+    expect(data().questions).toEqual([q.secret]);
     expect(state().nodes).toHaveLength(1);
     expect(state().edges).toHaveLength(0);
+    expect(state().parkQuestion(ines, q.secret)).toBe(false);
+    state().undo();
+    expect(data().questions).toBeUndefined();
   });
 
-  it("la carte Question ne chevauche pas le personnage", () => {
-    const id = state().parkQuestion(ines, q.fear)!;
-    const [a, b] = [ines, id].map((x) => state().nodes.find((n) => n.id === x)!.position);
-    expect(a.x !== b.x || a.y !== b.y).toBe(true);
+  it("répondre à une question en attente la retire de la liste", () => {
+    state().parkQuestion(ines, q.fear);
+    state().parkQuestion(ines, q.secret);
+    state().answerQuestion(ines, q.fear, "Le noir.");
+    expect(data().questions).toEqual([q.secret]);
+    state().dropQuestion(ines, q.secret);
+    expect(data().questions).toBeUndefined();
+  });
+
+  it("la fiche d'identité : un champ rempli, vidé, annulable", () => {
+    state().setFiche(ines, "age", "34");
+    state().setFiche(ines, "metier", "Gardienne");
+    expect(data().fiche).toEqual({ age: "34", metier: "Gardienne" });
+    state().setFiche(ines, "age", "");
+    expect(data().fiche).toEqual({ metier: "Gardienne" });
+    state().undo();
+    expect(data().fiche).toEqual({ age: "34", metier: "Gardienne" });
   });
 });

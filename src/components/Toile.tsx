@@ -53,6 +53,14 @@ export function Toile() {
   const t = useT();
   const theme = useSettings((s) => s.theme);
 
+  // Après « Organiser le canevas » : on cadre tout le projet.
+  const fitRequest = useCosmos((s) => s.fitRequest);
+  useEffect(() => {
+    if (!fitRequest) return;
+    const timer = setTimeout(() => fitView({ padding: 0.12, duration: 500 }), 60);
+    return () => clearTimeout(timer);
+  }, [fitRequest, fitView]);
+
   // Arrivée depuis la Bible : on centre la carte demandée.
   useEffect(() => {
     if (!focusId) return;
@@ -304,6 +312,14 @@ export function Toile() {
         <button type="button" className="icon-button" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 3.2" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+          </svg>
+        </button>
+        <button type="button" className="icon-button" aria-label={t.organize.button} title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+            <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+            <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+            <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
           </svg>
         </button>
         <button type="button" className="icon-button" disabled={!canUndo} aria-label={t.toile.undo} title={t.toile.undoHint} onClick={undo}>

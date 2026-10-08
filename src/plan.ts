@@ -6,6 +6,10 @@
 //   { "template": "troisActes", "beats": { "a_setup": ["k3x9a7bq2m", …], … } }
 // Les clés des cases sont propres à chaque gabarit : changer de gabarit ne perd donc aucun rangement,
 // celui du gabarit précédent reste dans le fichier et revient si l'on y retourne.
+//
+// Chapitres (facultatif) : `"chapters": [{ "id": "…", "title": "Le retour", "scenes": ["k3x9a7bq2m", …] }]`.
+// Un chapitre regroupe des scènes ; son numéro vient de sa place dans le récit (ordre du plan), il n'est
+// jamais écrit. Les chapitres ne dépendent pas du gabarit : on peut en changer sans rien perdre.
 
 export type PlanTemplate = "libre" | "troisActes" | "saveTheCat" | "voyageHeros" | "huitSequences" | "episode";
 
@@ -33,10 +37,20 @@ export const PLAN_TEMPLATE_KEYS = Object.keys(PLAN_TEMPLATES) as PlanTemplate[];
 export const NOVEL_TEMPLATES = ["libre", "troisActes", "saveTheCat", "voyageHeros"] as const satisfies readonly PlanTemplate[];
 export const isPlanTemplate = (v: unknown): v is PlanTemplate => typeof v === "string" && v in PLAN_TEMPLATES;
 
+export interface Chapter {
+  id: string;
+  /** Titre libre ; vide : le chapitre n'a que son numéro. */
+  title: string;
+  /** Scènes du chapitre. L'ordre de lecture reste celui du plan. */
+  scenes: string[];
+}
+
 export interface Plan {
   template: PlanTemplate;
   /** Scènes de chaque case, dans l'ordre. Peut contenir les cases d'autres gabarits. */
   beats: Record<string, string[]>;
+  /** Chapitres. Absent : aucun. */
+  chapters?: Chapter[];
 }
 
 export const EMPTY_PLAN: Plan = { template: "libre", beats: {} };
@@ -53,14 +67,36 @@ export function readPlan(raw: unknown): Plan {
       if (list.length > 0) clean[key] = list;
     }
   }
-  const next: Plan = { template: isPlanTemplate(template) ? template : "libre", beats: clean };
+  const chapters = readChapters((raw as { chapters?: unknown }).chapters);
+  const next: Plan = { template: isPlanTemplate(template) ? template : "libre", beats: clean, ...(chapters.length > 0 ? { chapters } : {}) };
   return isEmptyPlan(next) ? EMPTY_PLAN : next;
 }
 
-/** Rien à écrire dans le fichier : gabarit par défaut et aucune scène rangée. */
-export const isEmptyPlan = (plan: Plan) => plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0);
+/** Chapitres lus dans cosmos.json : une scène n'appartient qu'à un chapitre (le premier qui la cite). */
+function readChapters(raw: unknown): Chapter[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const ids = new Set<string>();
+  const out: Chapter[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const { id, title, scenes } = item as { id?: unknown; title?: unknown; scenes?: unknown };
+    if (typeof id !== "string" || !id || ids.has(id)) continue;
+    ids.add(id);
+    const list = Array.isArray(scenes) ? scenes.filter((s): s is string => typeof s === "string" && s !== "" && !seen.has(s) && !!seen.add(s)) : [];
+    out.push({ id, title: typeof title === "string" ? title : "", scenes: list });
+  }
+  return out;
+}
 
-/** Plan à écrire : sans les cartes qui n'existent plus ni les cases vides. Même objet si rien ne change. */
+/** Rien à écrire dans le fichier : gabarit par défaut, aucune scène rangée, aucun chapitre. */
+export const isEmptyPlan = (plan: Plan) =>
+  plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0) && (plan.chapters ?? []).length === 0;
+
+/**
+ * Plan à écrire : sans les cartes qui n'existent plus, ni les cases vides, ni les chapitres vides et
+ * sans titre. Même objet si rien ne change.
+ */
 export function prunePlan(plan: Plan, existing: Set<string>): Plan {
   let changed = false;
   const beats: Record<string, string[]> = {};
@@ -69,7 +105,22 @@ export function prunePlan(plan: Plan, existing: Set<string>): Plan {
     if (kept.length !== ids.length || kept.length === 0) changed = true;
     if (kept.length > 0) beats[key] = kept;
   }
-  return changed ? { ...plan, beats } : plan;
+  let chapters = plan.chapters;
+  if (chapters) {
+    const next = chapters
+      .map((c) => {
+        const scenes = c.scenes.filter((id) => existing.has(id));
+        return scenes.length === c.scenes.length ? c : { ...c, scenes };
+      })
+      .filter((c) => c.scenes.length > 0 || c.title.trim() !== "");
+    if (next.length !== chapters.length || next.some((c, i) => c !== chapters![i])) {
+      changed = true;
+      chapters = next;
+    }
+  }
+  if (!changed) return plan;
+  const { chapters: _old, ...rest } = plan;
+  return { ...rest, beats, ...(chapters && chapters.length > 0 ? { chapters } : {}) };
 }
 
 export interface Arranged {
@@ -158,3 +209,112 @@ export function stepScene(plan: Plan, sceneIds: string[], id: string, way: "up" 
 
 /** Change de gabarit. Les rangements de l'ancien restent dans le plan. */
 export const setTemplate = (plan: Plan, template: PlanTemplate): Plan => (plan.template === template ? plan : { ...plan, template });
+
+// ---------- Chapitres ----------
+
+/** Chapitre d'une scène, ou null. */
+export const chapterOf = (plan: Plan, sceneId: string): Chapter | null => plan.chapters?.find((c) => c.scenes.includes(sceneId)) ?? null;
+
+/**
+ * Numéro de chaque chapitre : sa place dans le récit, d'après sa première scène dans `order`.
+ * Les chapitres encore vides suivent, dans l'ordre de la liste.
+ */
+export function chapterNumbers(plan: Plan, order: string[]): Map<string, number> {
+  const numbers = new Map<string, number>();
+  for (const id of order) {
+    const chapter = chapterOf(plan, id);
+    if (chapter && !numbers.has(chapter.id)) numbers.set(chapter.id, numbers.size + 1);
+  }
+  for (const c of plan.chapters ?? []) if (!numbers.has(c.id)) numbers.set(c.id, numbers.size + 1);
+  return numbers;
+}
+
+export interface ChapterGroup {
+  /** null : scènes qui ne sont dans aucun chapitre. */
+  chapter: Chapter | null;
+  ids: string[];
+}
+
+/** Découpe une suite de scènes en groupes consécutifs du même chapitre. */
+export function groupByChapter(plan: Plan, ids: string[]): ChapterGroup[] {
+  const groups: ChapterGroup[] = [];
+  for (const id of ids) {
+    const chapter = chapterOf(plan, id);
+    const last = groups[groups.length - 1];
+    if (last && last.chapter?.id === chapter?.id) last.ids.push(id);
+    else groups.push({ chapter, ids: [id] });
+  }
+  return groups;
+}
+
+/** Plan avec ces chapitres (aucun : le champ disparaît). */
+function withChapters(plan: Plan, chapters: Chapter[]): Plan {
+  const { chapters: _old, ...rest } = plan;
+  return chapters.length > 0 ? { ...rest, chapters } : rest;
+}
+
+/** Range une scène dans un chapitre, ou l'en sort (`chapterId` null). Même objet si rien ne change. */
+export function assignChapter(plan: Plan, sceneId: string, chapterId: string | null): Plan {
+  const current = chapterOf(plan, sceneId);
+  if ((current?.id ?? null) === chapterId) return plan;
+  if (chapterId !== null && !plan.chapters?.some((c) => c.id === chapterId)) return plan;
+  return withChapters(
+    plan,
+    (plan.chapters ?? []).map((c) => {
+      if (c.id === chapterId) return { ...c, scenes: [...c.scenes, sceneId] };
+      if (c.id === current?.id) return { ...c, scenes: c.scenes.filter((s) => s !== sceneId) };
+      return c;
+    }),
+  );
+}
+
+/**
+ * Nouveau chapitre qui commence à cette scène : elle et les scènes qui la suivent dans `order`, tant
+ * qu'elles étaient dans le même chapitre qu'elle (ou dans aucun), passent dans le nouveau chapitre.
+ * C'est le geste « couper ici » : le chapitre d'avant s'arrête juste avant cette scène.
+ */
+export function startChapter(plan: Plan, order: string[], sceneId: string, id: string, title = ""): Plan {
+  const at = order.indexOf(sceneId);
+  if (at < 0 || plan.chapters?.some((c) => c.id === id)) return plan;
+  const from = chapterOf(plan, sceneId)?.id ?? null;
+  const moved: string[] = [];
+  for (let i = at; i < order.length; i++) {
+    if ((chapterOf(plan, order[i])?.id ?? null) !== from) break;
+    moved.push(order[i]);
+  }
+  const taken = new Set(moved);
+  const chapters = (plan.chapters ?? []).map((c) => (c.id === from ? { ...c, scenes: c.scenes.filter((s) => !taken.has(s)) } : c));
+  // Le nouveau chapitre se place juste après celui qu'il coupe (l'ordre de la liste départage les chapitres vides).
+  const index = from ? chapters.findIndex((c) => c.id === from) + 1 : chapters.length;
+  chapters.splice(index, 0, { id, title, scenes: moved });
+  return withChapters(plan, chapters);
+}
+
+/** Change le titre d'un chapitre. Même objet si rien ne change. */
+export function renameChapter(plan: Plan, id: string, title: string): Plan {
+  const chapter = plan.chapters?.find((c) => c.id === id);
+  if (!chapter || chapter.title === title) return plan;
+  return withChapters(plan, plan.chapters!.map((c) => (c.id === id ? { ...c, title } : c)));
+}
+
+/**
+ * Supprime un chapitre (jamais ses scènes) : elles rejoignent le chapitre qui le précède dans le récit,
+ * ou aucun chapitre s'il était le premier.
+ */
+export function removeChapter(plan: Plan, order: string[], id: string): Plan {
+  const chapter = plan.chapters?.find((c) => c.id === id);
+  if (!chapter) return plan;
+  const first = order.findIndex((s) => chapter.scenes.includes(s));
+  let previous: Chapter | null = null;
+  for (let i = first - 1; i >= 0 && first > 0; i--) {
+    const c = chapterOf(plan, order[i]);
+    if (c && c.id !== id) {
+      previous = c;
+      break;
+    }
+  }
+  return withChapters(
+    plan,
+    plan.chapters!.filter((c) => c.id !== id).map((c) => (c.id === previous?.id ? { ...c, scenes: [...c.scenes, ...chapter.scenes] } : c)),
+  );
+}

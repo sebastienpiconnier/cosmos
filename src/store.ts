@@ -22,9 +22,28 @@ import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "./placement";
 import { clampCardWidth, imageExtension } from "./media";
 import { removeMentions, renameMentions } from "./mentions";
-import { isBlank, type Manuscript } from "./manuscript";
-import { appendAnswer, isParked, parkedTitle } from "./assistant";
-import { EMPTY_PLAN, isEmptyPlan, placeScene, prunePlan, readPlan, setTemplate, stepScene, type Plan, type PlanTemplate } from "./plan";
+import { countWords, isBlank, type Manuscript } from "./manuscript";
+import { dayKey, readGoals, readProgress, recordProgress, type Goals, type Progress } from "./stats";
+import { appendAnswer, isParked } from "./assistant";
+import { addQuestion, legacyParkedCards, removeQuestion, setFicheField, type CharacterField } from "./character";
+import {
+  EMPTY_PLAN,
+  assignChapter,
+  chapterOf,
+  isEmptyPlan,
+  placeScene,
+  planOrder,
+  prunePlan,
+  readPlan,
+  removeChapter,
+  renameChapter,
+  setTemplate,
+  startChapter,
+  stepScene,
+  type Plan,
+  type PlanTemplate,
+} from "./plan";
+import { organize } from "./organize";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -34,7 +53,7 @@ import {
   renameHeading,
   type SceneCard,
 } from "./screenplay/link";
-import { getT } from "./i18n";
+import { DICTIONARIES, fmt, getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
 /** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
@@ -79,16 +98,39 @@ interface CosmosState {
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
-  addPlanScene: (title: string, beat: string) => string;
+  addPlanScene: (title: string, beat: string, chapterId?: string | null) => string;
+  /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
+  startChapterAt: (sceneId: string) => string | null;
+  /** Range une scène dans un chapitre, ou l'en sort (null). */
+  setSceneChapter: (sceneId: string, chapterId: string | null) => void;
+  renamePlanChapter: (id: string, title: string) => void;
+  /** Supprime un chapitre ; ses scènes rejoignent le chapitre précédent. */
+  deletePlanChapter: (id: string) => void;
+  /** Range toutes les cartes du canevas en cadres (type, gabarit, chapitres) et relie les scènes. */
+  organizeCanvas: () => void;
   /** Assistant personnage : ajoute la question (en gras) et la réponse au texte de la fiche. */
   answerQuestion: (id: string, question: string, answer: string) => void;
   /** Assistant personnage, « Je ne sais pas encore » : crée une carte Question reliée au personnage. */
-  parkQuestion: (id: string, question: string) => string | null;
+  parkQuestion: (id: string, question: string) => boolean;
+  /** Retire une question gardée pour plus tard (répondue ailleurs, ou plus utile). */
+  dropQuestion: (id: string, question: string) => void;
+  /** Change un champ de la fiche d'un personnage (vide : retiré). */
+  setFiche: (id: string, field: CharacterField, value: string) => void;
+  /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
+  openInBible: (id: string, assistant?: boolean) => void;
+  /** Fiche à montrer en arrivant dans la Bible, puis remise à null. */
+  bibleTarget: { id: string; assistant: boolean } | null;
+  /** Demande au canevas de cadrer tout le projet (après un rangement). */
+  fitRequest: number;
+  clearBibleTarget: () => void;
   /** Crée une carte Question reliée aux cartes citées (alerte de cohérence gardée pour plus tard). */
   addQuestionAbout: (title: string, cardIds: string[]) => string;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte Scène. */
   manuscript: Manuscript;
   setManuscriptText: (id: string, html: string) => void;
+  goals: Goals;
+  setGoals: (goals: Goals) => void;
+  progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
   /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
@@ -241,7 +283,7 @@ function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? "") }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {} };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress) };
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -287,9 +329,39 @@ function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode
   return changed ? next : nodes;
 }
 
+/**
+ * Anciennes cartes Question « à creuser » (créées par l'assistant avant que les questions ne vivent dans
+ * la carte du personnage) : leur question passe dans le personnage, et elles quittent le canevas.
+ */
+function adoptParkedCards(nodes: CardNode[], edges: Edge[]): { nodes: CardNode[]; edges: Edge[] } {
+  const labels = Object.values(DICTIONARIES).map((d) => d.assistant.linkLabel);
+  const found = legacyParkedCards(
+    nodes.map((n) => n.data),
+    edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
+    labels,
+  );
+  if (found.length === 0) return { nodes, edges };
+  const gone = new Set(found.map((f) => f.cardId));
+  const byCharacter = new Map<string, string[]>();
+  for (const f of found) byCharacter.set(f.characterId, [...(byCharacter.get(f.characterId) ?? []), f.question]);
+  return {
+    nodes: nodes
+      .filter((n) => !gone.has(n.id))
+      .map((n) => {
+        const added = byCharacter.get(n.id);
+        if (!added) return n;
+        const questions = added.reduce<string[] | undefined>((list, q) => addQuestion(list, q), n.data.questions);
+        return { ...n, data: { ...n.data, questions } };
+      }),
+    edges: edges.filter((e) => !gone.has(e.source) && !gone.has(e.target)),
+  };
+}
+
 /** État à adopter quand on ouvre un projet. `dirty` : l'ouverture a produit des changements à enregistrer. */
 function openProject(p: Project) {
-  const base = fromProject(p);
+  const read = fromProject(p);
+  const adopted = adoptParkedCards(read.nodes, read.edges);
+  const base = { ...read, ...adopted };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplay =
     p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
@@ -300,14 +372,14 @@ function openProject(p: Project) {
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
     state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
-    dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen,
+    dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
 }
 
 function toProject(
   s: Pick<
     CosmosState,
-    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript"
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript" | "goals" | "progress"
   >,
 ): Project {
   // Le plan écrit ne cite que des cartes qui existent encore.
@@ -335,6 +407,8 @@ function toProject(
           }
         : {}),
       ...(isEmptyPlan(plan) ? {} : { plan }),
+      ...(s.goals.daily || s.goals.total ? { goals: s.goals } : {}),
+      ...(Object.keys(s.progress).length > 0 ? { progress: s.progress } : {}),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
@@ -463,21 +537,41 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
       if (!card) return;
       const html = appendAnswer(card.html, question, answer);
-      if (html !== card.html) get().updateCard(id, { html });
+      if (html === card.html) return;
+      // Une question gardée pour plus tard, qui reçoit enfin sa réponse, quitte la liste.
+      const questions = removeQuestion(card.questions, question);
+      get().updateCard(id, questions === card.questions ? { html } : { html, questions });
     },
     parkQuestion: (id, question) => {
       const { nodes, edges } = get();
       const character = nodes.find((n) => n.id === id)?.data;
-      if (!character || isParked(nodes.map((n) => n.data), edges, id, question)) return null;
-      // Une seule étape d'historique pour la carte et son fil.
-      record();
-      const card: CardData = { id: newId(), type: "question", title: parkedTitle(character.title, question), html: "" };
-      const spot = firstFreeCell(boxes(nodes));
-      const edge = { id: newId(), source: card.id, target: id, sourceHandle: null, targetHandle: null, label: getT().assistant.linkLabel, type: "floating" };
-      set({ nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: addEdge(edge, edges) });
-      touch();
-      return card.id;
+      if (!character || !question.trim() || isParked(nodes.map((n) => n.data), edges, id, question)) return false;
+      // La question reste dans la carte du personnage : rien de plus sur le canevas.
+      get().updateCard(id, { questions: addQuestion(character.questions, question) });
+      return true;
     },
+    dropQuestion: (id, question) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card) return;
+      const questions = removeQuestion(card.questions, question);
+      if (questions !== card.questions) get().updateCard(id, { questions });
+    },
+    setFiche: (id, field, value) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || (card.fiche?.[field] ?? "") === value) return;
+      // Les lettres d'un même champ tapées d'affilée ne font qu'une étape d'historique.
+      record(`card:${id}:fiche:${field}`);
+      const fiche = setFicheField(card.fiche, field, value);
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche } } : n)) });
+      touch();
+    },
+    openInBible: (id, assistant = false) => {
+      if (!get().nodes.some((n) => n.id === id)) return;
+      set({ view: "bible", bibleTarget: { id, assistant } });
+    },
+    bibleTarget: null,
+    clearBibleTarget: () => set({ bibleTarget: null }),
+    fitRequest: 0,
     addQuestionAbout: (title, cardIds) => {
       const { nodes, edges } = get();
       // Une seule étape d'historique pour la carte et ses fils.
@@ -501,9 +595,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (before === next) return;
       if (next) manuscript[id] = next;
       else delete manuscript[id];
-      set({ manuscript });
+      // Mots écrits aujourd'hui : le total du jour suit, à partir de la différence dans cette scène.
+      const day = dayKey(new Date());
+      const { progress } = get();
+      const totalBefore = progress[day]?.end ?? Object.values(get().manuscript).reduce((sum, html) => sum + countWords(html), 0);
+      const totalAfter = Math.max(0, totalBefore + countWords(next) - countWords(before));
+      set({ manuscript, progress: recordProgress(progress, day, totalBefore, totalAfter) });
       touch();
     },
+    goals: {},
+    setGoals: (goals) => {
+      set({ goals: readGoals(goals) });
+      touch();
+    },
+    progress: {},
     restoreScene: (id) => {
       if (get().nodes.some((n) => n.id === id) || !(id in get().manuscript)) return;
       record();
@@ -535,14 +640,94 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
       return true;
     },
-    addPlanScene: (title, beat) => {
+    addPlanScene: (title, beat, chapterId) => {
       record();
       const card: CardData = { id: newId(), type: "scene", title, html: "" };
       const spot = firstFreeCell(boxes(get().nodes));
       const nodes = [...get().nodes, toNode(card, spot.x, spot.y)];
-      set({ nodes, plan: placeScene(get().plan, planScenes(nodes), card.id, beat) });
+      let plan = placeScene(get().plan, planScenes(nodes), card.id, beat);
+      // Sans chapitre précisé, la scène rejoint celui de la scène qui la précède dans le récit.
+      let chapter = chapterId;
+      if (chapter === undefined) {
+        const order = planOrder(plan, planScenes(nodes));
+        const before = order[order.indexOf(card.id) - 1];
+        chapter = before ? (chapterOf(plan, before)?.id ?? null) : null;
+      }
+      if (chapter) plan = assignChapter(plan, card.id, chapter);
+      set({ nodes, plan });
       touch();
       return card.id;
+    },
+    startChapterAt: (sceneId) => {
+      const id = newId();
+      const plan = startChapter(get().plan, planOrder(get().plan, planScenes(get().nodes)), sceneId, id);
+      if (plan === get().plan) return null;
+      record();
+      set({ plan });
+      touch();
+      return id;
+    },
+    setSceneChapter: (sceneId, chapterId) => {
+      const plan = assignChapter(get().plan, sceneId, chapterId);
+      if (plan === get().plan) return;
+      record();
+      set({ plan });
+      touch();
+    },
+    renamePlanChapter: (id, title) => {
+      const plan = renameChapter(get().plan, id, title);
+      if (plan === get().plan) return;
+      record(`chapter:${id}:title`);
+      set({ plan });
+      touch();
+    },
+    deletePlanChapter: (id) => {
+      const plan = removeChapter(get().plan, planOrder(get().plan, planScenes(get().nodes)), id);
+      if (plan === get().plan) return;
+      record();
+      set({ plan });
+      touch();
+    },
+    organizeCanvas: () => {
+      const { nodes, edges, plan, kind } = get();
+      if (nodes.length === 0) return;
+      const t = getT();
+      const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
+      const sizes = boxes(nodes);
+      const result = organize({
+        cards: nodes.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
+        plan,
+        sceneIds: planScenes(nodes),
+        labels: {
+          groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
+          beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
+          chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+          unplaced: t.plan.unplaced,
+          story: types.scene.section,
+        },
+        origin: { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
+        newId,
+      });
+      // Une seule étape d'historique : Ctrl/Cmd+Z remet le canevas tel qu'il était.
+      record();
+      let nextEdges = edges;
+      const linked = (a: string, b: string) => nextEdges.some((e) => (e.source === a && e.target === b) || (e.source === b && e.target === a));
+      for (const [source, target] of result.sequence) {
+        if (linked(source, target)) continue;
+        nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
+      }
+      set({
+        nodes: nodes.map((n) => {
+          const at = result.positions.get(n.id);
+          return at ? { ...n, position: at, selected: false } : n;
+        }),
+        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement.
+        frames: result.frames.map(toFrameNode),
+        edges: nextEdges,
+        view: "toile",
+        fitRequest: Date.now(),
+      });
+      touch();
     },
     paper: "letter",
     paperChosen: false,
@@ -767,6 +952,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Un cadre qu'on déplace emmène les cartes qu'il contient (leur centre est dedans).
       // Pas quand on le redimensionne par le haut ou la gauche : sa position change, pas son contenu.
       let nodes = get().nodes;
+      const frames = get().frames;
+      const carried = new Map<string, { x: number; y: number }>();
       for (const change of frameChanges) {
         if (change.type !== "position" || !change.position) continue;
         if (frameChanges.some((c) => c.type === "dimensions" && c.id === change.id)) continue;
@@ -783,6 +970,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const inside = cx >= box.x && cx <= box.x + box.width && cy >= box.y && cy <= box.y + box.height;
           return inside ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } } : n;
         });
+        // Et les cadres qu'il contient entièrement (un chapitre dans une case du gabarit).
+        for (const inner of frames) {
+          if (inner.id === frame.id || frameChanges.some((c) => "id" in c && c.id === inner.id)) continue;
+          const b = frameBox(inner);
+          if (b.x >= box.x && b.y >= box.y && b.x + b.width <= box.x + box.width && b.y + b.height <= box.y + box.height) {
+            carried.set(inner.id, { x: b.x + dx, y: b.y + dy });
+          }
+        }
       }
 
       let { screenplay } = get();
@@ -798,11 +993,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
           return { ...rest, style: { ...n.style, width: clampCardWidth(width) } };
         });
       }
-      set({
-        nodes: nextNodes,
-        frames: frameChanges.length > 0 ? applyNodeChanges(frameChanges, get().frames) : get().frames,
-        screenplay,
-      });
+      let nextFrames = frameChanges.length > 0 ? applyNodeChanges(frameChanges, frames) : frames;
+      if (carried.size > 0) nextFrames = nextFrames.map((f) => (carried.has(f.id) ? { ...f, position: carried.get(f.id)! } : f));
+      set({ nodes: nextNodes, frames: nextFrames, screenplay });
       if (changed) touch();
     },
     onEdgesChange: (changes) => {

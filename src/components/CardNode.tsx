@@ -249,21 +249,25 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const connection = useConnection();
   const isDropTarget = connection.inProgress && connection.fromNode?.id !== id;
 
-  // Nouvelle carte : on écrit tout de suite dedans.
+  // Nouvelle carte : on écrit tout de suite son titre (Entrée passe ensuite au corps).
   const pendingFocus = useCosmos((s) => s.pendingFocusId === id);
   useEffect(() => {
-    if (!pendingFocus || !editor) return;
+    if (!pendingFocus) return;
     // React Flow masque un nœud tant qu'il n'est pas mesuré : on réessaie brièvement.
     let tries = 0;
     let timer: ReturnType<typeof setTimeout>;
     const tryFocus = () => {
-      editor.commands.focus("end");
-      if (editor.isFocused || tries++ > 10) useCosmos.getState().clearPendingFocus();
+      const el = titleRef.current;
+      if (el) {
+        el.focus({ preventScroll: true });
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+      if ((el && document.activeElement === el) || tries++ > 10) useCosmos.getState().clearPendingFocus();
       else timer = setTimeout(tryFocus, 30);
     };
     tryFocus();
     return () => clearTimeout(timer);
-  }, [pendingFocus, editor]);
+  }, [pendingFocus]);
 
   return (
     <div ref={cardRef} className={`card${selected ? " is-selected" : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
@@ -279,11 +283,12 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
       {isDropTarget && <Handle id="drop" type="target" position={Position.Top} className="card-dropzone" />}
 
-      {/* Largeur : on tire le bord droit (ou Alt + flèches). La hauteur suit le contenu. */}
+      {/* Largeur : on tire la poignée du coin bas droit (ou Alt + flèches). La hauteur suit le contenu.
+          Une poignée de coin plutôt que tout le bord droit : le point d'accroche du milieu reste libre pour tirer un fil. */}
       {selected && (
         <NodeResizeControl
-          position="right"
-          variant={ResizeControlVariant.Line}
+          position="bottom-right"
+          variant={ResizeControlVariant.Handle}
           resizeDirection="horizontal"
           minWidth={CARD_MIN_WIDTH}
           maxWidth={CARD_MAX_WIDTH}
@@ -293,7 +298,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
       {imageUrl && (
         <div className="card-image">
-          <img src={imageUrl} alt={data.title ? fmt(t.card.imageAlt, { title: data.title }) : t.card.imageAltUntitled} draggable={false} />
+          {/* Fond flou tiré de la même image : il comble les côtés quand l'image garde ses proportions. */}
+          <img className="card-image-backdrop" src={imageUrl} alt="" aria-hidden="true" draggable={false} />
+          <img className="card-image-main" src={imageUrl} alt={data.title ? fmt(t.card.imageAlt, { title: data.title }) : t.card.imageAltUntitled} draggable={false} />
           <button
             type="button"
             className="card-image-remove nodrag"
@@ -365,6 +372,14 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       <div className="nodrag nowheel nopan">
         <EditorContent editor={editor} />
       </div>
+
+      {/* Questions gardées pour plus tard : un simple lien vers la fiche, pas de cartes sur le canevas. */}
+      {data.type === "personnage" && (data.questions?.length ?? 0) > 0 && (
+        <button type="button" className="card-questions nodrag" onClick={() => useCosmos.getState().openInBible(id, true)}>
+          <span className="card-questions-count">{data.questions!.length}</span>
+          {fmt(data.questions!.length === 1 ? t.character.pendingOne : t.character.pendingMany, { n: data.questions!.length })}
+        </button>
+      )}
 
       {mention && mentionCount > 0 && !slash && (
         <SuggestionMenu

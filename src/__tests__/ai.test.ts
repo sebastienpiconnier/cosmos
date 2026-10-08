@@ -2,7 +2,7 @@
 // IA facultative : requêtes vers chaque service, lecture des réponses, consignes et relecture des propositions.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig } from "../ai/providers";
+import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking } from "../ai/providers";
 import { coherencePrompt, extractJson, interviewPrompt, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
 import { aiConfig } from "../settings";
 import { useCosmos } from "../store";
@@ -44,9 +44,12 @@ describe("services", () => {
   });
 
   it("Ollama et LM Studio : serveur local, sans clé, adresse modifiable", () => {
-    const ollama = chatRequest(config("ollama"), "c", "t");
-    expect(ollama.url).toBe("http://localhost:11434/v1/chat/completions");
+    // Ollama : API native, pour une fenêtre de contexte assez grande et une réponse JSON garantie.
+    const ollama = chatRequest(config("ollama"), "c", "t", { json: true });
+    expect(ollama.url).toBe("http://localhost:11434/api/chat");
     expect(ollama.headers).not.toHaveProperty("authorization");
+    expect(JSON.parse(ollama.body!)).toMatchObject({ stream: false, format: "json", options: { num_ctx: OLLAMA_CONTEXT } });
+    expect(JSON.parse(chatRequest(config("ollama"), "c", "t").body!)).not.toHaveProperty("format");
     expect(chatRequest(config("lmstudio"), "c", "t").url).toBe("http://localhost:1234/v1/chat/completions");
     expect(chatRequest(config("lmstudio", { url: "http://127.0.0.1:5000/" }), "c", "t").url).toBe("http://127.0.0.1:5000/v1/chat/completions");
     // Une adresse saisie ne détourne jamais un service en ligne (la clé partirait ailleurs).
@@ -57,6 +60,11 @@ describe("services", () => {
     expect(readReply("anthropic", { content: [{ type: "text", text: " Bonjour " }, { type: "tool_use" }, { type: "text", text: "!" }] })).toBe("Bonjour !");
     expect(readReply("openai", { choices: [{ message: { content: " Salut " } }] })).toBe("Salut");
     expect(readReply("ollama", { choices: [] })).toBe("");
+    expect(readReply("ollama", { message: { role: "assistant", content: " Oui " } })).toBe("Oui");
+    // Le raisonnement des modèles locaux (<think>) n'est jamais pris pour la réponse.
+    expect(readReply("lmstudio", { choices: [{ message: { content: "<think>Une question ? [1]</think>\n{\"items\": []}" } }] })).toBe('{"items": []}');
+    expect(stripThinking("raisonnement…</think>Réponse")).toBe("Réponse");
+    expect(stripThinking("<think>coupé en plein milieu")).toBe("");
     expect(readReply("anthropic", null)).toBe("");
     expect(readReply("openai", { choices: [{ message: { content: [{ type: "text" }] } }] })).toBe("");
   });

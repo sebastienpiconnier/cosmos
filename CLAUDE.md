@@ -7,7 +7,7 @@ Application d'écriture pour romanciers et scénaristes « architectes » : un c
 - **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre. Ce qu'on crée dans une vue existe aussitôt dans les autres : une scène ou un personnage écrits dans le scénario, une fiche créée dans la Bible, ont leur carte sur le canevas.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
 - **Trois gestes** : taper (double-clic, clic droit, appui long, bouton « + » ou touche N), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
-- **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. L'IA reste optionnelle.
+- **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. La synthèse d'un personnage remet seulement en ordre ce que l'auteur a écrit, et n'entre dans la fiche que sur son clic. L'IA reste optionnelle. Les consignes complètes sont dans `docs/prompts-ia.md`.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
 - **Multilingue et mode sombre dès le départ** : aucun texte ni aucune couleur en dur dans les composants (voir les sections dédiées).
@@ -115,9 +115,12 @@ src/
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
   assistant.ts          Assistant personnage : questions par niveau, réponse ajoutée à la fiche, questions en attente (fonctions pures)
+  character.ts          Fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
+  organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
+  stats.ts              Statistiques du manuscrit (mots, pages, lecture) et objectifs d'écriture (fonctions pures)
   manuscript.ts         Manuscrit d'un roman : mots, cartes citées dans le texte, textes sans carte (fonctions pures)
   timeline.ts           Chronologie par intrigue : présence des thèmes, personnages et lieux dans les scènes (fonction pure)
-  plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes (fonctions pures)
+  plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes, chapitres (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
   media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
   settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
@@ -140,8 +143,10 @@ src/
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
     Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
-    Bible.tsx           Sommaire auto par type + fiches (titre modifiable) + liens + création d'une fiche
-    CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois
+    Bible.tsx           Sommaire auto par type + fiches (titre et texte modifiables) + liens + création d'une fiche ; portrait rond des personnages
+    BibleBody.tsx       Texte d'une fiche de la Bible, modifiable sur place (le corps de la carte)
+    CharacterSheet.tsx  Fiche d'identité d'un personnage : rôle, âge, métier, apparence, objectif, faille…
+    CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
@@ -151,7 +156,7 @@ src/
     AiMenu.tsx          Bouton « IA » (si un service est branché) : Ranger les idées, Vérifier la cohérence
     ExportMenu.tsx      Bouton « Exporter » : scénario (PDF, Fountain, FDX) ou manuscrit (PDF, Word, EPUB, Markdown), et bible
     usePagination.ts    Pagination du scénario courant (hook)
-    Manuscript.tsx      Vue Manuscrit d'un roman : une scène à la fois dans l'ordre du Plan, panneau « Dans cette scène »
+    Manuscript.tsx      Vue Manuscrit d'un roman : une scène à la fois dans l'ordre du Plan, mise en pages comme un livre, statistiques et objectifs, panneau « Dans cette scène »
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
     model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
     rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
@@ -176,8 +181,8 @@ src/
       pages.ts          Découpage de la feuille en vraies pages (A4, Letter) par décorations ProseMirror
       index.ts          screenplayExtensions() : l'assemblage
   ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
-    providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes, lecture des réponses, erreurs
-    tasks.ts            Consignes et relecture des réponses : Ranger, interview, cohérence (fonctions pures)
+    providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
+    tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -201,7 +206,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, facultatif)
+  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs)
   cartes/<id>.md       une carte par fichier
   manuscrit/<id>.md    texte d'une scène du roman (Markdown sans en-tête), au nom de sa carte Scène
   medias/<nom>.jpg     images des cartes (copiées dans le projet)
@@ -214,10 +219,14 @@ id: k3x9a7bq2m
 type: personnage
 title: "Inès Morvan"
 image: k3x9a7bq2m.jpg
+fiche: {"age":"34 ans","metier":"Gardienne de phare"}
+questions: ["Que cache-t-elle aux autres ?"]
 ---
 Gardienne remplaçante. Ne supporte pas le **silence**.
 Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 ```
+
+`fiche` (personnage : caractéristiques standard, clés fixes de `CHARACTER_FIELDS`) et `questions` (questions gardées pour plus tard) sont facultatifs, en JSON sur une ligne.
 
 Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
@@ -363,3 +372,13 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - Avant de coder une étape de la feuille de route, proposer un court plan (fichiers touchés, impact sur le format de projet).
 - Après chaque changement : `npm run build` doit passer sans erreur ni avertissement TypeScript.
 - Tester à la main dans `npm run dev` : créer une carte, la transformer, relier deux cartes, recharger la page, vérifier la Bible. Refaire le parcours en mode tactile, en anglais et en mode sombre.
+- **Questions « à creuser »** : « Je ne sais pas encore » range la question dans la carte du personnage (`questions`), jamais en carte sur le canevas ; la carte affiche seulement « N questions à compléter », qui ouvre sa fiche dans la Bible (`openInBible`). À l'ouverture d'un projet, les anciennes cartes Question créées par l'assistant (sans texte, un seul fil « à creuser »/« to dig into » vers un personnage dont elles portent le nom) sont reprises dans le personnage et quittent le canevas (`adoptParkedCards`).
+- **Bible modifiable** : le texte d'une fiche est un éditeur TipTap (`BibleBody`) sur le corps de la carte ; il se resynchronise quand le HTML change ailleurs (annuler, réponse de l'assistant, synthèse). Ne jamais revenir à un affichage en `dangerouslySetInnerHTML` non modifiable.
+- **Nouvelle carte** : le focus va dans le **titre**, pas dans le corps (Entrée passe ensuite au corps).
+- **Largeur d'une carte** : poignée au coin bas droit, pas tout le bord droit, qui recouvrait le point d'accroche du milieu et empêchait de tirer un fil depuis la droite.
+- **Image d'une carte** : proportions gardées (`object-fit: contain`), les bandes sont comblées par la même image floutée derrière. Jamais `cover`, qui coupait les portraits.
+- **Chapitres** : `plan.chapters` = `[{ id, title, scenes }]`. Le numéro d'un chapitre n'est jamais écrit : il vient de sa place dans le récit (`chapterNumbers`). « Nouveau chapitre à partir d'ici » (`startChapter`) coupe le chapitre courant ; supprimer un chapitre rend ses scènes au chapitre précédent, jamais de scène supprimée.
+- **Organiser le canevas** : une seule étape d'historique ; il **remplace tous les cadres** (ils se vidaient) et ne tire un fil « puis » qu'entre scènes pas encore reliées. Déplacer un cadre emmène aussi les cadres qu'il contient entièrement (chapitre dans une case de gabarit).
+- **IA et CORS** : dans l'app, les requêtes passent par `@tauri-apps/plugin-http` (permission `http:default` dans `capabilities/default.json`). Sans cela, LM Studio refuse l'appel par défaut (CORS). Le plugin ajoute pourtant l'en-tête Origin de l'app, qu'Ollama refuse sous Windows (`http://tauri.localhost`, réponse 403) : pour un serveur local on envoie `origin: ""`, que le plugin retire (fonction `unsafe-headers` dans Cargo.toml). Sans ces deux points, l'IA locale semblait « ne rien faire ».
+- **Ollama** : API native `/api/chat` avec `num_ctx` 16 384 (l'API compatible OpenAI tronquait le projet à quelques milliers de jetons, sans erreur) et `format: "json"` pour Ranger et Cohérence. Le raisonnement `<think>…</think>` des modèles locaux est retiré avant lecture (`stripThinking`).
+- **Pages du manuscrit** : l'extension `Pages` (screenplay/editor/pages.ts) sert aux deux éditeurs ; le manuscrit lui passe ses propres règles (`item`, `firstPage`, `label`). Les pages des scènes précédentes sont estimées à 250 mots par page (`stats.ts`), ce qui correspond à la page affichée.

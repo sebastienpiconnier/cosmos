@@ -37,26 +37,28 @@ Cosmos is under active development (version 0.1).
 
 ### The canvas
 
-- **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing. Rich text (bold, italic, lists). A new card never lands on top of another.
+- **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Six card types:** Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Double-click the thread (or tap it with a finger) to rename it.
 - **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
-- **Images:** drop an image on a card or on the canvas, or use the card’s image button. It is copied into the project’s `medias/` folder and also shows in the Bible.
-- **Card width:** drag the right edge of a selected card, or `Alt`+`→` and `Alt`+`←`.
-- **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards along.
+- **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
+- **Card width:** drag the bottom-right handle of a selected card, or `Alt`+`→` and `Alt`+`←`.
+- **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards and inner frames along.
+- **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas) and the scenes by template beat and chapter, linked in story order. `Ctrl`/`Cmd`+`Z` puts everything back.
 - **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
 - **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
 - **Minimap and zoom** to find your way as the canvas grows.
 
 ### The Bible
 
-A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas.
+A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Everything can be edited in place, title and text, and a character has a round portrait and a **character sheet**: role, age, occupation, background, appearance, personality, what they want, what they need, flaw, fear, secret, arc. All optional.
 
 ### The outline
 
 - **Four templates:** free, three acts, Save the Cat, hero’s journey. Each slot reminds you in one line what belongs there.
 - **Placing scenes:** drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
 - **Writing from the outline:** a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
+- **Chapters:** within each slot, scenes are grouped by chapter. “New chapter from here” cuts the story at a scene; the number follows on its own, the title is optional.
 - **Changing your mind:** switching templates loses nothing, each template keeps its own arrangement.
 - **List or index cards:** the outline shows as a list or as index cards.
 - **Timeline by storyline:** a table of scenes where each storyline (a Theme card), character and place has its row. You see at a glance where a storyline goes missing for too long, and you link a card to a scene by tapping a cell.
@@ -65,11 +67,13 @@ A table of contents and reference sheets generated automatically from your cards
 
 - **Questions, not answers:** in a character’s entry, “Ask about” puts one question at a time, across three levels (Essential, In depth, Intimate).
 - Your answer joins the entry, under the question. You can also skip to another question.
-- **“I don’t know yet”** keeps the question for later: it becomes a Question card linked to the character on the canvas.
+- **“I don’t know yet”** keeps the question for later, under the entry’s “To dig into” tab. On the canvas, the character’s card only shows “3 questions to answer”, which opens the entry.
+- **AI summary** (if an AI is plugged in): it puts what you wrote about the character (sheet, notes, answers) in order, without inventing anything. You add it to the entry or ignore it.
 
 ### The manuscript
 
-- **One scene at a time:** you write the text of each scene in outline order, with word counts per scene and in total.
+- **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter.
+- **Statistics and goals:** words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **In this scene:** characters and places mentioned in the text show up beside it, along with the card’s notes.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
 
@@ -107,18 +111,21 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 Cosmos works entirely without AI. You can plug one in from Settings:
 
-- **Locally**, with Ollama or LM Studio: your texts never leave your machine.
+- **Locally**, with Ollama or LM Studio: your texts never leave your machine. No server setting needed.
 - **With your own key**, for Claude, OpenAI or OpenRouter: the passages being analysed are then sent to that provider, under its terms. Your key stays on your device, never in the project.
 
 It asks, it doesn’t write: no action changes your project without your say.
 
-- **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one.
+- **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one, then “Organise the canvas” puts everything in frames.
 - **Tailored questions:** in the character assistant, a question based on what the entry already says. You do the answering.
+- **Character summary:** puts what you wrote in order, adding nothing.
 - **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
+
+The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs/prompts-ia.md) (in French, with the prompts themselves in English).
 
 ### Exports
 
-- **Manuscript:** PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
+- **Manuscript:** scenes of the same chapter form one chapter, separated by “* * *”. PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
 - **Screenplay:** PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **Bible:** PDF, Word or Markdown, with entries grouped by type and their links.
 - **Nothing to install:** everything is produced by the app itself.

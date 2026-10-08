@@ -1,16 +1,26 @@
 // Ce que Cosmos demande à l'IA, et comment il relit ses réponses. Fonctions pures.
 // Règle du produit : l'IA questionne et propose, elle n'écrit jamais à la place de l'auteur.
-// Trois tâches : « Ranger » (proposer un type pour les idées en vrac), l'interview (une question sur
-// mesure pour un personnage) et les alertes de cohérence (des contradictions possibles, sous forme de questions).
+// Quatre tâches : « Ranger » (proposer un type pour les idées en vrac), l'interview (une question sur
+// mesure pour un personnage), la synthèse d'un personnage (remettre en ordre ce que l'auteur a déjà
+// écrit, sans rien inventer) et les alertes de cohérence (des contradictions possibles, sous forme de questions).
+// Le texte complet de chaque consigne est recopié dans docs/prompts-ia.md : le tenir à jour.
 
 import { CARD_TYPES, type CardData, type CardType, type Link } from "../types";
 import { plainText } from "../search";
+import { CHARACTER_FIELDS } from "../character";
 
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
 
 const clip = (text: string, max = MAX_TEXT) => (text.length > max ? `${text.slice(0, max)}…` : text);
-const brief = (card: CardData) => ({ id: card.id, type: card.type, title: card.title.trim(), text: clip(plainText(card.html)) });
+/** Une carte telle que l'IA la lit : identifiant, type, titre, texte (abrégé) et fiche d'identité s'il y en a une. */
+const brief = (card: CardData) => ({
+  id: card.id,
+  type: card.type,
+  title: card.title.trim(),
+  text: clip(plainText(card.html)),
+  ...(card.fiche && Object.keys(card.fiche).length > 0 ? { sheet: card.fiche } : {}),
+});
 
 /** Nom de la langue de l'interface, pour demander la réponse dans cette langue. */
 const LANGUAGE: Record<string, string> = { fr: "français", en: "English" };
@@ -60,7 +70,8 @@ export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "sce
       `You help a writer organise the notes of a ${kind === "scenario" ? "screenplay" : "novel"}. Each note is an untyped idea card. ` +
       `Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), theme (a theme), question (an open question the writer asks themself). ` +
       `Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. ` +
-      `Answer with a JSON array only: [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in ${language(lang)}>"}].`,
+      `Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in ${language(lang)}>"}]}. ` +
+      `Use the card ids exactly as given. If no note should change, answer {"items": []}.`,
     user: JSON.stringify(tidyCandidates(cards).map(({ id, title, html }) => ({ id, title: title.trim(), text: clip(plainText(html)) }))),
   };
 }
@@ -100,6 +111,41 @@ export function parseQuestion(reply: string): string {
   return clip(line.replace(/^[-*\d.\s]*(question\s*:)?\s*/i, "").replace(/^["«“]\s*|\s*["»”]$/g, "").trim(), 300);
 }
 
+// ---------- Synthèse d'un personnage ----------
+
+/**
+ * Remettre en ordre ce que l'auteur a écrit d'un personnage (fiche, notes, réponses aux questions) en un
+ * court portrait. L'IA ne doit rien ajouter : chaque phrase vient de ce qui est écrit. Le résultat est
+ * proposé à l'auteur, qui l'ajoute à la fiche ou l'ignore.
+ */
+export function synthesisPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, fieldLabels: Record<string, string>): Prompt {
+  const related = links.flatMap((l) => {
+    const other = l.source === character.id ? l.target : l.target === character.id ? l.source : null;
+    const card = other ? cards.find((c) => c.id === other) : undefined;
+    return card && card.title.trim() ? [{ title: card.title.trim(), type: card.type, link: l.label }] : [];
+  });
+  const sheet = Object.fromEntries(CHARACTER_FIELDS.flatMap((key) => (character.fiche?.[key]?.trim() ? [[fieldLabels[key] ?? key, character.fiche[key].trim()]] : [])));
+  return {
+    system:
+      `You help a writer see their character clearly. Write a synthesis of the character using ONLY what the writer's notes say: the sheet, the notes and the answers to interview questions. ` +
+      `Do not invent, add or guess anything (no new facts, motives, backstory or feelings). Do not judge or advise. Keep the writer's own words where you can. ` +
+      `Structure: one short paragraph per aspect that the notes actually cover (who they are, what they want and what stops them, their inner life, their relationships, how they change). Skip aspects the notes do not cover. ` +
+      `If two notes contradict each other, end with one line starting with "?" that asks the writer which is right. ` +
+      `Plain text, no title, no lists, no Markdown, in ${language(lang)}, third person, present tense, at most 180 words.`,
+    user: JSON.stringify({ name: character.title.trim(), sheet, notes: clip(plainText(character.html), 6000), related: related.slice(0, 30) }),
+  };
+}
+
+/** Paragraphes de la synthèse, débarrassés de ce que les modèles ajoutent (titre, Markdown, guillemets). */
+export function parseSynthesis(reply: string): string[] {
+  return reply
+    .split(/\n+/)
+    .map((l) => l.replace(/^#+\s*/, "").replace(/^\*\*(.+)\*\*$/, "$1").replace(/[*_`]/g, "").trim())
+    .filter((l) => l && !/^(synth[eè]se|summary|portrait)\s*:?$/i.test(l))
+    .map((l) => clip(l, 1200))
+    .slice(0, 8);
+}
+
 // ---------- Cohérence ----------
 
 export interface CoherenceAlert {
@@ -116,7 +162,7 @@ export function coherencePrompt(cards: CardData[], links: Pick<Link, "source" | 
     system:
       `You are a continuity reader for a writer's story bible. Find statements in the notes that contradict each other (ages, dates, places, relationships, who knows what, physical details). ` +
       `Report only real contradictions between what is written, never missing information, style, or opinions. Do not propose fixes and do not rewrite anything: phrase each one as a short question to the writer, in ${language(lang)}. ` +
-      `Answer with a JSON array only: [{"cards": ["<id>", "<id>"], "question": "<question>"}]. If nothing contradicts, answer [].`,
+      `Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}. Use the card ids exactly as given. If nothing contradicts, answer {"items": []}.`,
     user: JSON.stringify({ cards: kept.map(brief), links: links.filter((l) => ids.has(l.source) && ids.has(l.target)).map(({ source, target, label }) => ({ source, target, label })) }),
   };
 }

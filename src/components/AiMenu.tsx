@@ -1,6 +1,7 @@
 // Bouton « IA » de la barre du haut, présent seulement si l'auteur a branché un service dans les Réglages.
 // Deux actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
 // idées en vrac) et « Vérifier la cohérence » (contradictions possibles, sous forme de questions).
+// Et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
 // L'auteur applique, ignore, ou garde une question pour plus tard.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -67,12 +68,12 @@ export function AiMenu() {
     try {
       if (task === "tidy") {
         const prompt = tidyPrompt(cards, lang, kind);
-        const items = parseTidy(await complete(config, prompt.system, prompt.user), cards);
+        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards);
         setResult({ kind: "tidy", items });
         setMessage(items.length === 0 ? t.tidyEmpty : "");
       } else {
         const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang);
-        const items = parseCoherence(await complete(config, prompt.system, prompt.user), cards);
+        const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards);
         setResult({ kind: "coherence", items });
         setMessage(items.length === 0 ? t.coherenceNone : "");
       }
@@ -119,6 +120,11 @@ export function AiMenu() {
             {t.coherence}
           </button>
           <p className="settings-hint">{t.coherenceHint}</p>
+          {/* Après avoir typé les idées : tout ranger en cadres sur le canevas (sans IA, annulable). */}
+          <button type="button" className="ghost-button" disabled={busy} onClick={() => useCosmos.getState().organizeCanvas()}>
+            {all.organize.button}
+          </button>
+          <p className="settings-hint">{all.organize.hint}</p>
 
           <p className="ai-message" role="status">
             {message}

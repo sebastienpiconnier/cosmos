@@ -1,7 +1,7 @@
 // Assistant personnage : des questions par niveau, pour creuser une fiche. Fonctions pures.
-// L'assistant questionne, l'auteur écrit. Aucun format propre : une réponse s'ajoute au texte de la
-// fiche (la question en gras, la réponse dessous), et « Je ne sais pas encore » crée une carte
-// Question reliée au personnage. On retrouve donc où l'on en est en relisant les cartes.
+// L'assistant questionne, l'auteur écrit. Une réponse s'ajoute au texte de la fiche (la question en
+// gras, la réponse dessous), et « Je ne sais pas encore » range la question dans la carte du personnage
+// (champ `questions`), sans rien poser sur le canevas : la carte affiche seulement leur nombre.
 
 import type { CardData, Link } from "./types";
 
@@ -39,8 +39,12 @@ export const isAnswered = (html: string, question: string) => html.includes(`<st
 /** Titre de la carte Question créée par « Je ne sais pas encore ». */
 export const parkedTitle = (name: string, question: string) => (name.trim() ? `${name.trim()} : ${question}` : question);
 
-/** La question attend déjà dans une carte Question reliée au personnage. */
+/**
+ * La question attend déjà : dans la carte du personnage (champ `questions`) ou, pour les projets
+ * d'avant, dans une carte Question reliée au personnage.
+ */
 export function isParked(cards: CardData[], links: Pick<Link, "source" | "target">[], characterId: string, question: string): boolean {
+  if (cards.find((c) => c.id === characterId)?.questions?.includes(question)) return true;
   const linked = new Set(links.flatMap((l) => (l.source === characterId ? [l.target] : l.target === characterId ? [l.source] : [])));
   return cards.some((c) => c.type === "question" && linked.has(c.id) && c.title.trim().endsWith(question));
 }

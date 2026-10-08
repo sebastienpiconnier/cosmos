@@ -4,6 +4,7 @@
 import type { Screenplay } from "./screenplay/model";
 import type { Paper } from "./screenplay/layout";
 import type { Plan } from "./plan";
+import type { Goals, Progress } from "./stats";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "theme" | "question";
 
@@ -34,6 +35,10 @@ export interface CardData {
   html: string;
   /** Image de la carte : nom d'un fichier du dossier medias/ du projet. */
   image?: string;
+  /** Personnage : caractéristiques standard (clés fixes, voir CHARACTER_FIELDS dans character.ts). Absent : rien de rempli. */
+  fiche?: Record<string, string>;
+  /** Questions gardées pour plus tard (« Je ne sais pas encore »). Elles vivent dans la carte, pas sur le canevas. */
+  questions?: string[];
   [key: string]: unknown; // requis par React Flow pour data
 }
 
@@ -79,6 +84,10 @@ export interface ProjectMeta {
   frames?: Frame[];
   /** Plan d'un roman : gabarit et scènes rangées dans ses cases. Absent : plan libre, rien de rangé. */
   plan?: Plan;
+  /** Objectifs d'écriture (mots par jour, mots du livre). Absent : aucun. */
+  goals?: Goals;
+  /** Mots du manuscrit au début et à la fin de chaque jour d'écriture. Absent : rien d'écrit encore. */
+  progress?: Progress;
   viewport?: { x: number; y: number; zoom: number };
 }
 

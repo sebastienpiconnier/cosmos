@@ -1,6 +1,8 @@
 // La bible se construit toute seule à partir des cartes typées du canevas.
 // Aucune donnée propre : c'est une autre lecture du même projet. On peut aussi y créer une fiche
 // et la nommer : c'est une carte comme les autres, qui apparaît aussitôt sur le canevas.
+// Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
+// d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -10,12 +12,25 @@ import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
 import { CharacterAssistant } from "./CharacterAssistant";
+import { CharacterSheet } from "./CharacterSheet";
+import { BibleBody } from "./BibleBody";
 
-
-/** Image d'une fiche, en tête (la même que sur sa carte). */
+/** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
   const url = useMediaUrl(name);
-  return url ? <img className="bible-image" src={url} alt={alt} /> : null;
+  if (!url) return null;
+  return (
+    <div className="bible-image">
+      <img className="bible-image-backdrop" src={url} alt="" aria-hidden="true" />
+      <img className="bible-image-main" src={url} alt={alt} />
+    </div>
+  );
+}
+
+/** Portrait d'un personnage, dans un cercle. */
+function Portrait({ name, alt }: { name: string | undefined; alt: string }) {
+  const url = useMediaUrl(name);
+  return url ? <img className="bible-portrait" src={url} alt={alt} /> : null;
 }
 
 export function Bible() {
@@ -26,6 +41,11 @@ export function Bible() {
   const setView = useCosmos((s) => s.setView);
   const updateCard = useCosmos((s) => s.updateCard);
   const addTitledCard = useCosmos((s) => s.addTitledCard);
+  const pickCardImage = useCosmos((s) => s.pickCardImage);
+  const target = useCosmos((s) => s.bibleTarget);
+  const clearTarget = useCosmos((s) => s.clearBibleTarget);
+  // Fiche ouverte depuis le canevas (« 3 questions à compléter ») : assistant ouvert sur elle.
+  const [assisted, setAssisted] = useState<string | null>(null);
 
   // Fiche qui vient d'être créée ici : elle reste en tête et son titre prend le focus,
   // sans sauter dans l'ordre alphabétique à chaque lettre tapée.
@@ -48,6 +68,17 @@ export function Bible() {
   );
   const [current, setCurrent] = useState<CardType | null>(null);
   const shown = sections.find((s) => s.type === current) ?? sections[0];
+
+  // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
+  useEffect(() => {
+    if (!target) return;
+    const card = nodes.find((n) => n.id === target.id)?.data;
+    clearTarget();
+    if (!card) return;
+    setCurrent(card.type);
+    if (target.assistant) setAssisted(card.id);
+    requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${card.id}"]`)?.scrollIntoView({ block: "start" }));
+  }, [target, nodes, clearTarget]);
 
   const create = (type: CardType) => {
     setCurrent(type);
@@ -122,9 +153,21 @@ export function Bible() {
         {shown.cards.map((card) => {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
           return (
-            <article key={card.id} className="bible-entry" style={{ ["--type" as string]: typeColor(shown.type) }}>
-              <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
+            <article key={card.id} data-entry={card.id} className={`bible-entry${shown.type === "personnage" ? " is-character" : ""}`} style={{ ["--type" as string]: typeColor(shown.type) }}>
+              {shown.type !== "personnage" && (
+                <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
+              )}
               <header>
+                {shown.type === "personnage" &&
+                  (card.image ? (
+                    <button type="button" className="bible-portrait-button" aria-label={t.card.changeImage} title={t.card.changeImage} onClick={() => pickCardImage(card.id)}>
+                      <Portrait name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
+                    </button>
+                  ) : (
+                    <button type="button" className="bible-portrait-button is-empty" aria-label={t.character.addPortrait} title={t.character.addPortrait} onClick={() => pickCardImage(card.id)}>
+                      <span aria-hidden="true">{(card.title.trim()[0] ?? "?").toUpperCase()}</span>
+                    </button>
+                  ))}
                 <h2>
                   {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
                   <input
@@ -146,13 +189,10 @@ export function Bible() {
                   {t.bible.seeOnCanvas}
                 </button>
               </header>
-              {card.html ? (
-                // HTML produit par TipTap ou nettoyé au chargement (voir sanitizeHtml).
-                <div className="bible-body" dangerouslySetInnerHTML={{ __html: card.html }} />
-              ) : (
-                <p className="muted">{t.bible.toDig}</p>
-              )}
-              {shown.type === "personnage" && <CharacterAssistant card={card} />}
+              {shown.type === "personnage" && <CharacterSheet card={card} />}
+              {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
+              <BibleBody card={card} />
+              {shown.type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
               {links.length > 0 && (
                 <div className="bible-links">
                   <span className="eyebrow">{t.bible.linkedTo}</span>

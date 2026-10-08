@@ -5,6 +5,7 @@
 import type { CardData, CardType, Link } from "../types";
 import { BIBLE_ORDER } from "../types";
 import { isBlank, type Manuscript } from "../manuscript";
+import { CHARACTER_FIELDS } from "../character";
 
 export interface Run {
   text: string;
@@ -122,13 +123,37 @@ export interface DocInfo {
   lang: string;
 }
 
-/** Manuscrit : les scènes écrites, dans l'ordre du plan. Une scène sans texte n'y figure pas. */
-export function manuscriptDoc(info: DocInfo, order: string[], cards: CardData[], manuscript: Manuscript, untitled: string): ExportDoc {
+/** Séparateur entre deux scènes d'un même chapitre. */
+export const SCENE_BREAK = "* * *";
+
+/**
+ * Manuscrit : les scènes écrites, dans l'ordre du plan. Une scène sans texte n'y figure pas.
+ * `chapterOf` (facultatif) : le chapitre de chaque scène. Les scènes d'un même chapitre, à la suite,
+ * forment un seul chapitre du livre (titre du chapitre, scènes séparées par « * * * ») ; une scène hors
+ * chapitre reste un chapitre à elle seule, sous son titre.
+ */
+export function manuscriptDoc(
+  info: DocInfo,
+  order: string[],
+  cards: CardData[],
+  manuscript: Manuscript,
+  untitled: string,
+  chapterOf?: (sceneId: string) => { id: string; title: string } | null,
+): ExportDoc {
   const byId = new Map(cards.map((c) => [c.id, c]));
-  const chapters = order
-    .filter((id) => !isBlank(manuscript[id]))
-    .map((id) => ({ title: byId.get(id)?.title.trim() || untitled, blocks: htmlToBlocks(manuscript[id]) }));
-  return { ...info, chapters, indent: true };
+  const chapters: (Chapter & { key?: string })[] = [];
+  for (const id of order.filter((x) => !isBlank(manuscript[x]))) {
+    const chapter = chapterOf?.(id) ?? null;
+    const last = chapters[chapters.length - 1];
+    if (chapter && last?.key === chapter.id) {
+      last.blocks.push({ kind: "paragraph", runs: [{ text: SCENE_BREAK }] }, ...htmlToBlocks(manuscript[id]));
+    } else if (chapter) {
+      chapters.push({ key: chapter.id, title: chapter.title, blocks: htmlToBlocks(manuscript[id]) });
+    } else {
+      chapters.push({ title: byId.get(id)?.title.trim() || untitled, blocks: htmlToBlocks(manuscript[id]) });
+    }
+  }
+  return { ...info, chapters: chapters.map(({ key: _key, ...c }) => c), indent: true };
 }
 
 export interface BibleStrings {
@@ -136,6 +161,8 @@ export interface BibleStrings {
   sections: Record<CardType, string>;
   untitled: string;
   linkedTo: string;
+  /** Libellés des champs de la fiche d'un personnage (facultatif : sans eux, la fiche n'est pas exportée). */
+  fields?: Record<string, string>;
 }
 
 /** Bible : une partie par type de carte, une fiche par carte (triées par titre), avec ses liens. */
@@ -146,6 +173,13 @@ export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "so
     const blocks: Block[] = [];
     for (const card of entries) {
       blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }] });
+      // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
+      if (strings.fields && card.fiche) {
+        for (const key of CHARACTER_FIELDS) {
+          const value = card.fiche[key]?.trim();
+          if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: value }] });
+        }
+      }
       blocks.push(...htmlToBlocks(card.html).map((b): Block => (b.kind === "heading" ? { kind: "paragraph", runs: b.runs.map((r) => ({ ...r, bold: true })) } : b)));
       const related = links
         .filter((l) => l.source === card.id || l.target === card.id)

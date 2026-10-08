@@ -9,7 +9,7 @@ import { useCosmos, planScenes } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { CARD_TYPES } from "../types";
-import { planOrder } from "../plan";
+import { chapterNumbers, chapterOf, planOrder } from "../plan";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
 import { bibleDoc, manuscriptDoc } from "../export/doc";
@@ -89,7 +89,14 @@ export function ExportMenu() {
   const manuscriptFile = (format: DocFormat) => async () => {
     const { nodes, plan, manuscript, paper } = useCosmos.getState();
     const cards = nodes.map((n) => n.data);
-    const doc = manuscriptDoc(info(), planOrder(plan, planScenes(nodes)), cards, manuscript, all.manuscript.untitled);
+    const order = planOrder(plan, planScenes(nodes));
+    const numbers = chapterNumbers(plan, order);
+    const doc = manuscriptDoc(info(), order, cards, manuscript, all.manuscript.untitled, (id) => {
+      const chapter = chapterOf(plan, id);
+      if (!chapter) return null;
+      const n = numbers.get(chapter.id) ?? 0;
+      return { id: chapter.id, title: chapter.title.trim() ? fmt(all.chapters.numberedTitle, { n, title: chapter.title.trim() }) : fmt(all.chapters.numbered, { n }) };
+    });
     if (doc.chapters.length === 0) return null;
     return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
   };
@@ -102,7 +109,7 @@ export function ExportMenu() {
       { ...base, title: fmt(x.bibleName, { title: base.title }) },
       nodes.map((n) => n.data),
       edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
-      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo },
+      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo, fields: all.character.fields },
     );
     return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
   };

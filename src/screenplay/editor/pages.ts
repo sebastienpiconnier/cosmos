@@ -50,7 +50,22 @@ export interface PagesOptions {
   geometry: () => { lines: number; pageLines: number; marginTop: number };
   /** Faux sur un écran trop étroit pour une vraie page : la feuille redevient continue. */
   enabled: (editorDom: HTMLElement) => boolean;
+  /** Marge au-dessus d'un élément et lignes à garder après lui, selon son type (scénario par défaut). */
+  item?: (type: string) => { margin: number; keep: number };
+  /** Numéro de la première page (le manuscrit continue la numérotation des scènes précédentes). */
+  firstPage?: () => number;
+  /** Texte du numéro de page (scénario : « 2. »). */
+  label?: (page: number) => string;
+  /** Appelé après chaque découpage, avec le nombre de pages. */
+  onLayout?: (pages: number) => void;
 }
+
+/** Règles du scénario : pas de marge avant une réplique, en-tête et personnage jamais seuls en bas de page. */
+const screenplayItem = (type: string) => ({
+  margin: TIGHT.has(type) ? 0 : 1,
+  // Jamais d'en-tête en bas de page (une ligne vide et une ligne de texte), ni de personnage sans réplique.
+  keep: type === "sceneHeading" ? 2 : type === "character" ? 1 : 0,
+});
 
 /** Espace entre deux pages, en lignes. */
 const GAP = 2;
@@ -83,7 +98,7 @@ function spacer(height: number, gapTop: number | null, label: string): () => HTM
 
 export const Pages = Extension.create<PagesOptions>({
   name: "screenplayPages",
-  addOptions: () => ({ geometry: () => ({ lines: 55, pageLines: 66, marginTop: 6 }), enabled: () => true }),
+  addOptions: () => ({ geometry: () => ({ lines: 55, pageLines: 66, marginTop: 6 }), enabled: () => true }) as PagesOptions,
 
   addProseMirrorPlugins() {
     const options = this.options;
@@ -108,32 +123,31 @@ export const Pages = Extension.create<PagesOptions>({
             const { doc } = view.state;
             const line = parseFloat(getComputedStyle(view.dom).fontSize);
             const { lines, pageLines, marginTop } = options.geometry();
+            const itemOf = options.item ?? screenplayItem;
+            const first = (options.firstPage?.() ?? 1) - 1;
+            const label = options.label ?? ((page: number) => `${page}.`);
             const decorations: Decoration[] = [];
-            let next = "";
+            let next = `p${first};`;
+            let pages = 0;
 
             if (line > 0 && options.enabled(view.dom as HTMLElement)) {
               const items: PageItem[] = [];
               const positions: number[] = [];
               doc.forEach((node, offset) => {
                 const dom = view.nodeDOM(offset);
-                const type = node.type.name;
-                items.push({
-                  height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1,
-                  margin: TIGHT.has(type) ? 0 : 1,
-                  // Jamais d'en-tête en bas de page (une ligne vide et une ligne de texte), ni de personnage sans réplique.
-                  keep: type === "sceneHeading" ? 2 : type === "character" ? 1 : 0,
-                });
+                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(node.type.name) });
                 positions.push(offset);
               });
               const layout = layoutPages(items, lines);
+              pages = layout.pages;
               const bottom = pageLines - marginTop - lines; // marge basse
               for (const b of layout.breaks) {
                 // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté.
                 const height = b.rest + bottom + GAP + marginTop - items[b.index].margin;
                 decorations.push(
-                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, `${b.page}.`), {
+                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(b.page + first)), {
                     side: -1,
-                    key: `page-${b.page}-${height.toFixed(2)}`,
+                    key: `page-${b.page + first}-${height.toFixed(2)}`,
                   }),
                 );
                 next += `${positions[b.index]}:${height.toFixed(2)};`;
@@ -144,6 +158,7 @@ export const Pages = Extension.create<PagesOptions>({
               next += `end:${tail.toFixed(2)}`;
             }
 
+            options.onLayout?.(pages);
             if (next === signature) return;
             signature = next;
             view.dispatch(view.state.tr.setMeta(pagesKey, decorations).setMeta("addToHistory", false));
