@@ -3,8 +3,8 @@ name = "cosmos"
 version = "0.1.0"
 description = "Cosmos : du chaos au monde ordonné, une toile pour les écrivains"
 authors = ["Sébastien Piconnier"]
-license = ""
-repository = ""
+license = "GPL-3.0-or-later"
+repository = "https://github.com/sebastienpiconnier/cosmos"
 edition = "2024"
 rust-version = "1.90"
 

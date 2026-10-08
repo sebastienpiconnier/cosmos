@@ -23,6 +23,7 @@ Cosmos s'adresse aux auteurs « architectes », ceux qui préparent avant d'écr
 - **Trois gestes suffisent :** taper, tirer un fil, déposer.
 - **Tes textes t'appartiennent.** Un projet est un dossier de fichiers Markdown, lisibles dans n'importe quel éditeur, avec ou sans Cosmos. Aucun compte, aucun serveur.
 - **L'IA questionne, elle n'écrit pas à ta place.** Elle est optionnelle, et c'est toi qui choisis laquelle brancher, y compris un modèle qui tourne sur ta machine.
+- **Libre et gratuit.** Cosmos est un logiciel libre, distribué sous licence GPL-3.0 : tu peux l'utiliser, l'étudier, le modifier et le partager.
 
 ## Télécharger
 
@@ -226,6 +227,8 @@ Le code passe par GitHub : `git push` en fin de session, `git pull` puis `npm in
 
 Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLAUDE.md), prévu pour travailler avec Claude Code.
 
-## Crédits
+## Licence
+
+Cosmos est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Tu peux l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que tu distribues doit rester sous la même licence.
 
 Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)).

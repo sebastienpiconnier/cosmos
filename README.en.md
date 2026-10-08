@@ -2,79 +2,76 @@
 
 [Français](README.md) · **English**
 
-From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it.
+**From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it.**
 
 ![The Cosmos canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
+
+[Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
+
+---
 
 ## The idea
 
 A story rarely starts with chapter one. It starts with fragments: an image, a character, a place, a question with no answer yet. Cosmos gives those fragments somewhere to land, then helps them grow into a coherent world, an outline and finally a text.
 
-The app is made for “architect” writers, the ones who plan before they write. It rests on a few choices:
+In Greek, *kosmos* means the order of the world, born out of chaos. That is exactly the path the app takes you along.
 
-- **One content, several views.** Canvas, Outline, Bible and Manuscript are four readings of the same project. Nothing is ever copied from one view to another.
+Cosmos is made for “architect” writers, the ones who plan before they write. It rests on a few choices:
+
+- **One content, several views.** Canvas, Bible, Outline and Manuscript are four readings of the same project. Nothing is ever copied from one view to another.
 - **Structure emerges, you don’t configure it.** No forms, no required fields. A card is born an “Idea” and becomes a Character, a Place or a Scene when you decide so.
-- **Three gestures are enough**: type, drag a thread, drop.
-- **Your texts are yours.** A project is a folder of Markdown files, readable in any editor, with or without Cosmos.
-- **AI asks questions, it doesn’t write for you.** It is planned for later and will stay optional.
+- **Three gestures are enough:** type, drag a thread, drop.
+- **Your texts are yours.** A project is a folder of Markdown files, readable in any editor, with or without Cosmos. No account, no server.
+- **AI asks questions, it doesn’t write for you.** It is optional, and you choose which one to plug in, including a model running on your own machine.
+- **Free and open source.** Cosmos is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
+
+## Download
+
+Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/cosmos/releases).
+
+> **First launch.** The app is not signed yet. On macOS, right-click the app, then “Open”. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”.
+
+Cosmos is under active development (version 0.1).
 
 ## Features
 
-Cosmos is under active development (version 0.1). Here is what works today.
-
 ### The canvas
 
-- **Free-form cards**: double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing. Rich text (bold, italic, lists). A new card never lands on top of another.
-- **Six card types**: Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
-- **Labeled threads**: drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge.
-- **Mentions**: type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
-- **Images**: drop an image on a card or on the canvas, or use the card’s image button. It is copied into the project’s `medias/` folder and also shows in the Bible.
-- **Card width**: drag the right edge of a selected card, or `Alt`+`→` and `Alt`+`←`.
-- **Frames**: a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards along.
-- **Undo and redo**: `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
-- **Search**: the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
+- **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing. Rich text (bold, italic, lists). A new card never lands on top of another.
+- **Six card types:** Idea, Character, Place, Scene, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Double-click the thread (or tap it with a finger) to rename it.
+- **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
+- **Images:** drop an image on a card or on the canvas, or use the card’s image button. It is copied into the project’s `medias/` folder and also shows in the Bible.
+- **Card width:** drag the right edge of a selected card, or `Alt`+`→` and `Alt`+`←`.
+- **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards along.
+- **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
+- **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
 - **Minimap and zoom** to find your way as the canvas grows.
-
-### The outline (novel)
-
-- **Four templates**: free, three acts, Save the Cat, hero’s journey. Each slot reminds you in one line what belongs there.
-- **Placing scenes**: drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
-- **Writing from the outline**: a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
-- **Changing your mind**: switching templates loses nothing, each template keeps its own arrangement.
-- **List or index cards**: the outline shows as a list or as index cards, like the step outline.
-- **Timeline by storyline**: a table of scenes where each storyline (a Theme card), character and place has its row. You see at a glance where a storyline goes missing for too long, and you link a card to a scene by tapping a cell.
-
-### The character assistant
-
-- **Questions, not answers**: in a character’s entry, “Ask about” puts one question at a time, across three levels (Essential, In depth, Intimate).
-- **Your answer joins the entry**, under the question. You can also skip to another question.
-- **“I don’t know yet”** keeps the question for later: it becomes a Question card linked to the character on the canvas.
-
-### The manuscript (novel)
-
-- **One scene at a time**: you write the text of each scene in outline order, with word counts per scene and in total.
-- **In this scene**: characters and places mentioned in the text show up beside it, along with the card’s notes.
-- **Your files**: every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
-
-### AI, if you want it
-
-Cosmos works without AI. You can plug one in from Settings: Claude, OpenAI, OpenRouter, or a model running on your machine with Ollama or LM Studio (your texts then never leave it).
-
-- **It asks, it doesn’t write**: no action changes your project without your say.
-- **Tidy up ideas**: suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one.
-- **Tailored questions**: in the character assistant, a question based on what the entry already says. You do the answering.
-- **Check consistency**: points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
-- **Your key stays on your device**, never in the project.
-
-### Exports
-
-- **Manuscript**: PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
-- **Bible**: PDF, Word or Markdown, with entries grouped by type and their links.
-- **Nothing to install**: everything is produced by the app, on desktop and in the browser alike.
 
 ### The Bible
 
 A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas.
+
+### The outline
+
+- **Four templates:** free, three acts, Save the Cat, hero’s journey. Each slot reminds you in one line what belongs there.
+- **Placing scenes:** drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
+- **Writing from the outline:** a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides.
+- **Changing your mind:** switching templates loses nothing, each template keeps its own arrangement.
+- **List or index cards:** the outline shows as a list or as index cards.
+- **Timeline by storyline:** a table of scenes where each storyline (a Theme card), character and place has its row. You see at a glance where a storyline goes missing for too long, and you link a card to a scene by tapping a cell.
+
+### The character assistant
+
+- **Questions, not answers:** in a character’s entry, “Ask about” puts one question at a time, across three levels (Essential, In depth, Intimate).
+- Your answer joins the entry, under the question. You can also skip to another question.
+- **“I don’t know yet”** keeps the question for later: it becomes a Question card linked to the character on the canvas.
+
+### The manuscript
+
+- **One scene at a time:** you write the text of each scene in outline order, with word counts per scene and in total.
+- **In this scene:** characters and places mentioned in the text show up beside it, along with the card’s notes.
+- **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text.
 
 ### Novels and screenplays
 
@@ -82,86 +79,81 @@ A project is a novel or a screenplay, and you can switch at any time. The canvas
 
 ### The screenplay editor
 
-For a screenplay project, the Screenplay view is an editor in standard film format:
+For a screenplay project, the Screenplay view is an editor in standard film format, linked to the canvas: each scene heading is tied to its Scene card, and what you write in one shows up in the other.
 
 ![The screenplay editor (French interface): scene list, standard-format page and “In this scene” panel](docs/images/scenario-fr.png)
 
-- **Real pages**: the sheet has the proportions and margins of the chosen paper size (A4 or US Letter), page after page, as in print.
-- **Title page**: a cover page where you write the title, your name, the “Written by” credit, your contact address and the date. Your name is remembered for your next screenplays.
-- **Six elements**: scene heading, action, character, parenthetical, dialogue, transition, with the standard indents.
-- **All from the keyboard**: `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
-- **Detection as you type**: a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
-- **Completion**: characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
-- **Linked to the canvas**: each scene heading is linked to its Scene card, and renaming one renames the other. A scene, its location or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
-- **Pages and minutes**: the page count and the estimated running time (about one minute per page) are always visible, in US Letter or A4.
-- **Step outline**: the scenes in order, as a list or as index cards, with their synopsis, characters and length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
-- **Step outline templates**: three acts, Save the Cat, eight sequences or TV episode. Slots are sections of the Fountain file, readable in other software, each with its running time.
-- **Synopsis**: one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
-- **Exports**: PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
-- **Import**: an existing `.fountain` file becomes a project, with its Scene, Character and Location cards already created and linked.
-- **Scene numbers and focus mode**: optional numbering in the margin, and a mode that keeps only the page on screen.
-- **An open file**: the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
+<details>
+<summary><strong>Everything the screenplay editor does</strong></summary>
+
+- **Real pages:** the sheet has the proportions and margins of the chosen paper size (A4 or US Letter), page after page, as in print.
+- **Title page:** a cover page where you write the title, your name, the “Written by” credit, your contact address and the date. Your name is remembered for your next screenplays.
+- **Six elements:** scene heading, action, character, parenthetical, dialogue, transition, with the standard indents.
+- **All from the keyboard:** `Tab` changes the element type, `Enter` moves to the next logical element (character, then dialogue, then action). An element bar does the same with a mouse or a finger.
+- **Detection as you type:** a line starting with `int.` or `ext.` becomes a scene heading, an opening parenthesis starts a parenthetical.
+- **Completion:** characters and locations from the Bible are suggested as you write, along with extensions (V.O., O.S.) and times of day (DAY, NIGHT). An unknown character or location can become a card in one gesture.
+- **Linked to the canvas:** renaming a scene heading renames its card, and the other way round. A scene, its location or a character you write in the screenplay gets its card on the canvas; a Scene card created on the canvas enters the screenplay.
+- **Pages and minutes:** the page count and the estimated running time (about one minute per page) are always visible.
+- **Step outline:** the scenes in order, as a list or as index cards, with their synopsis, characters and length. Reorder them by dragging or with the arrows, and the scene’s text follows in the file.
+- **Step outline templates:** three acts, Save the Cat, eight sequences or TV episode. Slots are sections of the Fountain file, readable in other software, each with its running time.
+- **Synopsis:** one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
+- **Import:** an existing `.fountain` file becomes a project, with its Scene, Character and Location cards already created and linked.
+- **Scene numbers and focus mode:** optional numbering in the margin, and a mode that keeps only the page on screen.
+- **An open format:** the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
+
+</details>
+
+### AI, if you want it
+
+Cosmos works entirely without AI. You can plug one in from Settings:
+
+- **Locally**, with Ollama or LM Studio: your texts never leave your machine.
+- **With your own key**, for Claude, OpenAI or OpenRouter: the passages being analysed are then sent to that provider, under its terms. Your key stays on your device, never in the project.
+
+It asks, it doesn’t write: no action changes your project without your say.
+
+- **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one.
+- **Tailored questions:** in the character assistant, a question based on what the entry already says. You do the answering.
+- **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
+
+### Exports
+
+- **Manuscript:** PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
+- **Screenplay:** PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
+- **Bible:** PDF, Word or Markdown, with entries grouped by type and their links.
+- **Nothing to install:** everything is produced by the app itself.
 
 ### Comfort
 
-- **Several projects**: a home screen to choose the one to work on, or to create one.
+- **Several projects:** a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
 - **English and French**, each with its own typography.
 - **Light, dark or system appearance.**
-- **Mouse, touch and keyboard**: every action has all three paths.
-- **Offline**: bundled fonts, no account, no server.
+- **Mouse, touch and keyboard:** every action has all three paths.
+- **Offline:** bundled fonts, no account, no server.
 
 ![The same canvas in dark mode](docs/images/canvas-dark-en.png)
 
-### Coming next
-
-| Step | Content |
-|---|---|
-| Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
-| Mobile | iOS and Android apps |
-| Sync | Across devices, then collaboration |
-
-
-
-## Platforms
-
-| System | Status |
-|---|---|
-| macOS (Apple Silicon and Intel), Windows, Linux | Ready: installers built by GitHub Actions |
-| iOS, iPadOS, Android | Code is ready (touch, storage), native project still to initialize |
-| Browser | For development (storage in the browser) |
-
-Without an Apple signature (developer account, $99 a year), macOS shows a warning on first launch: right-click the app, then “Open”. The secrets needed for signing are listed in `release.yml`. Same idea on Windows (SmartScreen).
-
 ## Getting started
 
-Requirements: Node 20+ and Rust (https://rustup.rs). Also, on Mac: the Xcode command line tools (`xcode-select --install`); on Windows: the Visual Studio Build Tools (C++) and WebView2 (already on Windows 10 and 11); on Linux: `libwebkit2gtk-4.1-dev` and its dependencies (see `ci.yml`).
+- **Choose a project:** on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
+- **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a small project to explore.
+- **New card:** double-click or right-click the canvas, press `N`, long-press with a finger, or use the “New card” button. Then just write.
+- **Change the type:** type `/` at the start of a line, or tap the type label (“IDEA”).
+- **Connect:** drag a thread from a point on a card’s edge to another card, then name the link.
+- **Settings** (icon at the top right): project type, interface language, appearance, and AI service.
 
-```bash
-npm install
-npm run tauri dev      # desktop app
-# or
-npm run dev            # in the browser (http://localhost:1420), no disk access
-```
+### Your files
 
-The app opens on the home screen: the list of your projects and a “New project” form. On a computer, each project is a folder you choose; “Try with an example” creates a small project to explore.
+Each project is a folder:
 
-**Mobile** (on a Mac): `npm run tauri ios init` then `npm run tauri ios dev` (Xcode required), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
+- `cosmos.json`: title, positions, links and frames
+- `cartes/*.md`: one card per Markdown file
+- `manuscrit/`: the text of the scenes (novel)
+- `scenario.fountain`: the screenplay text
+- `medias/`: images
 
-## Usage
-
-- **Choose a project**: on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
-- **New project**: a working title, novel or screenplay, and on a computer the folder to save it in.
-- **New card**: double-click the canvas, long-press with a finger, or use the “New card” button. Then just write.
-- **Change the type**: type **/** at the start of a line, or tap the type label (“IDEA”): Character, Place, Scene, Theme or Question.
-- **Drag a thread** from a point on a card’s edge to another card, then name the link (“suspects”, “takes place at”). To rename it: double-click the thread (or a single tap with a finger).
-- **Bible**: table of contents and sheets generated from the cards.
-- Autosave, or **Cmd+S** (Ctrl+S on Windows and Linux).
-- **Settings** (icon at the top right): project type (novel or screenplay), interface language (French, English) and appearance (system, light, dark).
-
-## Files
-
-Each project is a folder: `cosmos.json` (title, positions, links and frames), `cartes/*.md` (one card per Markdown file), `medias/` (images) and, for a screenplay, `scenario.fountain`. They stay readable in any editor. File and folder names are the same in every language.
+File and folder names are the same in every language.
 
 ```markdown
 ---
@@ -172,21 +164,73 @@ title: "Inès Morvan"
 Stand-in keeper. Can’t stand **silence**.
 ```
 
-To use a **writing project** (the folder opened in Cosmos, not the app’s code) on several computers, put that folder in iCloud Drive, Dropbox or OneDrive (avoid opening it on two machines at once).
+**Working on several computers:** put the project folder in iCloud Drive, Dropbox or OneDrive, and avoid opening it on two machines at once. The folder you choose stays allowed from one launch to the next, wherever it is (another drive, OneDrive, a USB stick). If the app can no longer open it, it tells you and you choose it again with “Open folder”.
 
-The folder you choose in the app stays allowed from one launch to the next, wherever it is (another drive, OneDrive, a USB stick). If the app can no longer open it, it tells you and you choose it again with “Open folder”.
+## Coming next
+
+| Step | Content |
+|---|---|
+| Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
+| Mobile | iOS and Android apps |
+| Sync | Across devices, then collaboration |
+
+## Platforms
+
+| System | Status |
+|---|---|
+| macOS (Apple Silicon and Intel), Windows, Linux | Ready: installers built by GitHub Actions |
+| iOS, iPadOS, Android | Code is ready (touch, storage), native project still to initialize |
+| Browser | For development only (storage in the browser) |
+
+---
 
 ## Development
 
-Tauri 2, React 19, strict TypeScript, Vite, React Flow for the canvas, TipTap for the editor, Zustand for state.
+**Stack:** Tauri 2, React 19, strict TypeScript, Vite, React Flow for the canvas, TipTap for the editor, Zustand for state.
+
+### Requirements
+
+- Node 20+ and Rust (https://rustup.rs)
+- **Mac:** the Xcode command line tools (`xcode-select --install`)
+- **Windows:** the Visual Studio Build Tools (C++) and WebView2 (already on Windows 10 and 11)
+- **Linux:** `libwebkit2gtk-4.1-dev` and its dependencies (see `ci.yml`)
+
+### Run
+
+```bash
+npm install
+npm run tauri dev      # desktop app
+# or
+npm run dev            # in the browser (http://localhost:1420), no disk access
+```
+
+**Mobile (on a Mac):** `npm run tauri ios init` then `npm run tauri ios dev` (Xcode required), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
+
+### Check
 
 ```bash
 npm run build   # TypeScript check + build
 npm test        # tests (Vitest)
 ```
 
-**Releasing a version**: `git tag v0.1.0 && git push --tags`. GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish.
+### Release a version
 
-The PDF embeds the Courier Prime font (SIL OFL licence, see [OFL.txt](src/assets/fonts/OFL.txt)).
+```bash
+git tag v0.1.0 && git push --tags
+```
+
+GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish. The secrets needed to sign the apps (Apple developer account, Windows certificate) are listed in `release.yml`.
+
+### Working on several computers
+
+The code goes through GitHub: `git push` at the end of a session, `git pull` then `npm install` if needed at the start of a session on the other machine. Don’t put the code folder in OneDrive or iCloud.
+
+### Documentation
 
 Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in French), written for working with Claude Code.
+
+## License
+
+Cosmos is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
+
+The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)).
