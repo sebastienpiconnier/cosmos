@@ -25,10 +25,9 @@ Les deux outils se complètent : NEO est centré sur la page (on écrit le livre
 5. **Sprints d'écriture** : un objectif de mots en temps limité, avec le compte en direct.
 6. **Bible du fork, encore à reprendre** : types de fiches du monde avec leurs champs (objet : à qui il appartient, pourquoi il compte ; groupe : membres, but ; indice : ce qu'il révèle, qui le sait ; système : principe, limites et prix à payer ; événement : quand, ce qui s'est passé, conséquences ; lieu : ambiance), galerie de plusieurs images par fiche, « renommer aussi dans le texte » quand on renomme un personnage, synopsis de toute l'histoire en tête du Plan, import de fiches d'un autre projet, export des fiches en un seul fichier HTML.
 7. **Paragraphes « poésie » et « sans alinéa »** (⌘⇧Entrée, Maj+Entrée) : citations, chansons, lettres, panneaux dans le récit.
-8. **Prologue et épilogue** : un chapitre qui sort de la numérotation.
-9. **Correcteur à la demande** (⌘;) plutôt que des soulignements pendant l'écriture.
-10. **Sauvegardes quotidiennes** (archive ZIP du projet, gardée quinze jours) et **instantané PDF horodaté** avec empreinte SHA-256 du texte.
-11. **Import .docx, .txt, .md** avec détection des chapitres et des sauts de section : utile pour faire entrer un manuscrit existant dans Cosmos (chaque chapitre devient un chapitre du plan, chaque section une carte Scène).
+8. **Correcteur à la demande** (⌘;) plutôt que des soulignements pendant l'écriture.
+9. **Sauvegardes quotidiennes** (archive ZIP du projet, gardée quinze jours) et **instantané PDF horodaté** avec empreinte SHA-256 du texte.
+10. **Import .docx, .txt, .md** avec détection des chapitres et des sauts de section : utile pour faire entrer un manuscrit existant dans Cosmos (chaque chapitre devient un chapitre du plan, chaque section une carte Scène).
 
 ## À ne pas reprendre
 
