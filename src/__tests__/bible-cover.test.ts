@@ -111,3 +111,23 @@ describe("couverture dans le projet et dans l'export", () => {
     expect(bibleDoc({ title: "B", author: "", lang: "fr" }, [], [], { sections: {} as never, untitled: "", linkedTo: "", cover: { title: "Le projet", fields: {} } }).chapters).toHaveLength(0);
   });
 });
+
+describe("assistant par thème", () => {
+  it("dix thèmes, des questions dans les deux langues, en même nombre", async () => {
+    const { ASSISTANT_THEMES, themeKeys, flatThemeTexts, bankQuestions } = await import("../assistant");
+    expect(ASSISTANT_THEMES).toHaveLength(10);
+    for (const th of ASSISTANT_THEMES) {
+      expect(fr.assistant.themeQuestions[th].length).toBeGreaterThanOrEqual(6);
+      expect(en.assistant.themeQuestions[th]).toHaveLength(fr.assistant.themeQuestions[th].length);
+      for (const q of [...fr.assistant.themeQuestions[th], ...en.assistant.themeQuestions[th]]) expect(q.trim().endsWith("?")).toBe(true);
+    }
+    // Une réponse donnée marque la question comme faite, et peut aller dans le champ qui lui correspond.
+    const texts = flatThemeTexts(fr.assistant.themeQuestions);
+    const card = { id: "p", type: "personnage" as const, title: "Inès", html: `<p><strong>${texts["passe.4"]}</strong></p><p>Le naufrage.</p>` };
+    const qs = bankQuestions(themeKeys("passe", fr.assistant.themeQuestions), texts, card, [card], []);
+    expect(qs.find((q) => q.key === "passe.4")?.state).toBe("answered");
+    expect(qs.filter((q) => q.state === "open")).toHaveLength(qs.length - 1);
+    expect(fieldToFill("passe.4", { fiche: {} })).toBe("blessure");
+    expect(fieldToFill("voix.0", { fiche: {} })).toBe("voix");
+  });
+});

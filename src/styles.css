@@ -1084,3 +1084,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .mood-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .rel-face:hover { transform: none; } }
 .mood-title { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; font: 500 18px var(--font-display); }
+
+/* Assistant personnage, onglet « Par thème » : pastilles des thèmes avec leur avancée. */
+.assistant-themes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.assistant-themes button { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 14px; cursor: pointer; }
+.assistant-themes button:hover { background: var(--ground); }
+.assistant-themes button[aria-pressed="true"] { border-color: transparent; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.assistant-themes button.is-done:not([aria-pressed="true"]) { color: var(--muted); border-style: dashed; }
+@media (pointer: coarse) { .assistant-themes button { min-height: 44px; } }

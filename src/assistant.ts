@@ -19,10 +19,32 @@ export const ASSISTANT_QUESTIONS = {
 export type AssistantQuestion = (typeof ASSISTANT_QUESTIONS)[AssistantLevel][number];
 
 /**
+ * Questions par thème (onglet « Par thème »), pour creuser un domaine précis : le passé, le corps, la voix…
+ * Clé d'une question : `<thème>.<rang>`, texte dans `t.assistant.themeQuestions[thème][rang]`.
+ * Questions écrites pour Cosmos (inspirées des grandes familles des questionnaires de personnage) :
+ * ouvertes, une à la fois. Ne pas reformuler une question livrée (elle redeviendrait ouverte, voir isAnswered).
+ */
+export const ASSISTANT_THEMES = ["passe", "corps", "voix", "travail", "emotions", "colere", "relations", "espoirs", "pensee", "ombres"] as const;
+export type AssistantTheme = (typeof ASSISTANT_THEMES)[number];
+
+/** Clés des questions d'un thème, d'après le nombre de textes de la langue courante. */
+export const themeKeys = (theme: AssistantTheme, texts: Record<AssistantTheme, readonly string[]>) => texts[theme].map((_, i) => `${theme}.${i}`);
+
+/** Textes à plat, par clé (`passe.0`…), pour `bankQuestions`. */
+export const flatThemeTexts = (texts: Record<AssistantTheme, readonly string[]>): Record<string, string> =>
+  Object.fromEntries(ASSISTANT_THEMES.flatMap((theme) => texts[theme].map((text, i) => [`${theme}.${i}`, text])));
+
+/**
  * Champ de la fiche auquel répond une question. Après une réponse, si ce champ est vide, l'assistant
  * propose de l'y reporter aussi (la réponse de l'auteur, telle quelle, sur son clic).
  */
-export const QUESTION_FIELD: Partial<Record<AssistantQuestion, CharacterField>> = {
+export const QUESTION_FIELD: Partial<Record<string, CharacterField>> = {
+  "passe.4": "blessure",
+  "ombres.0": "blessure",
+  "corps.3": "apparence",
+  "voix.0": "voix",
+  "emotions.3": "peur",
+  "relations.0": "relations",
   want: "objectif",
   need: "besoin",
   past: "blessure",
@@ -37,7 +59,7 @@ export const QUESTION_FIELD: Partial<Record<AssistantQuestion, CharacterField>> 
 
 /** Champ où reporter une réponse, s'il existe et qu'il est encore vide. */
 export function fieldToFill(key: string | null | undefined, character: Pick<CardData, "fiche">): CharacterField | null {
-  const field = key ? QUESTION_FIELD[key as AssistantQuestion] : undefined;
+  const field = key ? QUESTION_FIELD[key] : undefined;
   return field && !character.fiche?.[field]?.trim() ? field : null;
 }
 
@@ -89,7 +111,18 @@ export function levelQuestions(
   cards: CardData[],
   links: Pick<Link, "source" | "target">[],
 ): AskedQuestion[] {
-  return ASSISTANT_QUESTIONS[level].map((key) => {
+  return bankQuestions(ASSISTANT_QUESTIONS[level], texts, character, cards, links);
+}
+
+/** Des questions (par clé) pour ce personnage, avec leur état. Sert aux niveaux comme aux thèmes. */
+export function bankQuestions(
+  keys: readonly string[],
+  texts: Record<string, string>,
+  character: CardData,
+  cards: CardData[],
+  links: Pick<Link, "source" | "target">[],
+): AskedQuestion[] {
+  return keys.filter((key) => texts[key]).map((key) => {
     const text = texts[key];
     const state: QuestionState = isAnswered(character.html, text) ? "answered" : isParked(cards, links, character.id, text) ? "parked" : "open";
     return { key, text, state };

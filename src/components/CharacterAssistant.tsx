@@ -11,12 +11,12 @@ import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import type { CardData } from "../types";
-import { ASSISTANT_LEVELS, fieldToFill, levelQuestions, nextOpen, type AssistantLevel } from "../assistant";
+import { ASSISTANT_LEVELS, ASSISTANT_THEMES, bankQuestions, fieldToFill, flatThemeTexts, levelQuestions, nextOpen, themeKeys, type AssistantLevel, type AssistantTheme } from "../assistant";
 import type { CharacterField } from "../character";
 import { AiError, complete, isReady } from "../ai/providers";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
 
-type Tab = AssistantLevel | "custom" | "pending";
+type Tab = AssistantLevel | "themes" | "custom" | "pending";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -67,12 +67,21 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     () => Object.fromEntries(ASSISTANT_LEVELS.map((l) => [l, levelQuestions(l, t.questions, card, cards, edges)])) as Record<AssistantLevel, ReturnType<typeof levelQuestions>>,
     [t, card, cards, edges],
   );
+  // Questions par thème : le thème choisi, ou le premier qui a encore des questions ouvertes.
+  const [themeChosen, setTheme] = useState<AssistantTheme | null>(null);
+  const themeTexts = useMemo(() => flatThemeTexts(t.themeQuestions), [t]);
+  const byTheme = useMemo(
+    () => Object.fromEntries(ASSISTANT_THEMES.map((th) => [th, bankQuestions(themeKeys(th, t.themeQuestions), themeTexts, card, cards, edges)])) as Record<AssistantTheme, ReturnType<typeof bankQuestions>>,
+    [t, themeTexts, card, cards, edges],
+  );
+  const theme: AssistantTheme = themeChosen ?? ASSISTANT_THEMES.find((th) => byTheme[th].some((q) => q.state === "open")) ?? ASSISTANT_THEMES[0];
   const isLevel = tab !== "custom" && tab !== "pending";
-  const questions = isLevel ? byLevel[tab] : [];
+  const questions = tab === "themes" ? byTheme[theme] : isLevel ? byLevel[tab] : [];
   const fromBank = isLevel ? (questions.find((q) => q.key === shownKey && q.state === "open") ?? nextOpen(questions, null)) : null;
   const question = tab === "custom" ? custom : tab === "pending" ? (pendingShown && pending.includes(pendingShown) ? pendingShown : "") : (fromBank?.text ?? "");
   const name = card.title.trim();
   const done = (l: AssistantLevel) => byLevel[l].filter((q) => q.state !== "open").length;
+  const themeDone = (th: AssistantTheme) => byTheme[th].filter((q) => q.state !== "open").length;
 
   const pickTab = (next: Tab) => {
     setTab(next);
@@ -248,6 +257,9 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
                 {t.levels[l]} <span className="assistant-count">{fmt(t.progress, { done: done(l), total: byLevel[l].length })}</span>
               </button>
             ))}
+            <button type="button" aria-pressed={tab === "themes"} onClick={() => pickTab("themes")}>
+              {t.themesTab}
+            </button>
             {ai && (
               <button type="button" aria-pressed={tab === "custom"} onClick={() => pickTab("custom")}>
                 {t.custom}
@@ -257,7 +269,26 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
               {ct.pendingTab} <span className="assistant-count">{pending.length}</span>
             </button>
           </div>
-          <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : t.levelHints[tab]}</p>
+          {tab === "themes" && (
+            <div className="assistant-themes" role="group" aria-label={t.themesAria}>
+              {ASSISTANT_THEMES.map((th) => (
+                <button
+                  key={th}
+                  type="button"
+                  aria-pressed={theme === th}
+                  className={themeDone(th) === byTheme[th].length ? "is-done" : ""}
+                  onClick={() => {
+                    setTheme(th);
+                    setShownKey(null);
+                    setAnswer("");
+                  }}
+                >
+                  {t.themes[th]} <span className="assistant-count">{fmt(t.progress, { done: themeDone(th), total: byTheme[th].length })}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : tab === "themes" ? t.themeHints[theme] : t.levelHints[tab]}</p>
 
           {tab === "pending" && !question ? (
             pending.length === 0 ? (
@@ -288,7 +319,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
               </button>
             </div>
           ) : (
-            <p className="assistant-done">{t.levelDone}</p>
+            <p className="assistant-done">{tab === "themes" ? t.themeDone : t.levelDone}</p>
           )}
         </div>
       )}
