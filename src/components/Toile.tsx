@@ -22,7 +22,7 @@ import type { CardData } from "../types";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
-import { imageExtension } from "../media";
+import { documentExtension, imageExtension } from "../media";
 import { clipFromText } from "../clip";
 
 const LONG_PRESS_MS = 500;
@@ -97,6 +97,19 @@ export function Toile() {
   // Lien ou texte déposé depuis un navigateur : une carte Lien ou Extrait, là où on l'a lâché (une seule).
   const onDrop = async (e: React.DragEvent) => {
     const at = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    // Un PDF : une carte Document là où on l'a lâché (ou la carte vide sur laquelle on l'a lâché).
+    const pdf = [...e.dataTransfer.files].find((f) => documentExtension(f.name));
+    if (pdf) {
+      e.preventDefault();
+      const target = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
+      const doc = { name: pdf.name, data: new Uint8Array(await pdf.arrayBuffer()) };
+      const store = useCosmos.getState();
+      const card = target ? store.nodes.find((n) => n.id === target)?.data : undefined;
+      const blank = card && !card.fichier && !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim();
+      if (card && (blank || (card.type === "document" && !card.fichier))) await store.setCardDocument(card.id, doc);
+      else await store.addDocument(doc, at);
+      return;
+    }
     const file = [...e.dataTransfer.files].find((f) => imageExtension(f.name));
     if (!file) {
       const link = e.dataTransfer.getData("text/uri-list").split("\n").find((l) => l && !l.startsWith("#"));
@@ -198,6 +211,12 @@ export function Toile() {
       const store = useCosmos.getState();
       const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
       const at = pasteAtRef.current();
+      const pdf = [...data.files].find((f) => documentExtension(f.name) || f.type === "application/pdf");
+      if (pdf) {
+        e.preventDefault();
+        await store.addDocument({ name: documentExtension(pdf.name) ? pdf.name : "document.pdf", data: new Uint8Array(await pdf.arrayBuffer()) }, at);
+        return;
+      }
       if (image) {
         e.preventDefault();
         const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
@@ -425,6 +444,23 @@ export function Toile() {
             <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
           </svg>
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
+        </button>
+        <button
+          type="button"
+          className="icon-button has-label"
+          aria-label={t.documents.import}
+          title={t.documents.importHint}
+          onClick={() => {
+            const rect = wrapper.current?.getBoundingClientRect();
+            const at = rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
+            void useCosmos.getState().pickDocument(undefined, at);
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z" />
+            <path d="M14 3.5V8h4.5M12 11.5v6M9.5 15l2.5 2.5 2.5-2.5" />
+          </svg>
+          <span className="tool-label" aria-hidden="true">{t.documents.importShort}</span>
         </button>
         <button
           type="button"

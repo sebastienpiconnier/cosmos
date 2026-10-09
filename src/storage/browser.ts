@@ -81,6 +81,27 @@ export const browserStorage: Storage = {
   async mediaUrl(name) {
     return loadMedia()[name] ?? null;
   },
+  async readMedia(name) {
+    const url = loadMedia()[name];
+    if (!url) return null;
+    const binary = atob(url.slice(url.indexOf(",") + 1));
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out;
+  },
+  pickFile(_label, extensions) {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = extensions.map((ext) => `.${ext}`).join(",");
+      input.addEventListener("cancel", () => resolve(null));
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        resolve(file ? { name: file.name, data: new Uint8Array(await file.arrayBuffer()) } : null);
+      });
+      input.click();
+    });
+  },
   pickImage() {
     return new Promise((resolve) => {
       const input = document.createElement("input");

@@ -6,6 +6,7 @@
 // type: personnage
 // title: "Inès Morvan"
 // image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
+// fichier: k3x9a7bq2m.pdf   (facultatif, carte Document : le PDF, dans medias/)
 // fiche: {"age":"34"}       (facultatif, personnage : caractéristiques standard, voir character.ts)
 // questions: ["…"]          (facultatif : questions gardées pour plus tard)
 // corbeille: {…}             (seulement dans corbeille/ : jour, place, fils et scène du scénario)
@@ -20,7 +21,7 @@ import { readTrashInfo } from "../trash";
 import { marked } from "marked";
 import TurndownService from "turndown";
 import { CARD_TYPES, type CardData, type CardType } from "../types";
-import { isMediaName } from "../media";
+import { isDocumentName, isMediaName } from "../media";
 import { MENTION_SCHEME, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
@@ -125,6 +126,7 @@ export function cardToFile(card: CardData): string {
     `type: ${card.type === "idee" && card.keep?.type ? card.keep.type : card.type}`,
     `title: ${JSON.stringify(card.title)}`,
     ...(card.image ? [`image: ${card.image}`] : []),
+    ...(card.fichier ? [`fichier: ${card.fichier}`] : []),
     ...(card.type === "scene" && isPageKind(card.page) ? [`page: ${card.page}`] : []),
     ...(fiche && Object.keys(fiche).length > 0 ? [`fiche: ${JSON.stringify(fiche)}`] : []),
     ...(card.images && card.images.length > 0 ? [`images: ${JSON.stringify(card.images)}`] : []),
@@ -162,6 +164,8 @@ export function fileToCard(text: string): CardData | null {
   const card: CardData = { id: fields.id, type, title, html: markdownToHtml(m[2]) };
   // Le nom vient du disque : on n'accepte qu'un simple nom de fichier image, jamais un chemin.
   if (isMediaName(fields.image)) card.image = fields.image;
+  // Document d'une carte (PDF) : même prudence, un simple nom de fichier de medias/.
+  if (isDocumentName(fields.fichier)) card.fichier = fields.fichier;
   if (isPageKind(fields.page)) card.page = fields.page;
   // Comme pour `image` : seuls de simples noms de fichiers images, jamais un chemin.
   const gallery = parseJson(fields.images);
@@ -185,7 +189,7 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "page", "fiche", "images", "questions", "reponses", "corbeille"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille"]);
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

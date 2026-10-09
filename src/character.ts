@@ -65,6 +65,8 @@ export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] a
 /** Fiche d'une intrigue : sa question dramatique et son parcours, du déclencheur à la résolution. */
 /** Fiche d'un lien ou d'une image collés : d'où vient l'information. */
 export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte"] as const;
+/** Fiche d'un document importé (PDF) : d'où il vient et sa longueur. */
+export const DOCUMENT_FIELDS = ["auteur", "publication", "pages"] as const;
 export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
@@ -78,12 +80,13 @@ export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   intrigue: PLOT_FIELDS,
   lien: SOURCE_FIELDS,
   image: SOURCE_FIELDS,
+  document: DOCUMENT_FIELDS,
 };
-export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof SCENE_FIELDS)[number];
+export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof DOCUMENT_FIELDS)[number] | (typeof SCENE_FIELDS)[number];
 export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
-export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte"]);
+export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
 
 /** Adresse web d'une source, si elle en a une valide (http ou https). */
 export function sourceUrl(card: Pick<CardData, "type" | "fiche">): string | null {

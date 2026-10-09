@@ -11,7 +11,8 @@ import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot } from "./placement";
-import { clampCardWidth, imageExtension } from "./media";
+import { clampCardWidth, documentExtension, imageExtension } from "./media";
+import { documentFiche, documentTitle } from "./documents";
 import { removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
@@ -85,7 +86,16 @@ interface CosmosState {
    * besoin et agrandie si elle est pleine. Une seule étape d'historique. Rend l'identifiant de la carte.
    */
   /** Carte Lien, Image ou Extrait (type `source`), posée à `at` (point du canevas) ou au centre de la vue. */
-  addResearchCard: (card: { title: string; html: string; fiche?: Record<string, string>; image?: string; type?: CardType }, at?: { x: number; y: number }) => string;
+  addResearchCard: (card: { title: string; html: string; fiche?: Record<string, string>; image?: string; fichier?: string; type?: CardType }, at?: { x: number; y: number }) => string;
+  /** Un PDF déposé, collé ou choisi : une carte Document (le PDF et l'aperçu de sa première page dans medias/). */
+  addDocument: (file: { name: string; data: Uint8Array }, at?: { x: number; y: number }) => Promise<string | null>;
+  /** Le PDF d'une carte existante (Document encore vide, ou carte vide qui le devient). Rend faux en cas d'échec. */
+  setCardDocument: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
+  /** L'auteur choisit un PDF : pour la carte `id`, sinon une nouvelle carte posée en `at`. */
+  pickDocument: (id?: string, at?: { x: number; y: number }) => Promise<void>;
+  /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
+  documentCard: string | null;
+  openDocument: (id: string) => void;
   /** Une image collée ou déposée devient une source illustrée de la zone Recherche. */
   addResearchImage: (file: { name: string; data: Uint8Array }, at?: { x: number; y: number }) => Promise<string | null>;
   /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
@@ -108,8 +118,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | null) => void;
   /** Ouvre une scène dans le manuscrit. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
@@ -300,6 +310,39 @@ export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
 
   /**
+   * Copie un PDF dans medias/ avec l'aperçu de sa première page, et lit ce qu'il dit de lui-même (titre,
+   * auteur, année, pages). Un PDF que pdf.js ne sait pas lire (chiffré, abîmé) est gardé quand même, sans
+   * aperçu. Rend null si ce n'est pas un PDF ou si la copie échoue.
+   */
+  const storeDocument = async (file: { name: string; data: Uint8Array }) => {
+    if (!documentExtension(file.name)) return null;
+    const base = newId();
+    const fichier = `${base}.pdf`;
+    try {
+      await storage.writeMedia(fichier, file.data);
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+    let info: { pages: number; title: string; author: string; year: string; thumbnail: Uint8Array | null } = { pages: 0, title: "", author: "", year: "", thumbnail: null };
+    try {
+      info = await (await import("./pdfDocument")).readPdf(file.data);
+    } catch (err) {
+      console.error(err);
+    }
+    let image: string | undefined;
+    if (info.thumbnail) {
+      try {
+        await storage.writeMedia(`${base}.jpg`, info.thumbnail);
+        image = `${base}.jpg`;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    return { fichier, image, title: documentTitle(info.title, file.name), fiche: documentFiche(info) };
+  };
+
+  /**
    * Cartes `ids` à la corbeille, à partir de l'état donné : leurs fils et leur scène du scénario partent
    * avec elles, leurs mentions dans les autres cartes redeviennent du texte. Pas d'étape d'historique ici.
    */
@@ -465,14 +508,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dialog: null,
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
     setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}) }),
-    addResearchCard: ({ title, html, fiche, image, type = "idee" }, at) => {
+    addResearchCard: ({ title, html, fiche, image, fichier, type = "idee" }, at) => {
       record();
       // Comme dans Milanote : la carte naît là où l'on colle ou dépose, sans cadre imposé. « Organiser » la
       // rangera plus tard dans le cadre de son type (Images, Liens, Idées en vrac).
       const size = { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height };
       const taken = boxes(get().nodes);
       const spot = at ? freeSpot({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
-      const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}) };
+      const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}), ...(fichier ? { fichier } : {}) };
       set({
         nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), { ...toNode(card, spot.x, spot.y), selected: true }],
       });
@@ -490,6 +533,41 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return null;
       }
       return get().addResearchCard({ type: "image", title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } }, at);
+    },
+    addDocument: async (file, at) => {
+      const stored = await storeDocument(file);
+      if (!stored) return null;
+      const id = get().addResearchCard({ type: "document", title: stored.title, html: "", fichier: stored.fichier, ...(stored.image ? { image: stored.image } : {}), fiche: stored.fiche }, at);
+      // La place libre la plus proche peut être hors de l'écran : on montre la carte.
+      set({ focusId: id });
+      return id;
+    },
+    setCardDocument: async (id, file) => {
+      if (!get().nodes.some((n) => n.id === id)) return false;
+      const stored = await storeDocument(file);
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!stored || !card) return false;
+      record();
+      // Rien de ce que l'auteur a écrit n'est remplacé : titre, image et champs déjà remplis restent.
+      get().updateCard(id, {
+        type: "document",
+        fichier: stored.fichier,
+        ...(card.title.trim() ? {} : { title: stored.title }),
+        ...(card.image || !stored.image ? {} : { image: stored.image }),
+        fiche: { ...stored.fiche, ...(card.fiche ?? {}) },
+      });
+      return true;
+    },
+    pickDocument: async (id, at) => {
+      const file = await storage.pickFile(getT().documents.pickLabel, ["pdf"]);
+      if (!file) return;
+      if (id) await get().setCardDocument(id, file);
+      else await get().addDocument(file, at);
+    },
+    documentCard: null,
+    openDocument: (id) => {
+      if (!get().nodes.find((n) => n.id === id)?.data.fichier) return;
+      set({ documentCard: id, dialog: "document" });
     },
     addResearchClip: (text, at) => {
       const clip = clipFromText(text);

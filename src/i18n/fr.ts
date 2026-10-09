@@ -103,6 +103,7 @@ export const fr = {
     intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
     image: { label: "Image", section: "Images", titlePlaceholder: "Légende…" },
     lien: { label: "Lien", section: "Liens", titlePlaceholder: "Titre du lien" },
+    document: { label: "Document", section: "Documents", titlePlaceholder: "Titre du document" },
     theme: { label: "Thème", section: "Thèmes", titlePlaceholder: "Thème" },
     question: { label: "Question", section: "À creuser", titlePlaceholder: "La question à creuser" },
   },
@@ -231,6 +232,25 @@ export const fr = {
   },
 
   // Exports du manuscrit et de la bible (ceux du scénario sont dans screenplay.export).
+  // Cartes Document : un PDF importé sur le canevas, lu dans la liseuse de l'app.
+  documents: {
+    pickLabel: "Document PDF",
+    import: "Importer un PDF",
+    importShort: "PDF",
+    importHint: "Importer un PDF : une carte Document, avec l’aperçu de sa première page (tu peux aussi le déposer ou le coller sur le canevas)",
+    choose: "Choisir un PDF",
+    read: "Lire le document",
+    readShort: "Lire",
+    pages: "{n} pages",
+    onePage: "1 page",
+    viewerAria: "Lecture du document {title}",
+    close: "Fermer",
+    loading: "Ouverture du document…",
+    missing: "Le PDF de cette carte est introuvable dans le dossier du projet (medias/).",
+    failed: "Ce PDF n’a pas pu être affiché.",
+    pageAria: "Page {n}",
+  },
+
   exports: {
     manuscript: "Manuscrit",
     screenplay: "Scénario",
@@ -1076,7 +1096,7 @@ export const fr = {
 
   // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
   fiche: {
-    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", lien: "Référence", image: "Référence", scene: "Fiche de la scène" },
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", lien: "Référence", image: "Référence", document: "Référence", scene: "Fiche de la scène" },
     fields: {
       epoque: "Époque",
       ambiance: "Ambiance",
@@ -1093,6 +1113,7 @@ export const fr = {
       auteur: "Auteur",
       publication: "Publication",
       consulte: "Consultée le",
+      pages: "Pages",
       synopsis: "Synopsis",
     },
     placeholders: {
@@ -1111,6 +1132,7 @@ export const fr = {
       auteur: "Qui l’a écrit",
       publication: "Site, livre, revue, date",
       consulte: "8 octobre 2026",
+      pages: "12",
       synopsis: "Ce qui se passe dans la scène, en une phrase",
     },
   },

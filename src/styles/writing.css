@@ -334,3 +334,17 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
   .sq-trash { min-width: 44px; min-height: 44px; }
   .sp-option, .sp-focus { min-height: 44px; }
 }
+
+/* Liseuse d'une carte Document : grande fenêtre, pages l'une sous l'autre sur le fond de l'app. */
+.app-dialog.is-document { width: min(980px, calc(100vw - 24px)); height: 92vh; max-height: 92vh; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.app-dialog.is-document[open] { display: flex; }
+.document-viewer { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.document-viewer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.document-viewer-head h2 { flex: 1 1 200px; min-width: 0; margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+.document-viewer-count { color: var(--ink-2); font-size: 14px; }
+.document-viewer-head .ghost-button { min-height: 44px; }
+.document-viewer-pages { flex: 1; overflow: auto; padding: 18px; background: var(--ground); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+/* Une page pas encore dessinée garde la place d'une page A4 : le défilement ne saute pas. */
+.document-page { width: min(820px, 100%); aspect-ratio: 1 / 1.414; background: var(--page); box-shadow: var(--shadow-card); }
+.document-page.is-drawn { aspect-ratio: auto; background: none; }
+.document-page canvas { display: block; max-width: 100%; height: auto; }

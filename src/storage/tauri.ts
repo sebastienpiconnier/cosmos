@@ -108,6 +108,18 @@ export const tauriStorage: Storage = {
     if (!(await exists(path))) return null;
     return URL.createObjectURL(new Blob([(await readFile(path)) as BlobPart], { type: mimeOf(name) }));
   },
+  async readMedia(name) {
+    const dir = await projectFolder();
+    if (!dir) return null;
+    const path = await join(dir, MEDIA_DIR, name);
+    return (await exists(path)) ? readFile(path) : null;
+  },
+  async pickFile(label, extensions) {
+    // Comme pour une image : le fichier choisi dans le dialogue est autorisé en lecture par Tauri.
+    const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions }] });
+    if (typeof path !== "string") return null;
+    return { name: baseName(path), data: await readFile(path) };
+  },
   async pickImage(label) {
     const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions: IMAGE_EXTENSIONS }] });
     if (typeof path !== "string") return null;

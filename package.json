@@ -34,6 +34,7 @@
     "marked": "^18.1.0",
     "nanoid": "^6.0.2",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "turndown": "^7.2.4",

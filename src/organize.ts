@@ -4,7 +4,7 @@
 //
 //   Personnages · Intrigues · Lieux · Thèmes · Questions   (une rangée de cadres)
 //   Récit : [case du gabarit [chapitre [scènes]]]   (côte à côte, rangées de 8 scènes au plus)
-//   Idées en vrac · Images · Liens · Pages du livre
+//   Idées en vrac · Images · Liens · Documents · Pages du livre
 //
 // En paysage de préférence : un écran est plus large que haut. Les cases du gabarit (ou les chapitres,
 // sans gabarit) se suivent de gauche à droite, et l'on passe à la rangée suivante avant 9 scènes.
@@ -209,6 +209,7 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
         ...typeFrame("idee"),
         ...typeFrame("image"),
         ...typeFrame("lien"),
+        ...typeFrame("document"),
         ...(pages.length > 0 ? [{ kind: "frame" as const, title: labels.pages, body: { items: pages.flatMap(cardItem), columns: typeColumns(pages.length), gap: GAP } }] : []),
       ],
       columns: 4,

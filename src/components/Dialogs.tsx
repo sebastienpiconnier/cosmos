@@ -8,6 +8,7 @@ import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
 import { isAppleKeyboard, openExternal } from "../platform";
 import { version } from "../../package.json";
 import { TrashList } from "./TrashList";
+import { DocumentViewer } from "./DocumentViewer";
 
 const REPO = "https://github.com/sebastienpiconnier/cosmos";
 
@@ -29,7 +30,7 @@ export function Dialogs() {
     ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
 
   return (
-    <dialog ref={ref} className="app-dialog" aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
+    <dialog ref={ref} className={`app-dialog${dialog === "document" ? " is-document" : ""}`} aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
       {dialog === "shortcuts" && (
         <>
           <h2 id="app-dialog-title">{t.shortcuts.title}</h2>
@@ -55,6 +56,7 @@ export function Dialogs() {
         </>
       )}
       {dialog === "trash" && <TrashList />}
+      {dialog === "document" && <DocumentViewer />}
       {dialog === "about" && (
         <div className="about">
           <h2 id="app-dialog-title">
@@ -79,11 +81,14 @@ export function Dialogs() {
           </p>
         </div>
       )}
-      <div className="assistant-actions app-dialog-actions">
-        <button type="button" className="is-primary" onClick={() => setDialog(null)} autoFocus>
-          {t.gallery.close}
-        </button>
-      </div>
+      {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. */}
+      {dialog !== "document" && (
+        <div className="assistant-actions app-dialog-actions">
+          <button type="button" className="is-primary" onClick={() => setDialog(null)} autoFocus>
+            {t.gallery.close}
+          </button>
+        </div>
+      )}
     </dialog>
   );
 }

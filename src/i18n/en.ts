@@ -102,6 +102,7 @@ export const en: Messages = {
     intrigue: { label: "Plot", section: "Plots", titlePlaceholder: "Name of the plot" },
     image: { label: "Image", section: "Images", titlePlaceholder: "Caption…" },
     lien: { label: "Link", section: "Links", titlePlaceholder: "Link title" },
+    document: { label: "Document", section: "Documents", titlePlaceholder: "Document title" },
     theme: { label: "Theme", section: "Themes", titlePlaceholder: "Theme" },
     question: { label: "Question", section: "To dig into", titlePlaceholder: "The question to dig into" },
   },
@@ -226,6 +227,24 @@ export const en: Messages = {
       empty: "The AI returned nothing usable. Try again, or change the model.",
       other: "The AI action failed.",
     },
+  },
+
+  documents: {
+    pickLabel: "PDF document",
+    import: "Import a PDF",
+    importShort: "PDF",
+    importHint: "Import a PDF: a Document card with a preview of its first page (you can also drop or paste it on the canvas)",
+    choose: "Choose a PDF",
+    read: "Read the document",
+    readShort: "Read",
+    pages: "{n} pages",
+    onePage: "1 page",
+    viewerAria: "Reading {title}",
+    close: "Close",
+    loading: "Opening the document…",
+    missing: "This card’s PDF can’t be found in the project folder (medias/).",
+    failed: "This PDF couldn’t be displayed.",
+    pageAria: "Page {n}",
   },
 
   exports: {
@@ -1056,7 +1075,7 @@ export const en: Messages = {
   },
 
   fiche: {
-    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", lien: "Reference", image: "Reference", scene: "Scene sheet" },
+    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", lien: "Reference", image: "Reference", document: "Reference", scene: "Scene sheet" },
     fields: {
       epoque: "Period",
       ambiance: "Atmosphere",
@@ -1073,6 +1092,7 @@ export const en: Messages = {
       auteur: "Author",
       publication: "Published in",
       consulte: "Accessed on",
+      pages: "Pages",
       synopsis: "Synopsis",
     },
     placeholders: {
@@ -1091,6 +1111,7 @@ export const en: Messages = {
       auteur: "Who wrote it",
       publication: "Site, book, journal, date",
       consulte: "October 8, 2026",
+      pages: "12",
       synopsis: "What happens in the scene, in one sentence",
     },
   },

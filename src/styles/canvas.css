@@ -24,6 +24,7 @@
 .react-flow__minimap-node.type-intrigue { fill: var(--type-intrigue); }
 .react-flow__minimap-node.type-lien { fill: var(--type-lien); }
 .react-flow__minimap-node.type-image { fill: var(--type-image); }
+.react-flow__minimap-node.type-document { fill: var(--type-document); }
 .react-flow__minimap-node.type-question { fill: var(--type-question); }
 .toile-hint {
   position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -245,7 +246,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .toile-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
 .toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }
 /* Cartes Lien et Image de la zone Recherche : un corps vide ne s'affiche que quand on écrit dans la carte. */
-.card:is(.is-image-card, .is-lien-card):not(:focus-within) .card-body:has(.ProseMirror > p.is-editor-empty:only-child) { display: none; }
+/* Le corps reparaît quand on écrit le titre ou le texte, pas quand on touche un bouton (il bougerait sous le doigt). */
+.card:is(.is-image-card, .is-lien-card, .is-document-card):not(:has(.card-title:focus, .card-body:focus-within)) .card-body:has(.ProseMirror > p.is-editor-empty:only-child) { display: none; }
 
 /* Sélection multiple : bouton « Sélection » enfoncé, barre des actions sur la sélection (au-dessus de l'aide). */
 .history-buttons .icon-button.is-on { background: var(--accent-soft); color: var(--accent-ink); }

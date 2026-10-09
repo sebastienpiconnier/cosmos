@@ -4,7 +4,7 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
-import { imageExtension } from "../media";
+import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
@@ -149,6 +149,17 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     const data = event.clipboardData;
     if (!data) return false;
     const store = useCosmos.getState();
+    // Un PDF collé dans une carte vide (ou une carte Document sans fichier) : elle devient ce Document.
+    const pdf = [...data.files].find((f) => documentExtension(f.name) || f.type === "application/pdf");
+    if (pdf) {
+      const card = store.nodes.find((n) => n.id === id)?.data;
+      const blank = card && !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim();
+      if (!card || card.fichier || !(blank || card.type === "document")) return false;
+      event.preventDefault();
+      const name = documentExtension(pdf.name) ? pdf.name : "document.pdf";
+      void pdf.arrayBuffer().then((buf) => store.setCardDocument(id, { name, data: new Uint8Array(buf) }));
+      return true;
+    }
     const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
     if (image) {
       const card = store.nodes.find((n) => n.id === id)?.data;
@@ -328,7 +339,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}${data.type === "image" || data.type === "lien" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -464,6 +475,19 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           <span aria-hidden="true">↗</span> {fmt(t.research.open, { host: hostOf(source) })}
         </button>
       )}
+
+      {/* Document : le lire dans l'app, ou choisir son PDF s'il n'en a pas encore. */}
+      {data.type === "document" &&
+        (data.fichier ? (
+          <button type="button" className="card-source nodrag" onClick={() => useCosmos.getState().openDocument(id)}>
+            <span aria-hidden="true">▤</span> {t.documents.read}
+            {data.fiche?.pages ? ` · ${data.fiche.pages === "1" ? t.documents.onePage : fmt(t.documents.pages, { n: data.fiche.pages })}` : ""}
+          </button>
+        ) : (
+          <button type="button" className="card-source nodrag" onClick={() => void useCosmos.getState().pickDocument(id)}>
+            <span aria-hidden="true">+</span> {t.documents.choose}
+          </button>
+        ))}
 
       {/* Questions gardées pour plus tard : un simple lien vers la fiche, pas de cartes sur le canevas. */}
       {data.type === "personnage" && (data.questions?.length ?? 0) > 0 && (

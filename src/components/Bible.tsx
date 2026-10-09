@@ -246,6 +246,19 @@ export function Bible() {
               {/* Le synopsis d'une scène de scénario vit dans le fichier Fountain (séquencier) : pas de fiche ici. */}
               {type !== "personnage" && !(type === "scene" && kind === "scenario") && <CardSheet card={card} />}
               {(type === "lien" || type === "image") && <SourceTools card={card} />}
+              {type === "document" && (
+                <div className="source-tools">
+                  {card.fichier ? (
+                    <button type="button" className="ghost-button" onClick={() => useCosmos.getState().openDocument(card.id)}>
+                      {t.documents.read}
+                    </button>
+                  ) : (
+                    <button type="button" className="ghost-button" onClick={() => void useCosmos.getState().pickDocument(card.id)}>
+                      {t.documents.choose}
+                    </button>
+                  )}
+                </div>
+              )}
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
               <BibleBody card={card} />
               {type === "personnage" && (

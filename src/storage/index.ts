@@ -57,6 +57,10 @@ export interface Storage {
   writeMedia(name: string, data: Uint8Array): Promise<void>;
   /** Adresse affichable (blob: ou data:) d'une image de medias/, ou null si le fichier manque. */
   mediaUrl(name: string): Promise<string | null>;
+  /** Octets d'un fichier de medias/ (le PDF d'une carte Document), ou null s'il manque. */
+  readMedia(name: string): Promise<Uint8Array | null>;
+  /** L'auteur choisit un fichier (un PDF à importer). Renvoie null s'il annule. */
+  pickFile(label: string, extensions: string[]): Promise<{ name: string; data: Uint8Array } | null>;
   /** L'auteur choisit une image (bouton d'une carte). Renvoie null s'il annule. */
   pickImage(label: string): Promise<{ name: string; data: Uint8Array } | null>;
   /** Plusieurs images d'un coup (galerie d'une fiche). Liste vide si l'auteur annule. */

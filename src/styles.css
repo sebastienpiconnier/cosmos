@@ -36,6 +36,7 @@
   --type-intrigue: #b3392c;
   --type-lien: #0b6e8a;
   --type-image: #7a4bb0;
+  --type-document: #7a5c2e;
   --backdrop: rgb(20 22 34 / 0.6); /* fond derrière une photo agrandie */
   --revisit: #ffe58a; /* « à reprendre » */
   --page-ink-dim: #9a9eae; /* texte hors focus (mode focus) */
@@ -86,6 +87,7 @@
   --type-intrigue: #f2887c;
   --type-lien: #5fc3e0;
   --type-image: #c3a2ef;
+  --type-document: #d6c47a;
   --backdrop: rgb(0 0 0 / 0.7);
   --revisit: #6b5a12;
   --page-ink-dim: #6c7083;
