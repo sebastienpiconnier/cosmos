@@ -158,7 +158,7 @@
 .cover-jacket { display: flex; flex-direction: column; gap: 12px; padding: 32px 28px; border-radius: 16px 0 0 16px; background: var(--cover-bg); color: var(--cover-ink); min-height: 420px; }
 .cover-kind { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cover-muted); }
 .cover-title, .cover-tagline { width: 100%; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; padding: 4px 6px; margin-left: -6px; resize: none; field-sizing: content; }
-.cover-title { font: 700 30px/1.15 var(--font-display); }
+.cover-title { font: 700 30px/1.15 var(--font-display); overflow: hidden; overflow-wrap: break-word; }
 .cover-tagline { font: italic 18px/1.4 var(--font-text); min-height: 2.8em; }
 .cover-title::placeholder, .cover-tagline::placeholder { color: var(--cover-muted); }
 .cover-title:hover, .cover-tagline:hover { border-color: var(--cover-line); }

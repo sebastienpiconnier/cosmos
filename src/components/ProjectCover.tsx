@@ -197,20 +197,34 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
   const chips = PITCH_CHIPS.filter((c) => kind === "roman" || (c !== "pov" && c !== "temps"));
   const tagId = useId();
 
+  // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge, WebKit).
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [title]);
+
   return (
     <section className="cover" aria-label={p.aria}>
       <div className="cover-jacket">
         <div className="cover-kind">{t.kinds[kind]}</div>
-        <input
-          type="text"
+        {/* Zone de texte d'une ligne qui grandit : un titre long passe à la ligne au lieu d'être coupé. */}
+        <textarea
+          ref={titleRef}
           className="cover-title"
+          rows={1}
           value={title}
           placeholder={p.untitled}
           aria-label={p.titleAria}
           autoComplete="off"
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value.replace(/\n/g, " "))}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+            if (e.key === "Enter" || e.key === "Escape") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
           }}
         />
         <label className="sr-only" htmlFor={tagId}>

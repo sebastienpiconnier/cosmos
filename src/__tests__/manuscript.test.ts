@@ -50,6 +50,15 @@ describe("cartes citées dans le texte", () => {
     expect(found("<p>Retour au port.</p>")).toEqual(["l2"]);
     expect(found("")).toEqual([]);
   });
+
+  it("un trait d'union lie deux mots : « la Mère » n'est pas citée dans « la Mère-grand »", () => {
+    const family = [card("m", "personnage", "La Mère"), card("g", "personnage", "La Mère-grand")];
+    const of = (html: string) => detectCards(html, family).map((c) => c.id);
+    expect(of("<p>Elle va chez la Mère-grand.</p>")).toEqual(["g"]);
+    expect(of("<p>La Mère cuit des galettes.</p>")).toEqual(["m"]);
+    expect(found("<p>Le phare de Kerlaouen-Nord, Yann-Ines.</p>")).toEqual([]);
+    expect(found("<p>— Inès ! dit-il.</p>")).toEqual(["p1"]);
+  });
 });
 
 describe("fichiers du manuscrit", () => {

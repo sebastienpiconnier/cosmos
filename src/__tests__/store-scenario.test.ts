@@ -75,15 +75,16 @@ describe("projet roman", () => {
   it("passer en scénario crée le fichier : page de titre et un en-tête par carte Scène", async () => {
     await state().load();
     await state().save();
-    const scene = state().nodes.find((n) => n.data.type === "scene")!;
+    const scenes = state().nodes.filter((n) => n.data.type === "scene");
+    expect(scenes.length).toBeGreaterThan(1);
 
     state().setKind("scenario");
     expect(state().status).toBe("modifie");
     await state().save();
 
-    expect(disk()[SCREENPLAY_FILE]).toBe(
-      `Title: ${state().title}\n\n.${scene.data.title} [[cosmos:${scene.id}]]\n`,
-    );
+    const file = disk()[SCREENPLAY_FILE];
+    expect(file.startsWith(`Title: ${state().title}\n\n`)).toBe(true);
+    for (const scene of scenes) expect(file).toContain(`.${scene.data.title} [[cosmos:${scene.id}]]\n`);
   });
 
   it("format de page : rien d'écrit pour un roman, le choix est enregistré et relu", async () => {

@@ -19,7 +19,8 @@ export const totalWords = (manuscript: Manuscript, ids: string[]) => ids.reduce(
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const hasWord = (text: string, word: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(word)}(?![\\p{L}\\p{N}])`, "u").test(text);
+// Un trait d'union lie deux mots en un seul : « la mère » n'est pas citée dans « la mère-grand ».
+const hasWord = (text: string, word: string) => new RegExp(`(?<![\\p{L}\\p{N}]-?)${escape(word)}(?!-?[\\p{L}\\p{N}])`, "u").test(text);
 
 /**
  * Personnages et lieux cités dans le texte d'une scène : par leur titre entier, ou, pour un personnage,

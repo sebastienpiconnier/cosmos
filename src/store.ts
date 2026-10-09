@@ -30,7 +30,8 @@ import { markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { fmt, getT } from "./i18n";
-import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, demoProject, firstScreenplay, frameBox, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
+import { demoProject } from "./demo";
+import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
@@ -970,6 +971,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     tryExample: async () => {
       if (!(await storage.create())) return;
+      // Les gravures du conte, avant l'ouverture : les cartes les trouvent aussitôt dans medias/.
+      // Un échec (quota du navigateur) laisse seulement les cartes sans image.
+      try {
+        const { demoMedia } = await import("./demoMedia");
+        for (const [name, data] of demoMedia()) await storage.writeMedia(name, data);
+      } catch (err) {
+        console.error(err);
+      }
       await get().load();
       if (get().screen === "project" && get().status === "modifie") await get().save();
       // Le projet d'exemple s'ouvre sur la visite guidée : c'est là qu'on découvre l'app.

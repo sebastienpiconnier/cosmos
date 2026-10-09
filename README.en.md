@@ -159,7 +159,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 ## Getting started
 
 - **Choose a project:** on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
-- **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a small project and opens a six-step guided tour (it stays in Settings).
+- **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a full project, Perrault’s “Little Red Riding Hood” illustrated by Gustave Doré (characters, places, a three-act outline, chapters and the tale written in the manuscript), and opens a six-step guided tour (it stays in Settings).
 - **New card:** double-click or right-click the canvas, press `N`, long-press with a finger, or use the “New card” button. Then just write.
 - **Change the type:** type `/` at the start of a line, or tap the type label (“IDEA”).
 - **Connect:** drag a thread from a point on a card’s edge to another card, then name the link.
@@ -257,3 +257,5 @@ Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in F
 Cosmos is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
 
 The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)).
+
+The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for Cosmos.

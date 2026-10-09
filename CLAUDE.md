@@ -111,7 +111,9 @@ Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/wor
 src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
   store.ts              État Zustand : actions sur les cartes, fils, vue, sauvegarde, historique d'annulation
-  projectState.ts       Nœuds du canevas (CardNode, FrameNode) et passage projet sur disque <-> état (fromProject, openProject, toProject, projet d'exemple), fonctions pures
+  projectState.ts       Nœuds du canevas (CardNode, FrameNode) et passage projet sur disque <-> état (fromProject, openProject, toProject), fonctions pures
+  demo.ts               Projet d'exemple « Le Petit Chaperon rouge » (Perrault, 1697) : cartes, fils, plan, chapitres, couverture, manuscrit ; textes dans `t.demo`
+  demoMedia.ts          Gravures de Doré du projet d'exemple (`src/assets/demo/`, en `?inline`), chargées seulement à sa création
   tour.ts               Visite guidée : étapes et vue de chacune (données pures)
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
@@ -229,6 +231,7 @@ src/
     tauri.ts            Vrais dossiers sur disque : un par projet (choisi sur ordinateur, privé sur mobile)
   styles.css            Jetons de couleur (clair, sombre), base, accueil, barre du haut ; puis styles/ : canvas.css, bible.css, screenplay.css, writing.css, importés dans cet ordre par main.tsx
   assets/fonts/         Courier Prime en TTF pour le PDF (licence OFL jointe)
+  assets/demo/          Trois gravures de Gustave Doré (1862, domaine public), en JPEG réduit, pour le projet d'exemple
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 .github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
 ```
@@ -457,3 +460,5 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Gabarits expliqués** : `t.plan.templateAbout` sous le choix du gabarit (Plan et séquencier) ; dans le séquencier, chaque case de gabarit montre son aide (`t.plan.beats[clé].hint`, `isBeat`).
 - **Icône et logo** : une constellation (étoiles éparses, quelques-unes reliées, une qui brille). Source `src-tauri/icons/icon.svg` (aussi `public/favicon.svg`), PNG 1024 rendu depuis ce SVG puis `npx tauri icon` ; le logo de la barre du haut est la même figure en `currentColor`.
 - **Scènes de la vue Scénario** : la liste de gauche se réordonne (glisser, flèches de la scène en cours, Alt+↑/↓) avec `moveBlock`, comme le séquencier. `moveScene` (ScreenplayView) recharge l'éditeur lui-même (`synced`, `setContent`) avant d'y poser le curseur : passer par l'effet de rechargement remettrait le curseur au début.
+- **Projet d'exemple** : « Le Petit Chaperon rouge » de Perrault (texte de 1697, orthographe modernisée, dialogues entre « » sans tiret) avec trois gravures de Doré. `tryExample` écrit d'abord les gravures dans `medias/` (`demoMedia`, import dynamique : elles restent hors du paquet de démarrage), puis ouvre le projet. La traduction anglaise est propre à Cosmos : ne pas y recopier une traduction publiée. Changer l'exemple : `demo.ts` et `t.demo` dans les deux langues, et le test « essayer avec un exemple ».
+- **Noms cités dans le texte** (`detectCards`) : un trait d'union lie deux mots, « la Mère » n'est pas citée dans « la Mère-grand ».

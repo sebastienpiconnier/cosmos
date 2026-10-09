@@ -266,37 +266,6 @@ export function toProject(
 
 export const p = (text: string) => `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</p>`;
 
-/** Projet d'exemple affiché au premier lancement, dans la langue de l'interface. */
-export function demoProject(): Project {
-  const d = getT().demo;
-  const ines = newId(), phare = newId(), idee = newId(), scene = newId();
-  return {
-    meta: {
-      version: 1,
-      title: d.title,
-      kind: "roman",
-      layout: [
-        { id: idee, x: 60, y: 60 },
-        { id: ines, x: 120, y: 300 },
-        { id: phare, x: 620, y: 120 },
-        { id: scene, x: 560, y: 420 },
-      ],
-      links: [
-        { id: newId(), source: ines, target: phare, label: d.linkWorksAt },
-        { id: newId(), source: scene, target: phare, label: d.linkSetIn },
-      ],
-    },
-    cards: [
-      { id: idee, type: "idee", title: "", html: p(d.idea) },
-      { id: ines, type: "personnage", title: d.characterTitle, html: p(d.characterBody) },
-      { id: phare, type: "lieu", title: d.placeTitle, html: p(d.placeBody) },
-      { id: scene, type: "scene", title: d.sceneTitle, html: p(d.sceneBody) },
-    ],
-    screenplay: null,
-  };
-}
-
-
 /** Ce que l'enregistrement lit dans l'état du store (voir toProject). */
 export interface ProjectSlice {
   title: string;

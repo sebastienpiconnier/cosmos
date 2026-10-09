@@ -160,7 +160,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 ## Prise en main
 
 - **Choisir un projet :** à chaque lancement, l'accueil liste tes projets. Depuis un projet, le bouton « Projets » enregistre et y revient.
-- **Nouveau projet :** un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer. « Essayer avec un exemple » crée un petit projet et ouvre une visite guidée en six étapes (elle reste dans les Réglages).
+- **Nouveau projet :** un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer. « Essayer avec un exemple » crée un projet complet, « Le Petit Chaperon rouge » de Perrault illustré par Gustave Doré (personnages, lieux, plan en trois actes, chapitres et conte écrit dans le manuscrit), et ouvre une visite guidée en six étapes (elle reste dans les Réglages).
 - **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
 - **Changer le type :** taper `/` en début de ligne, ou toucher l'étiquette du type (« IDÉE »).
 - **Relier :** tirer un fil depuis un point au bord d'une carte vers une autre, puis nommer le lien.
@@ -256,3 +256,5 @@ Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLA
 Cosmos est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Tu peux l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que tu distribues doit rester sous la même licence.
 
 Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)).
+
+Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour Cosmos.

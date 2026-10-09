@@ -88,8 +88,14 @@ describe("créer", () => {
     await state().start();
     await state().tryExample();
     expect(state().screen).toBe("project");
-    expect(state().nodes.length).toBe(4);
+    expect(state().nodes.length).toBe(21);
     expect(state().status).toBe("enregistre");
+    // Le conte est écrit dans le manuscrit, le plan a ses chapitres, les gravures sont dans medias/.
+    expect(Object.keys(state().manuscript)).toHaveLength(7);
+    expect(state().plan.chapters).toHaveLength(2);
+    const portraits = state().nodes.filter((n) => n.data.image).map((n) => n.data.image!);
+    expect(new Set(portraits).size).toBe(3);
+    for (const name of portraits) expect(await storage.mediaUrl(name)).toMatch(/^data:image\/jpeg;base64,/);
     await state().closeProject();
     expect(state().projects).toHaveLength(1);
   });
