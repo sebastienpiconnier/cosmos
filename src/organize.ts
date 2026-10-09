@@ -3,8 +3,11 @@
 // d'historique (Ctrl/Cmd+Z remet tout comme avant).
 //
 //   Personnages · Intrigues · Lieux · Thèmes · Questions   (une rangée de cadres)
-//   Récit : [case du gabarit [chapitre [scènes]]]   (une case par ligne ; sans gabarit, les chapitres)
-//   Idées en vrac · Images · Liens
+//   Récit : [case du gabarit [chapitre [scènes]]]   (côte à côte, rangées de 8 scènes au plus)
+//   Idées en vrac · Images · Liens · Pages du livre
+//
+// En paysage de préférence : un écran est plus large que haut. Les cases du gabarit (ou les chapitres,
+// sans gabarit) se suivent de gauche à droite, et l'on passe à la rangée suivante avant 9 scènes.
 //
 // Les scènes sont reliées dans l'ordre du récit (un fil « puis » entre deux scènes qui se suivent).
 
@@ -29,6 +32,8 @@ export interface OrganizeLabels {
   unplaced: string;
   /** Cadre de toutes les scènes, quand le plan est libre et sans chapitre. */
   story: string;
+  /** Cartes Scène hors récit (page de titre, dédicace, épilogue…). */
+  pages: string;
 }
 
 export interface OrganizeInput {
@@ -53,6 +58,11 @@ const GAP = 32; // entre deux cartes
 const GROUP_GAP = 56; // entre deux cadres
 const ROW_GAP = 96; // entre deux rangées de l'ensemble
 const PAD = { side: 32, top: 64, bottom: 32 }; // marge intérieure d'un cadre (titre en haut)
+/** Scènes au plus sur une rangée du récit. */
+export const SCENES_PER_ROW = 8;
+
+/** Colonnes d'un cadre de type : une seule rangée jusqu'à 4 cartes, puis plus large que haut. */
+export const typeColumns = (n: number) => (n <= 4 ? Math.max(1, n) : Math.ceil(Math.sqrt(n * 2)));
 
 type Item =
   | { kind: "card"; id: string; width: number; height: number }
@@ -123,44 +133,87 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
     return c ? [{ kind: "card", id: c.id, width: c.width, height: c.height }] : [];
   };
   const ofType = (type: CardType) => cards.filter((c) => c.type === type).map((c) => c.id);
-  const typeFrame = (type: CardType, columns: number): Item[] => {
+  const typeFrame = (type: CardType): Item[] => {
     const ids = ofType(type);
-    return ids.length > 0 ? [{ kind: "frame", title: labels.groups[type], body: { items: ids.flatMap(cardItem), columns, gap: GAP } }] : [];
+    return ids.length > 0 ? [{ kind: "frame", title: labels.groups[type], body: { items: ids.flatMap(cardItem), columns: typeColumns(ids.length), gap: GAP } }] : [];
   };
+  /**
+   * Groupes du récit (cases ou chapitres) de gauche à droite, en rangées de SCENES_PER_ROW scènes au plus.
+   * Un groupe plus long que la limite occupe une rangée à lui seul (ses scènes passent à la ligne).
+   */
+  const inRows = (groups: { item: Item; count: number }[]): Item[] => {
+    const rows: { item: Item; count: number }[][] = [];
+    let current: { item: Item; count: number }[] = [];
+    let total = 0;
+    for (const g of groups) {
+      if (current.length > 0 && total + g.count > SCENES_PER_ROW) {
+        rows.push(current);
+        current = [];
+        total = 0;
+      }
+      current.push(g);
+      total += g.count;
+    }
+    if (current.length > 0) rows.push(current);
+    return rows.map((row): Item => ({ kind: "box", body: { items: row.map((g) => g.item), columns: row.length, gap: GROUP_GAP } }));
+  };
+  const sceneColumns = (n: number) => Math.max(1, Math.min(SCENES_PER_ROW, n));
 
   // Récit : les scènes dans les cases du gabarit, regroupées par chapitre.
   const scenes = sceneIds.filter((id) => byId.get(id)?.type === "scene");
+  // Les cartes Scène hors du récit (pages du livre) ont leur propre cadre, à la fin.
+  const story_ = new Set(scenes);
+  const pages = ofType("scene").filter((id) => !story_.has(id));
   const { beats, unplaced } = arrange(plan, scenes);
   const order = [...beats.flatMap((b) => b.ids), ...unplaced];
   const numbers = chapterNumbers(plan, order);
-  const chaptered = (ids: string[]): Item[] =>
-    groupByChapter(plan, ids).map((g): Item => {
-      const body: Layout = { items: g.ids.flatMap(cardItem), columns: 3, gap: GAP };
-      return g.chapter ? { kind: "frame", title: labels.chapter(numbers.get(g.chapter.id) ?? 0, g.chapter.title.trim()), body } : { kind: "box", body };
+  // Les chapitres d'un groupe se suivent de gauche à droite, leurs scènes aussi.
+  const chaptered = (ids: string[]): { item: Item; count: number }[] =>
+    groupByChapter(plan, ids).map((g) => {
+      const body: Layout = { items: g.ids.flatMap(cardItem), columns: sceneColumns(g.ids.length), gap: GAP };
+      const item: Item = g.chapter ? { kind: "frame", title: labels.chapter(numbers.get(g.chapter.id) ?? 0, g.chapter.title.trim()), body } : { kind: "box", body };
+      return { item, count: g.ids.length };
     });
   const free = plan.template === "libre" || PLAN_TEMPLATES[plan.template].length <= 1;
   let story: Item[];
   if (free) {
     const groups = chaptered(beats[0]?.ids ?? []);
-    const anyChapter = groups.some((g) => g.kind === "frame");
-    story = groups.length === 0 ? [] : anyChapter ? groups : [{ kind: "frame", title: labels.story, body: { items: groups, columns: 1, gap: GAP } }];
+    const anyChapter = groups.some((g) => g.item.kind === "frame");
+    story =
+      groups.length === 0 ? [] : anyChapter ? inRows(groups) : [{ kind: "frame", title: labels.story, body: { items: groups.map((g) => g.item), columns: 1, gap: GAP } }];
   } else {
-    story = beats
+    const placed = beats
       .filter((b) => b.ids.length > 0)
-      .map((b): Item => ({ kind: "frame", title: labels.beat(b.key), body: { items: chaptered(b.ids), columns: 3, gap: GROUP_GAP } }));
-    if (unplaced.length > 0) story.push({ kind: "frame", title: labels.unplaced, body: { items: unplaced.flatMap(cardItem), columns: 4, gap: GAP } });
+      .map((b) => {
+        const inner = chaptered(b.ids);
+        const item: Item = { kind: "frame", title: labels.beat(b.key), body: { items: inner.map((g) => g.item), columns: Math.max(1, inner.length), gap: GROUP_GAP } };
+        return { item, count: b.ids.length };
+      });
+    story = inRows(placed);
+    if (unplaced.length > 0) {
+      story.push({ kind: "frame", title: labels.unplaced, body: { items: unplaced.flatMap(cardItem), columns: sceneColumns(unplaced.length), gap: GAP } });
+    }
   }
 
   const rows: Layout[] = [
     {
-      items: [...typeFrame("personnage", 3), ...typeFrame("intrigue", 2), ...typeFrame("lieu", 2), ...typeFrame("theme", 2), ...typeFrame("question", 2)],
+      items: [...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")],
       columns: 5,
       gap: GROUP_GAP,
     },
-    // Sans gabarit, les chapitres se suivent de gauche à droite ; avec, une case par ligne.
-    { items: story, columns: free ? 3 : 1, gap: GROUP_GAP },
+    // Les rangées du récit l'une sous l'autre (chacune de gauche à droite, voir inRows).
+    { items: story, columns: 1, gap: GROUP_GAP },
     // Idées en vrac, puis les images et les liens collés sur le canevas.
-    { items: [...typeFrame("idee", 4), ...typeFrame("image", 3), ...typeFrame("lien", 3)], columns: 3, gap: GROUP_GAP },
+    {
+      items: [
+        ...typeFrame("idee"),
+        ...typeFrame("image"),
+        ...typeFrame("lien"),
+        ...(pages.length > 0 ? [{ kind: "frame" as const, title: labels.pages, body: { items: pages.flatMap(cardItem), columns: typeColumns(pages.length), gap: GAP } }] : []),
+      ],
+      columns: 4,
+      gap: GROUP_GAP,
+    },
   ].filter((r) => r.items.length > 0);
 
   const out: OrganizeResult = { positions: new Map(), frames: [], sequence: [] };

@@ -10,6 +10,7 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
+  SelectionMode,
   useReactFlow,
   type Edge,
 } from "@xyflow/react";
@@ -18,7 +19,7 @@ import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
 import type { CardData } from "../types";
-import { useT } from "../i18n";
+import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
 import { imageExtension } from "../media";
@@ -53,6 +54,10 @@ export function Toile() {
   const touch = isTouch();
   const t = useT();
   const theme = useSettings((s) => s.theme);
+  // Mode « Sélection » : glisser sur le canevas entoure des cartes au lieu de déplacer la vue (chemin du doigt).
+  const [selecting, setSelecting] = useState(false);
+  const selectedCards = nodes.filter((n) => n.selected).length;
+  const selectedFrames = frames.filter((f) => f.selected).length;
 
   // Zone Recherche demandée (bouton ou nouvelle source) : on la cadre.
   const focusFrame = useCosmos((s) => s.focusFrame);
@@ -150,6 +155,18 @@ export function Toile() {
         for (const n of chosen) resizeCard(n.id, e.key === "ArrowRight" ? 40 : -40);
         return;
       }
+      // Ctrl ou Cmd + A : toutes les cartes et tous les cadres. Échap : plus rien de sélectionné.
+      if (key === "a" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        useCosmos.getState().selectAll();
+        return;
+      }
+      if (e.key === "Escape" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const { nodes: all, frames: boxesNow, clearSelection } = useCosmos.getState();
+        if (all.some((n) => n.selected) || boxesNow.some((b) => b.selected)) clearSelection();
+        setSelecting(false);
+        return;
+      }
       if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       e.preventDefault();
       if (key === "n") createInCenterRef.current();
@@ -202,6 +219,9 @@ export function Toile() {
   // sinon ils déplaceraient le focus (ou ouvriraient le menu du type).
   const createAtRef = useRef(createAt);
   createAtRef.current = createAt;
+  // En mode Sélection, l'appui long trace le rectangle au lieu de créer une carte.
+  const selectingRef = useRef(selecting);
+  selectingRef.current = selecting;
   useEffect(() => {
     const el = wrapper.current;
     if (!el) return;
@@ -215,7 +235,7 @@ export function Toile() {
     };
     const down = (e: PointerEvent) => {
       fired = false;
-      if (e.pointerType === "mouse" || !e.isPrimary || !isPane(e.target)) return;
+      if (e.pointerType === "mouse" || !e.isPrimary || !isPane(e.target) || selectingRef.current) return;
       start = { x: e.clientX, y: e.clientY };
       timer = setTimeout(() => {
         if (!start) return;
@@ -317,6 +337,11 @@ export function Toile() {
         colorMode={theme}
         connectionMode={ConnectionMode.Loose}
         zoomOnDoubleClick={false}
+        // Sélection multiple : Maj + glisser entoure (ou glisser seul en mode Sélection), Ctrl ou Cmd + clic ajoute.
+        selectionOnDrag={selecting}
+        panOnDrag={!selecting}
+        selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode={["Meta", "Control"]}
         deleteKeyCode={["Delete", "Backspace"]}
         minZoom={0.15}
         maxZoom={2}
@@ -401,6 +426,20 @@ export function Toile() {
           </svg>
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
         </button>
+        <button
+          type="button"
+          className={`icon-button has-label${selecting ? " is-on" : ""}`}
+          aria-label={t.toile.select}
+          aria-pressed={selecting}
+          title={t.toile.selectHint}
+          onClick={() => setSelecting(!selecting)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M4 16v2.5A1.5 1.5 0 0 0 5.5 20H8" />
+            <path d="M12 12l8.5 3-3.6 1.4L15.5 20z" />
+          </svg>
+          <span className="tool-label" aria-hidden="true">{t.toile.selectShort}</span>
+        </button>
         <button type="button" className="icon-button" disabled={!canUndo} aria-label={t.toile.undo} title={t.toile.undoHint} onClick={undo}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9 14L4 9l5-5" />
@@ -415,7 +454,44 @@ export function Toile() {
         </button>
       </div>
 
-      <div className="toile-hint">
+      {/* Plusieurs cartes choisies : ce qu'on peut en faire d'un coup, aussi au doigt (pas de clavier). */}
+      {selectedCards + selectedFrames > 1 && (
+        <div className="selection-bar" role="toolbar" aria-label={t.toile.select}>
+          <span className="selection-count" aria-live="polite">
+            {selectedFrames > 0 ? fmt(t.toile.selectedCountFrames, { n: selectedCards, f: selectedFrames }) : fmt(t.toile.selectedCount, { n: selectedCards })}
+          </span>
+          {selectedCards > 0 && (
+            <button type="button" className="ghost-button" title={t.toile.selectionFrameHint} onClick={createFrame}>
+              {t.toile.selectionFrame}
+            </button>
+          )}
+          {selectedCards > 0 && (
+            <button
+              type="button"
+              className="ghost-button"
+              title={t.toile.selectionTrashHint}
+              onClick={() => {
+                const s = useCosmos.getState();
+                s.deleteCards(s.nodes.filter((n) => n.selected).map((n) => n.id));
+              }}
+            >
+              {t.toile.selectionTrash}
+            </button>
+          )}
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              useCosmos.getState().clearSelection();
+              setSelecting(false);
+            }}
+          >
+            {t.toile.selectionClear}
+          </button>
+        </div>
+      )}
+
+      <div className="toile-hint" hidden={selectedCards + selectedFrames > 1}>
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
       </div>
     </div>

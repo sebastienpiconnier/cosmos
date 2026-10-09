@@ -258,6 +258,12 @@ interface CosmosState {
   /** Une photo de la galerie devient l'image principale (le portrait) ; l'ancienne rejoint la galerie. */
   useAsMainImage: (id: string, name: string) => void;
   deleteCard: (id: string) => void;
+  /** Plusieurs cartes à la corbeille (sélection), une seule étape d'historique. */
+  deleteCards: (ids: string[]) => void;
+  /** Sélectionne toutes les cartes et tous les cadres (Ctrl ou Cmd + A). */
+  selectAll: () => void;
+  /** Plus rien de sélectionné (Échap, bouton de la barre de sélection). */
+  clearSelection: () => void;
   /** Retire un fil (« Délier »), une étape d'historique. */
   removeLink: (id: string) => void;
   renameLink: (id: string, label: string) => void;
@@ -798,6 +804,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
           unplaced: t.plan.unplaced,
           story: types.scene.section,
+          pages: t.organize.pages,
         },
         origin: { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
         newId,
@@ -1267,13 +1274,26 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const images = card.images.map((n) => (n === name ? card.image : n)).filter((n): n is string => !!n);
       get().updateCard(id, { image: name, images: images.length > 0 ? images : undefined });
     },
-    deleteCard: (id) => {
-      if (!get().nodes.some((n) => n.id === id)) return;
+    deleteCard: (id) => get().deleteCards([id]),
+    deleteCards: (ids) => {
+      const known = ids.filter((id) => get().nodes.some((n) => n.id === id));
+      if (known.length === 0) return;
       record();
-      // À la corbeille, pas effacée : la carte, ses fils et sa scène du scénario peuvent revenir.
-      set(toTrash([id], get()));
+      // À la corbeille, pas effacées : les cartes, leurs fils et leurs scènes du scénario peuvent revenir.
+      set(toTrash(known, get()));
       touch();
     },
+    // La sélection est un état d'affichage : ni historique, ni projet « modifié ».
+    selectAll: () =>
+      set({
+        nodes: get().nodes.map((n) => (n.selected ? n : { ...n, selected: true })),
+        frames: get().frames.map((f) => (f.selected ? f : { ...f, selected: true })),
+      }),
+    clearSelection: () =>
+      set({
+        nodes: get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+        frames: get().frames.map((f) => (f.selected ? { ...f, selected: false } : f)),
+      }),
     removeLink: (id) => {
       if (!get().edges.some((e) => e.id === id)) return;
       record();

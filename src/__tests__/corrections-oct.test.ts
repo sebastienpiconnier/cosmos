@@ -17,7 +17,7 @@ import {
   startChapter,
   type Plan,
 } from "../plan";
-import { organize } from "../organize";
+import { organize, typeColumns } from "../organize";
 import { dayKey, firstPageOf, manuscriptStats, readGoals, readProgress, recordProgress, streak, wordsOn } from "../stats";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -94,6 +94,7 @@ describe("organiser le canevas", () => {
     chapter: (n: number, title: string) => (title ? `Chapitre ${n} · ${title}` : `Chapitre ${n}`),
     unplaced: "À placer",
     story: "Scènes",
+    pages: "Pages du livre",
   };
   let n = 0;
   const newId = () => `f${++n}`;
@@ -121,6 +122,35 @@ describe("organiser le canevas", () => {
     // Aucun chevauchement entre cartes.
     const boxes = [...r.positions.values()].map((p) => ({ ...p, width: 240, height: 120 }));
     for (const a of boxes) for (const b of boxes) if (a !== b) expect(a.x + 240 <= b.x || b.x + 240 <= a.x || a.y + 120 <= b.y || b.y + 120 <= a.y).toBe(true);
+  });
+
+  it("en paysage : cases côte à côte, nouvelle rangée avant 9 scènes, ensemble plus large que haut", () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({ id: `s${i}`, type: "scene" as const, width: 240, height: 120 }));
+    const ids = many.map((c) => c.id);
+    // Cinq cases : 3 + 3 + 2 scènes tiennent sur une rangée (8), puis 2 + 2 sur la suivante.
+    const beats = { a_setup: ids.slice(0, 3), a_incident: ids.slice(3, 6), a_confrontation: ids.slice(6, 8), a_crisis: ids.slice(8, 10), a_climax: ids.slice(10) };
+    const r = organize({ cards: many, plan: { template: "troisActes", beats }, sceneIds: ids, labels, origin: { x: 0, y: 0 }, newId });
+    const frame = (title: string) => r.frames.find((f) => f.title === title)!;
+    expect(frame("a_incident").y).toBe(frame("a_setup").y);
+    expect(frame("a_confrontation").y).toBe(frame("a_setup").y);
+    expect(frame("a_incident").x).toBeGreaterThan(frame("a_setup").x);
+    expect(frame("a_crisis").y).toBeGreaterThan(frame("a_setup").y);
+    expect(frame("a_climax").y).toBe(frame("a_crisis").y);
+    // Les scènes d'une case sont sur une même ligne.
+    expect(new Set(ids.slice(0, 3).map((id) => r.positions.get(id)!.y)).size).toBe(1);
+    const xs = [...r.positions.values()].map((p) => p.x);
+    const ys = [...r.positions.values()].map((p) => p.y);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys));
+    // Un cadre de type : une rangée jusqu'à 4 cartes, puis plus large que haut.
+    expect([1, 4, 5, 9, 20].map(typeColumns)).toEqual([1, 4, 4, 5, 7]);
+  });
+
+  it("les pages du livre (épilogue…) ont leur cadre, à la fin, et ne restent pas en plan", () => {
+    const withPage = [...cards, { id: "e1", type: "scene" as const, width: 240, height: 120 }];
+    const r = organize({ cards: withPage, plan: EMPTY_PLAN, sceneIds: ["s1", "s2", "s3"], labels, origin: { x: 0, y: 0 }, newId });
+    expect(r.frames.map((f) => f.title)).toEqual(["Personnages", "Scènes", "Idées", "Pages du livre"]);
+    expect(r.positions.has("e1")).toBe(true);
+    expect(r.sequence.flat()).not.toContain("e1");
   });
 
   it("plan libre sans chapitre : un cadre « Scènes »", () => {

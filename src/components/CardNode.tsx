@@ -386,6 +386,22 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           <span className="card-dot" />
           {types[data.type].label}
         </button>
+        {/* Fiche dans la Bible : toutes les cartes typées en ont une (les idées en vrac n'y sont qu'une liste). */}
+        {data.type !== "idee" && (
+          <button
+            type="button"
+            className="card-delete card-bible nodrag"
+            aria-label={t.card.openSheet}
+            title={t.card.openSheet}
+            onClick={() => useCosmos.getState().openInBible(id)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 4.5h9.5a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z" />
+              <path d="M5 17a3 3 0 0 1 3-3h9.5" />
+              <path d="M9 8h5" />
+            </svg>
+          </button>
+        )}
         <button
           type="button"
           className="card-delete card-image-add nodrag"

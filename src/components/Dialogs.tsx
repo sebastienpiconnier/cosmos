@@ -26,7 +26,7 @@ export function Dialogs() {
 
   const apple = isAppleKeyboard();
   const keyName = (k: string) =>
-    ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete })[k] ?? k;
+    ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
 
   return (
     <dialog ref={ref} className="app-dialog" aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
