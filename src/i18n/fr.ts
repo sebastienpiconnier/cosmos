@@ -242,6 +242,16 @@ export const fr = {
     contents: "Sommaire",
     bibleName: "{title}, bible",
     emptyManuscript: "Rien à exporter : aucune scène n’est encore écrite.",
+    canvas: "Canevas",
+    canvasPng: "Image PNG (tout le tableau)",
+    canvasPdf: "PDF standard (A4, à envoyer)",
+    canvasPdfLarge: "PDF grand format (A1, à imprimer)",
+    canvasDocx: "Word (.docx), texte des cartes",
+    canvasMd: "Markdown, texte des cartes",
+    canvasName: "{title}, canevas",
+    canvasLoose: "Hors cadre",
+    untitledFrame: "Cadre sans nom",
+    emptyCanvas: "Rien à exporter : le canevas est vide.",
   },
 
   // Assistant personnage : des questions pour creuser une fiche. Il questionne, il n'écrit pas.

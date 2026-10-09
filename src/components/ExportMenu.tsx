@@ -1,5 +1,6 @@
 // Bouton « Exporter » : le scénario (PDF au format standard, Fountain, Final Draft) ou le manuscrit
-// d'un roman (PDF, Word, EPUB, Markdown), et la bible du projet dans les deux cas.
+// d'un roman (PDF, Word, EPUB, Markdown), la bible du projet dans les deux cas, et le canevas (PNG, PDF
+// standard ou grand format, Word, Markdown).
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -15,6 +16,26 @@ import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile 
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
 import { bibleDoc, manuscriptDoc } from "../export/doc";
 import { visibleSections } from "../bibleSections";
+import { canvasBounds, canvasDoc } from "../export/canvas";
+import { boxes, frameBox } from "../projectState";
+import { fileName } from "../screenplay/export";
+
+/** Formats du canevas : image, PDF standard ou grand format, texte des cartes. */
+const CANVAS_FORMATS = ["png", "pdf", "pdfLarge", "docx", "md"] as const;
+type CanvasFormat = (typeof CANVAS_FORMATS)[number];
+
+/** Le calque des cartes de React Flow, une fois le canevas à l'écran (on y passe au besoin). */
+async function canvasViewport(): Promise<HTMLElement | null> {
+  const s = useCosmos.getState();
+  if (s.view !== "toile") s.setView("toile");
+  for (let i = 0; i < 40; i++) {
+    const el = document.querySelector<HTMLElement>(".toile .react-flow__viewport");
+    // Les cartes sont mesurées : React Flow les montre (visibility) dès qu'il connaît leur taille.
+    if (el && el.querySelector(".react-flow__node") && !el.querySelector(".react-flow__node[style*='visibility: hidden']")) return el;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return document.querySelector<HTMLElement>(".toile .react-flow__viewport");
+}
 
 export function ExportMenu() {
   const { t: all, types, kind } = useVocab();
@@ -46,15 +67,15 @@ export function ExportMenu() {
     };
   }, [open]);
 
-  /** Fabrique le fichier, puis le fait enregistrer par le système. */
-  const run = async (label: string, build: () => Promise<ExportedFile | null>) => {
+  /** Fabrique le fichier, puis le fait enregistrer par le système. `empty` : message si rien à exporter. */
+  const run = async (label: string, build: () => Promise<ExportedFile | null>, empty = x.emptyManuscript) => {
     if (busy) return;
     setBusy(true);
     setMessage(t.working);
     try {
       const file = await build();
       if (!file) {
-        setMessage(x.emptyManuscript);
+        setMessage(empty);
         return;
       }
       const saved = await storage.saveAs(file, label);
@@ -132,13 +153,53 @@ export function ExportMenu() {
     return exportDocument(full, format, { name: doc.title, paper, contents: x.contents });
   };
 
+  const canvasFile = (format: CanvasFormat) => async (): Promise<ExportedFile | null> => {
+    const { nodes, frames, edges, title } = useCosmos.getState();
+    if (nodes.length === 0) return null;
+    const base = info();
+    const name = fmt(x.canvasName, { title: base.title });
+    const file = (extension: string, mime: string, data: Uint8Array): ExportedFile => ({ name: `${fileName(name, "cosmos")}.${extension}`, extension, mime, data });
+    if (format === "docx" || format === "md") {
+      const cardBoxes = boxes(nodes);
+      const doc = canvasDoc(
+        { ...base, title: name },
+        nodes.map((n, i) => ({ card: n.data, box: cardBoxes[i] })),
+        frames.map((f) => ({ id: f.id, title: f.data.title, box: frameBox(f) })),
+        edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
+        {
+          types: Object.fromEntries(CARD_TYPES.map((type) => [type, types[type].label])) as Record<(typeof CARD_TYPES)[number], string>,
+          untitled: all.bible.untitled,
+          loose: x.canvasLoose,
+          untitledFrame: x.untitledFrame,
+          linkedTo: all.bible.linkedTo,
+          fields: { ...all.character.fields, ...all.fiche.fields },
+          arcTypes: all.character.arcTypes,
+        },
+      );
+      const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));
+      return exportDocument(full, format, { name, paper: useCosmos.getState().paper, contents: x.contents });
+    }
+    // Image : on dessine le canevas tel qu'il est affiché, sans sélection ni poignées.
+    useCosmos.getState().clearSelection();
+    const viewport = await canvasViewport();
+    const measured = useCosmos.getState();
+    const bounds = canvasBounds([...boxes(measured.nodes), ...measured.frames.map(frameBox)]);
+    if (!viewport || !bounds) return null;
+    const image = await import("../export/canvasImage");
+    const canvas = await image.renderCanvas(viewport, bounds, format === "pdfLarge" ? "large" : "standard");
+    if (format === "png") return file("png", "image/png", await image.canvasPng(canvas));
+    return file("pdf", "application/pdf", await image.canvasPdf(canvas, format === "pdfLarge" ? "large" : "standard", title.trim() || base.title));
+  };
+  const canvasLabels: Record<CanvasFormat, string> = { png: x.canvasPng, pdf: x.canvasPdf, pdfLarge: x.canvasPdfLarge, docx: x.canvasDocx, md: x.canvasMd };
+
   const groups = [
     kind === "scenario"
       ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
       : { title: x.manuscript, items: MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })) },
     { title: x.bible, items: BIBLE_FORMATS.map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
-  ];
-  const failed = message === t.failed || message === x.emptyManuscript;
+    { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
+  ] as { title: string; empty?: string; items: { key: string; label: string; build: () => Promise<ExportedFile | null> }[] }[];
+  const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas;
 
   return (
     <div className="settings" ref={rootRef}>
@@ -161,7 +222,7 @@ export function ExportMenu() {
             <div key={group.title} className="export-group" role="group" aria-label={group.title}>
               <span className="eyebrow">{group.title}</span>
               {group.items.map((item) => (
-                <button key={item.key} type="button" className="ghost-button" disabled={busy} onClick={() => run(`${group.title}, ${item.label}`, item.build)}>
+                <button key={item.key} type="button" className="ghost-button" disabled={busy} onClick={() => run(`${group.title}, ${item.label}`, item.build, group.empty)}>
                   {item.label}
                 </button>
               ))}

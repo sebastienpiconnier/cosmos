@@ -257,3 +257,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 }
 .selection-bar .ghost-button { min-height: 44px; }
 .selection-count { font-weight: 600; margin-right: 4px; }
+
+/* Capture du canevas (export PNG ou PDF) : sans les textes indicatifs. Les cartes gardent leur taille,
+   sinon les fils, calculés sur la taille mesurée, ne toucheraient plus leurs cartes. */
+.is-capturing .card-editor p.is-editor-empty:first-child::before { visibility: hidden; }
