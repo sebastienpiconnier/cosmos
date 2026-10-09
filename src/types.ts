@@ -7,7 +7,7 @@ import type { Plan } from "./plan";
 import type { Goals, Progress } from "./stats";
 import type { Pitch } from "./pitch";
 
-export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "source";
+export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "image" | "lien";
 
 /**
  * Nature du projet. Change le vocabulaire (Lieu → Décor, Plan → Séquencier…), le style des
@@ -19,10 +19,10 @@ export const PROJECT_KINDS: ProjectKind[] = ["roman", "scenario"];
 export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || v === "scenario";
 
 /** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
-export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "theme", "question", "source"];
+export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "theme", "question", "image", "lien"];
 
 /** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
-export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "scene", "theme", "question", "source", "idee"];
+export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "scene", "theme", "question", "image", "lien", "idee"];
 
 /** Couleur d'un type, en variable CSS (s'adapte au mode clair/sombre). */
 export const typeColor = (t: CardType) => `var(--type-${t})`;

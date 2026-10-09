@@ -90,6 +90,13 @@ interface CosmosState {
   /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
   addResearchClip: (text: string, at?: { x: number; y: number }) => string | null;
   /**
+   * Coller dans une carte encore vide : une adresse web en fait la carte Lien (titre et image du site
+   * arrivent ensuite), une image en fait la carte Image. Rend faux si la carte n'est pas vide ou si ce
+   * qu'on colle n'est ni l'un ni l'autre (le collage suit alors son chemin normal).
+   */
+  turnIntoLink: (id: string, text: string) => boolean;
+  turnIntoImage: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
+  /**
    * Complète une source depuis sa page : titre (s'il n'est que le nom du site), auteur, publication, et
    * image du site si la carte n'en a pas. Ne remplace jamais ce que l'auteur a écrit. Hors historique.
    */
@@ -274,6 +281,10 @@ export interface Snapshot {
 /** Hauteur réservée pour l'image d'une carte créée par dépôt (voir .card-image dans styles.css). */
 const IMAGE_ROOM = 220;
 
+/** Carte encore vide (ni titre, ni texte, ni image), Idée ou Lien/Image tout juste créé : elle peut devenir ce qu'on y colle. */
+const isBlankCard = (card: CardData) =>
+  !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim() && ["idee", "lien", "image"].includes(card.type);
+
 const HISTORY_LIMIT = 100;
 /** Deux gestes de même nature rapprochés (lettres d'un titre, déplacement) ne font qu'une étape. */
 const HISTORY_MERGE_MS = 800;
@@ -447,10 +458,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dialog: null,
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
     setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}) }),
-    addResearchCard: ({ title, html, fiche, image, type = "source" }, at) => {
+    addResearchCard: ({ title, html, fiche, image, type = "idee" }, at) => {
       record();
       // Comme dans Milanote : la carte naît là où l'on colle ou dépose, sans cadre imposé. « Organiser » la
-      // rangera plus tard dans un cadre Recherche, comme les autres types.
+      // rangera plus tard dans le cadre de son type (Images, Liens, Idées en vrac).
       const size = { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height };
       const taken = boxes(get().nodes);
       const spot = at ? freeSpot({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
@@ -471,7 +482,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         return null;
       }
-      return get().addResearchCard({ title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } }, at);
+      return get().addResearchCard({ type: "image", title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } }, at);
     },
     addResearchClip: (text, at) => {
       const clip = clipFromText(text);
@@ -480,20 +491,37 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const now = Date.now();
       if (lastPaste.text === text.trim() && now - lastPaste.at < 1500) return null;
       lastPaste = { text: text.trim(), at: now };
-      // Le même lien collé deux fois : on montre la source existante au lieu d'en créer une autre.
-      const same = clip.url ? get().nodes.find((n) => n.data.type === "source" && n.data.fiche?.url === clip.url) : undefined;
+      // Le même lien collé deux fois : on montre la carte existante au lieu d'en créer une autre.
+      const same = clip.url ? get().nodes.find((n) => n.data.type === "lien" && n.data.fiche?.url === clip.url) : undefined;
       if (same) {
         set({ focusId: same.id });
         return same.id;
       }
-      const id = get().addResearchCard({
-        title: clip.title,
-        html: clip.markdown ? markdownToHtml(markHighlights(clip.markdown)) : "",
-        fiche: { ...(clip.url ? { url: clip.url } : {}), consulte: today(useSettings.getState().lang) },
-      }, at);
+      // Un lien : une carte Lien. Un texte : une Idée qui le cite.
+      const id = get().addResearchCard(
+        clip.url
+          ? { type: "lien", title: clip.title, html: "", fiche: { url: clip.url, consulte: today(useSettings.getState().lang) } }
+          : { type: "idee", title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) },
+        at,
+      );
       // Un lien : le titre, l'auteur et l'image du site arrivent d'eux-mêmes, si la page se laisse lire.
       if (clip.url) void get().completeSource(id);
       return id;
+    },
+    turnIntoLink: (id, text) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      const clip = clipFromText(text);
+      if (!card || !clip?.url || !isBlankCard(card)) return false;
+      get().updateCard(id, { type: "lien", title: clip.title, fiche: { ...(card.fiche ?? {}), url: clip.url, consulte: today(useSettings.getState().lang) } });
+      void get().completeSource(id);
+      return true;
+    },
+    turnIntoImage: async (id, file) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || !isBlankCard(card) || !imageExtension(file.name)) return false;
+      if (!(await get().setCardImage(id, file))) return false;
+      get().updateCard(id, { type: "image", fiche: { consulte: today(useSettings.getState().lang) } });
+      return true;
     },
     completeSource: async (id) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
@@ -764,7 +792,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         plan,
         sceneIds: planScenes(arranged),
         labels: {
-          groups: { ...(Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>), source: t.research.frameTitle },
+          groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
           beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
           chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
           unplaced: t.plan.unplaced,

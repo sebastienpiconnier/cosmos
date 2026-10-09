@@ -155,6 +155,9 @@ export function fileToCard(text: string): CardData | null {
   } catch {
     /* titre non quoté : on le garde tel quel */
   }
+  // Ancienne carte « source » (avant octobre 2026) : un Lien si elle a une adresse, une Image si elle a une
+  // image, une Idée sinon (un passage copié). Elle est réécrite sous son nouveau type.
+  if (fields.type === "source") fields.type = /"url"\s*:\s*"https?:/i.test(fields.fiche ?? "") ? "lien" : isMediaName(fields.image) ? "image" : "idee";
   const type = (CARD_TYPES.includes(fields.type as CardType) ? fields.type : "idee") as CardType;
   const card: CardData = { id: fields.id, type, title, html: markdownToHtml(m[2]) };
   // Le nom vient du disque : on n'accepte qu'un simple nom de fichier image, jamais un chemin.

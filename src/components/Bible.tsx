@@ -245,7 +245,7 @@ export function Bible() {
               {type === "personnage" && <CharacterMotor card={card} />}
               {/* Le synopsis d'une scène de scénario vit dans le fichier Fountain (séquencier) : pas de fiche ici. */}
               {type !== "personnage" && !(type === "scene" && kind === "scenario") && <CardSheet card={card} />}
-              {type === "source" && <SourceTools card={card} />}
+              {(type === "lien" || type === "image") && <SourceTools card={card} />}
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
               <BibleBody card={card} />
               {type === "personnage" && (

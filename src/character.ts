@@ -63,7 +63,7 @@ export const ficheText = (key: string, value: string, arcLabels?: Record<string,
 /** Fiche d'un lieu (idée reprise de la Bible du fork de NEO). */
 export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] as const;
 /** Fiche d'une intrigue : sa question dramatique et son parcours, du déclencheur à la résolution. */
-/** Fiche d'une source de recherche : d'où vient l'information. */
+/** Fiche d'un lien ou d'une image collés : d'où vient l'information. */
 export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte"] as const;
 export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
 
@@ -76,7 +76,8 @@ export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   personnage: CHARACTER_FIELDS,
   lieu: PLACE_FIELDS,
   intrigue: PLOT_FIELDS,
-  source: SOURCE_FIELDS,
+  lien: SOURCE_FIELDS,
+  image: SOURCE_FIELDS,
 };
 export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof SCENE_FIELDS)[number];
 export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
@@ -86,7 +87,7 @@ export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "
 
 /** Adresse web d'une source, si elle en a une valide (http ou https). */
 export function sourceUrl(card: Pick<CardData, "type" | "fiche">): string | null {
-  const url = card.type === "source" ? card.fiche?.url?.trim() : "";
+  const url = card.type === "lien" || card.type === "image" ? card.fiche?.url?.trim() : "";
   return url && /^https?:\/\/\S+$/i.test(url) ? url : null;
 }
 

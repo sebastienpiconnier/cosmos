@@ -101,7 +101,8 @@ export const fr = {
     lieu: { label: "Lieu", section: "Lieux", titlePlaceholder: "Nom du lieu" },
     scene: { label: "Scène", section: "Scènes", titlePlaceholder: "Titre de la scène" },
     intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
-    source: { label: "Source", section: "Sources", titlePlaceholder: "Titre de la source" },
+    image: { label: "Image", section: "Images", titlePlaceholder: "Légende…" },
+    lien: { label: "Lien", section: "Liens", titlePlaceholder: "Titre du lien" },
     theme: { label: "Thème", section: "Thèmes", titlePlaceholder: "Thème" },
     question: { label: "Question", section: "À creuser", titlePlaceholder: "La question à creuser" },
   },
@@ -939,7 +940,7 @@ export const fr = {
       mention: "Citer une autre carte",
       width: "Élargir ou rétrécir la carte",
       delete: "Supprimer la sélection",
-      paste: "Coller un lien, un texte ou une image : une carte Lien, Extrait ou Image",
+      paste: "Coller un lien ou une image : une carte Lien ou Image (dans une carte vide, elle le devient)",
       bold: "Gras",
       italic: "Italique",
       strike: "Barré",
@@ -1039,10 +1040,6 @@ export const fr = {
     frameTitle: "Recherche",
     // Titres que la zone a portés par défaut dans les versions d'avant (remplacés à l'ouverture).
     oldTitles: ["Sources"],
-    // Ce qu'est une carte de la zone, selon ce qu'on y a collé (le type reste « source » dans le fichier).
-    kinds: { lien: "Lien", image: "Image", extrait: "Extrait" },
-    captionPlaceholder: "Légende…",
-    excerptPlaceholder: "D’où vient ce passage ? (facultatif)",
     open: "Ouvrir {host}",
     fetch: "Compléter depuis la page",
     fetching: "Lecture de la page…",
@@ -1052,7 +1049,7 @@ export const fr = {
 
   // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
   fiche: {
-    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", source: "Référence", scene: "Fiche de la scène" },
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", lien: "Référence", image: "Référence", scene: "Fiche de la scène" },
     fields: {
       epoque: "Époque",
       ambiance: "Ambiance",
@@ -1149,7 +1146,7 @@ export const fr = {
     done: "À toi d’écrire",
     steps: {
       cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou appui long sur le canevas : une carte naît. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
-      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : une seule carte Lien, Image ou Extrait naît là où tu es, avec le titre et l’image du site. Quand tout déborde, « Organiser » range les cartes en cadres par type (dont un cadre Recherche), par case du plan et par chapitre." },
+      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : une seule carte naît là où tu es : un Lien avec le titre et l’image du site, une Image, ou une Idée pour un texte. Coller une adresse dans une carte vide en fait la carte Lien. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre." },
       bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
       plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
       write: { title: "Écris, scène par scène", body: "Le manuscrit suit l’ordre du plan, mis en pages comme un livre. Entrée deux fois coupe la scène, trois fois ouvre un chapitre : un bouton « Annuler » apparaît à chaque coupure." },

@@ -36,13 +36,13 @@ describe("zone Recherche, fonctions pures", () => {
     expect(pageInfo("<title> Un   titre </title>").title).toBe("Un titre");
   });
 
-  it("une source a son adresse dans sa fiche, relue depuis le fichier", () => {
+  it("un lien a son adresse dans sa fiche, relue depuis le fichier", () => {
     expect(clipFromText("https://www.gallica.bnf.fr/x")).toEqual({ title: "gallica.bnf.fr", url: "https://www.gallica.bnf.fr/x", markdown: "" });
-    const card = { id: "s", type: "source" as const, title: "Phare", html: "<blockquote><p>Extrait</p></blockquote>", fiche: { url: "https://x.fr/a", consulte: "9 octobre 2026" } };
+    const card = { id: "s", type: "lien" as const, title: "Phare", html: "<blockquote><p>Extrait</p></blockquote>", fiche: { url: "https://x.fr/a", consulte: "9 octobre 2026" } };
     expect(sourceUrl(card)).toBe("https://x.fr/a");
-    expect(sourceUrl({ type: "source", fiche: { url: "javascript:alert(1)" } })).toBeNull();
+    expect(sourceUrl({ type: "lien", fiche: { url: "javascript:alert(1)" } })).toBeNull();
     expect(sourceUrl({ type: "idee", fiche: { url: "https://x.fr" } })).toBeNull();
-    expect(fileToCard(cardToFile(card))).toMatchObject({ type: "source", fiche: card.fiche });
+    expect(fileToCard(cardToFile(card))).toMatchObject({ type: "lien", fiche: card.fiche });
   });
 });
 
@@ -64,10 +64,11 @@ describe("zone Recherche dans le projet", () => {
     const b = state().addResearchClip("Le phare de Kerlaouen fut éteint en 1952.")!;
     expect(state().frames).toHaveLength(0);
     const card = (id: string) => state().nodes.find((n) => n.id === id)!;
-    expect(card(a).data).toMatchObject({ type: "source", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare" } });
+    expect(card(a).data).toMatchObject({ type: "lien", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare" } });
     expect(card(a).position).toEqual({ x: 980, y: 580 });
+    // Un texte collé : une Idée qui le cite.
+    expect(card(b).data).toMatchObject({ type: "idee" });
     expect(card(b).data.html).toContain("<blockquote>");
-    expect(state().nodes.filter((n) => n.data.type === "source")).toHaveLength(2);
     // Un ancien cadre Recherche garde sa nature dans cosmos.json.
     const files = serialize(deserialize(serialize({ meta: { version: 1, title: "K", layout: [], links: [], frames: [{ id: "r", title: "Recherche", x: 0, y: 0, width: 300, height: 200, kind: "research" }] }, cards: [], screenplay: null }))!);
     expect(JSON.parse(files["cosmos.json"]).frames[0].kind).toBe("research");
@@ -75,12 +76,12 @@ describe("zone Recherche dans le projet", () => {
     expect(state().nodes.some((n) => n.id === b)).toBe(false);
   });
 
-  it("« Organiser le canevas » range liens, images et extraits dans un cadre Recherche, comme les autres types", () => {
+  it("« Organiser le canevas » range les liens dans un cadre Liens, comme les autres types", () => {
     state().addTitledCard("personnage", "Inès");
     const a = state().addResearchClip("https://x.fr/a")!;
-    const b = state().addTitledCard("source", "Archives");
+    const b = state().addTitledCard("lien", "Archives");
     state().organizeCanvas();
-    const zone = state().frames.find((f) => f.data.title === "Recherche")!;
+    const zone = state().frames.find((f) => f.data.title === "Liens")!;
     expect(zone).toBeDefined();
     for (const id of [a, b]) {
       const p = state().nodes.find((n) => n.id === id)!.position;
@@ -94,18 +95,22 @@ describe("zone Recherche dans le projet", () => {
     const a = state().addResearchClip("https://x.fr/page'")!;
     const b = state().addResearchClip("https://x.fr/page")!;
     expect(a).toBe(b);
-    expect(state().nodes.filter((n) => n.data.type === "source")).toHaveLength(1);
+    expect(state().nodes.filter((n) => n.data.type === "lien")).toHaveLength(1);
     expect(state().nodes.find((n) => n.id === a)!.data.fiche?.url).toBe("https://x.fr/page");
   });
 });
 
 describe("cartes de la zone Recherche (recette d'octobre, suite)", () => {
-  it("lien, image ou extrait selon ce qu'on a collé ; l'ancien titre de la zone est remplacé", async () => {
-    const { sourceKind, renamedZone } = await import("../research");
-    expect(sourceKind({ type: "source", fiche: { url: "https://exemple.fr/a" }, image: "a.jpg" })).toBe("lien");
-    expect(sourceKind({ type: "source", image: "a.jpg" })).toBe("image");
-    expect(sourceKind({ type: "source" })).toBe("extrait");
-    expect(sourceKind({ type: "idee", image: "a.jpg" })).toBeNull();
+  it("une ancienne carte Source devient Lien, Image ou Idée ; l'ancien titre de la zone est remplacé", async () => {
+    const { renamedZone } = await import("../research");
+    const old = (front: string) => fileToCard(`---\nid: k3x9a7bq2m\ntype: source\ntitle: "x"\n${front}---\nTexte\n`)!;
+    expect(old('fiche: {"url":"https://exemple.fr/a","consulte":"hier"}\nimage: a.jpg\n')).toMatchObject({ type: "lien", fiche: { url: "https://exemple.fr/a", consulte: "hier" } });
+    expect(old("image: a.jpg\n")).toMatchObject({ type: "image", image: "a.jpg" });
+    const idea = old('fiche: {"consulte":"hier"}\n');
+    expect(idea.type).toBe("idee");
+    expect(idea.keep?.type).toBeUndefined();
+    // Ce que l'Idée ne montre pas reste dans le fichier.
+    expect(cardToFile(idea)).toContain('"consulte":"hier"');
     expect(renamedZone("Sources", ["Sources"], "Recherche")).toBe("Recherche");
     expect(renamedZone("Mes lectures", ["Sources"], "Recherche")).toBe("Mes lectures");
   });
@@ -119,5 +124,28 @@ describe("un lien et son titre", () => {
       markdown: "",
     });
     expect(clipFromText("Un passage\nsur deux lignes\nhttps://x.fr")?.url).toBeUndefined();
+  });
+});
+
+describe("coller dans une carte vide", () => {
+  const state = () => useCosmos.getState();
+  beforeEach(async () => {
+    localStorage.clear();
+    useSettings.setState({ lang: "fr" });
+    useCosmos.setState({ loaded: false, screen: "home", projects: [], nodes: [], frames: [], edges: [], screenplay: null, savedScreenplay: null, plan: EMPTY_PLAN, manuscript: {}, lastFiles: {}, past: [], future: [] });
+    await state().start();
+    await state().createProject({ title: "K", kind: "roman" });
+  });
+
+  it("une adresse collée dans une carte vide en fait la carte Lien elle-même, une seule carte", () => {
+    const id = state().addCard({ x: 0, y: 0 });
+    expect(state().turnIntoLink(id, "https://fr.wikipedia.org/wiki/Phare_d%27Ar-Men")).toBe(true);
+    expect(state().nodes).toHaveLength(1);
+    expect(state().nodes[0].data).toMatchObject({ id, type: "lien", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare_d%27Ar-Men" } });
+    // Une carte qui a déjà du texte garde le collage normal (le lien va dans son texte).
+    const other = state().addCard({ x: 600, y: 0 });
+    state().updateCard(other, { html: "<p>Le phare</p>" });
+    expect(state().turnIntoLink(other, "https://x.fr")).toBe(false);
+    expect(state().turnIntoLink(state().addCard({ x: 1200, y: 0 }), "pas une adresse")).toBe(false);
   });
 });

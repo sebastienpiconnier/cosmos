@@ -100,7 +100,8 @@ export const en: Messages = {
     lieu: { label: "Place", section: "Places", titlePlaceholder: "Place name" },
     scene: { label: "Scene", section: "Scenes", titlePlaceholder: "Scene title" },
     intrigue: { label: "Plot", section: "Plots", titlePlaceholder: "Name of the plot" },
-    source: { label: "Source", section: "Sources", titlePlaceholder: "Title of the source" },
+    image: { label: "Image", section: "Images", titlePlaceholder: "Caption…" },
+    lien: { label: "Link", section: "Links", titlePlaceholder: "Link title" },
     theme: { label: "Theme", section: "Themes", titlePlaceholder: "Theme" },
     question: { label: "Question", section: "To dig into", titlePlaceholder: "The question to dig into" },
   },
@@ -926,7 +927,7 @@ export const en: Messages = {
       mention: "Mention another card",
       width: "Widen or narrow the card",
       delete: "Delete the selection",
-      paste: "Paste a link, a text or an image: a Link, Excerpt or Image card",
+      paste: "Paste a link or an image: a Link or Image card (an empty card becomes one)",
       bold: "Bold",
       italic: "Italic",
       strike: "Strikethrough",
@@ -1020,9 +1021,6 @@ export const en: Messages = {
   research: {
     frameTitle: "Research",
     oldTitles: ["Sources"],
-    kinds: { lien: "Link", image: "Image", extrait: "Excerpt" },
-    captionPlaceholder: "Caption…",
-    excerptPlaceholder: "Where is this passage from? (optional)",
     open: "Open {host}",
     fetch: "Fill in from the page",
     fetching: "Reading the page…",
@@ -1031,7 +1029,7 @@ export const en: Messages = {
   },
 
   fiche: {
-    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", source: "Reference", scene: "Scene sheet" },
+    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", lien: "Reference", image: "Reference", scene: "Scene sheet" },
     fields: {
       epoque: "Period",
       ambiance: "Atmosphere",
@@ -1125,7 +1123,7 @@ export const en: Messages = {
     done: "Your turn to write",
     steps: {
       cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or long-press the canvas: a card is born. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
-      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single Link, Image or Excerpt card is born where you are, with the site’s title and picture. When it all overflows, “Organize” sorts the cards into frames by type (including a Research frame), by outline beat and by chapter." },
+      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single card is born where you are: a Link with the site’s title and picture, an Image, or an Idea for a text. Pasting an address into an empty card turns it into the Link card. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter." },
       bible: { title: "The Bible builds itself", body: "Every typed card gets its sheet, nothing is copied. Start with the project cover (tagline, logline, genre), then dig into your characters: what they want, what they lack, their wound. The assistant asks questions, it never answers for you." },
       plan: { title: "Give the story a shape", body: "Pick a template (three acts, Save the Cat, hero’s journey) and place your scenes in its beats. The timeline shows who and what appears in each scene." },
       write: { title: "Write, scene by scene", body: "The manuscript follows the outline, laid out like a book. Enter twice breaks the scene, three times starts a chapter: an “Undo” button shows up at every break." },

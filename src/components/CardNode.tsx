@@ -4,6 +4,7 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
+import { imageExtension } from "../media";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
@@ -11,7 +12,7 @@ import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { sourceUrl } from "../character";
 import { openExternal } from "../platform";
-import { hostOf, sourceKind } from "../research";
+import { hostOf } from "../research";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
@@ -143,6 +144,25 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     }
   };
 
+  /** Coller dans la carte (titre ou texte) : une adresse ou une image collée dans une carte vide la transforme. */
+  const pasteIntoCard = (event: ClipboardEvent | React.ClipboardEvent): boolean => {
+    const data = event.clipboardData;
+    if (!data) return false;
+    const store = useCosmos.getState();
+    const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
+    if (image) {
+      const card = store.nodes.find((n) => n.id === id)?.data;
+      if (!card || card.title.trim() || card.image || (card.html ?? "").replace(/<[^>]*>/g, "").trim()) return false;
+      event.preventDefault();
+      const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
+      void image.arrayBuffer().then((buf) => store.turnIntoImage(id, { name, data: new Uint8Array(buf) }));
+      return true;
+    }
+    if (!store.turnIntoLink(id, data.getData("text/plain"))) return false;
+    event.preventDefault();
+    return true;
+  };
+
   const editor = useEditor({
     extensions: [
       ...richTextExtensions(),
@@ -154,6 +174,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     immediatelyRender: true,
     editorProps: {
       attributes: { class: "card-editor", "aria-label": getT().card.bodyAria },
+      // Coller une adresse ou une image dans une carte vide : elle devient la carte Lien ou Image elle-même.
+      handlePaste: (_view, event) => pasteIntoCard(event),
       handleKeyDown: (_view, event) => {
         const { slash: s, options: opts, active: a, mention: m, mentionActive: ma, mentionCount: count } = stateRef.current;
         if (m && count) {
@@ -253,8 +275,6 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [data.title, slugline, width]);
 
   const source = sourceUrl(data);
-  // Carte de la zone Recherche : un lien, une image ou un extrait (même type « source » dans le fichier).
-  const clipKind = sourceKind(data);
 
   // Texte trop long : la carte se replie (hauteur mesurée, suit les modifications et la largeur).
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -308,7 +328,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}${clipKind ? ` is-${clipKind}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}${data.type === "image" || data.type === "lien" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -364,7 +384,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           }}
         >
           <span className="card-dot" />
-          {clipKind ? t.research.kinds[clipKind] : types[data.type].label}
+          {types[data.type].label}
         </button>
         <button
           type="button"
@@ -396,9 +416,12 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         rows={1}
         className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
         value={data.title}
-        placeholder={clipKind === "image" ? t.research.captionPlaceholder : clipKind === "extrait" ? t.research.excerptPlaceholder : types[data.type].titlePlaceholder}
+        placeholder={types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
         onChange={(e) => updateCard(id, { title: e.target.value.replace(/\n/g, " ") })}
+        onPaste={(e) => {
+          if (pasteIntoCard(e)) e.preventDefault();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
