@@ -62,6 +62,13 @@ export function CharacterMotor({ card }: { card: CardData }) {
           </button>
         ))}
       </div>
+      {/* L'évolution en mots, juste sous sa forme dessinée : une seule notion, l'arc. */}
+      <div className="motor-arc-text">
+        <label className="sr-only" htmlFor={`${id}-arc`}>
+          {t.fields.arc}
+        </label>
+        <textarea id={`${id}-arc`} rows={1} value={card.fiche?.arc ?? ""} placeholder={t.placeholders.arc} onChange={(e) => setFiche(card.id, "arc", e.target.value)} />
+      </div>
     </div>
   );
 }

@@ -102,7 +102,7 @@ export const en: Messages = {
     intrigue: { label: "Plot", section: "Plots", titlePlaceholder: "Name of the plot" },
     source: { label: "Source", section: "Sources", titlePlaceholder: "Title of the source" },
     theme: { label: "Theme", section: "Themes", titlePlaceholder: "Theme" },
-    question: { label: "Open question", section: "Open questions", titlePlaceholder: "The question" },
+    question: { label: "Question", section: "To dig into", titlePlaceholder: "The question to dig into" },
   },
 
   card: {
@@ -128,6 +128,7 @@ export const en: Messages = {
     addCard: "New card",
     addCardHint: "Shortcut: N key",
     addFrame: "New frame",
+    frameShort: "Frame",
     addFrameHint: "New frame, around the selected cards (C key)",
     frameTitle: "Frame name",
     frameTitleAria: "Frame name",
@@ -726,13 +727,13 @@ export const en: Messages = {
     offerField: "Also put it in “{field}”",
     offered: "Added to the sheet.",
     addPortrait: "Add a portrait",
-    moreDetails: "More details ({n} empty fields)",
-    fewerDetails: "Fewer details",
+    moreDetails: "Show empty fields ({n})",
+    fewerDetails: "Hide empty fields",
     notInText: "Not in the text yet",
     mentionsOne: "Named {n} time · from scene {scene} “{title}”",
     mentionsMany: "Named {n} times · from scene {scene} “{title}”",
-    pendingOne: "{n} question to answer",
-    pendingMany: "{n} questions to answer",
+    pendingOne: "{n} question to dig into",
+    pendingMany: "{n} questions to dig into",
     pendingTab: "To dig into",
     pendingHint: "Questions kept for later. They stay in the sheet, not on the canvas.",
     pendingEmpty: "No questions waiting.",
@@ -847,6 +848,8 @@ export const en: Messages = {
     enterHint: "Enter twice: new scene · three times: new chapter · Backspace in the empty scene: undo the break",
     newScene: "New scene, the rest of the text moved into it.",
     newChapter: "New chapter.",
+    undoBreak: "Undo",
+    breakUndone: "Break undone.",
   },
 
   shortcuts: {
@@ -871,7 +874,7 @@ export const en: Messages = {
       mention: "Mention another card",
       width: "Widen or narrow the card",
       delete: "Delete the selection",
-      paste: "Paste a link, a text or an image: a source in the Research area",
+      paste: "Paste a link, a text or an image: a card in the Sources area",
       bold: "Bold",
       italic: "Italic",
       strike: "Strikethrough",
@@ -920,7 +923,7 @@ export const en: Messages = {
     button: "To do ({n}) · Ctrl or Cmd + Shift + L",
     title: "To do",
     empty: "Nothing waiting. Tick boxes (- [ ] in a card), mark a passage “to revisit” (Ctrl or Cmd + Shift + X) or keep a question for later: it all shows up here.",
-    kinds: { task: "Checkboxes", revisit: "To revisit in the manuscript", question: "Questions about characters", open: "Open questions" },
+    kinds: { task: "Checkboxes", revisit: "To revisit in the manuscript", dig: "To dig into" },
     inCard: "in “{title}”",
     inScene: "scene “{title}”",
     check: "Tick “{text}”",
@@ -962,9 +965,9 @@ export const en: Messages = {
   },
 
   research: {
-    frameTitle: "Research",
-    button: "Research",
-    hint: "Go to the Research area (links, excerpts and images pasted or dropped on the canvas land there)",
+    frameTitle: "Sources",
+    button: "Sources",
+    hint: "Go to the Sources area (links, excerpts and images pasted or dropped on the canvas land there)",
     open: "Open {host}",
     fetch: "Fill in from the page",
     fetching: "Reading the page…",
@@ -1024,6 +1027,7 @@ export const en: Messages = {
   },
 
   organize: {
+    short: "Organize",
     button: "Organise the canvas",
     hint: "Puts every card in a frame: characters, places, themes, questions, scenes by template beat and chapter, loose ideas. Scenes are linked in order. Undo with Ctrl or Cmd + Z.",
   },
@@ -1050,6 +1054,28 @@ export const en: Messages = {
     bookGoal: "Book goal",
     goalPlaceholder: "Words",
     estimate: "Pages estimated at {n} words per page, like a printed novel.",
+  },
+
+  // Guided tour (sample project, or Settings › Guided tour).
+  tour: {
+    open: "Guided tour",
+    progress: "Step {n} of {total}",
+    close: "Close the tour",
+    prev: "Back",
+    next: "Next",
+    done: "Your turn to write",
+    steps: {
+      cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or long-press the canvas: a card is born. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
+      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: they land in the Sources area. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter." },
+      bible: { title: "The Bible builds itself", body: "Every typed card gets its sheet, nothing is copied. Start with the project cover (tagline, logline, genre), then dig into your characters: what they want, what they lack, their wound. The assistant asks questions, it never answers for you." },
+      plan: { title: "Give the story a shape", body: "Pick a template (three acts, Save the Cat, hero’s journey) and place your scenes in its beats. The timeline shows who and what appears in each scene." },
+      write: { title: "Write, scene by scene", body: "The manuscript follows the outline, laid out like a book. Enter twice breaks the scene, three times starts a chapter: an “Undo” button shows up at every break." },
+      files: { title: "Your words are yours", body: "Everything saves on its own, as Markdown files you can read outside Cosmos. Ctrl or Cmd + / shows every shortcut, and this tour stays in Settings." },
+    },
+    scenario: {
+      plan: { title: "Give the story a shape", body: "The step outline lists your scenes in screenplay order. Lay down a template (three acts, Save the Cat, eight sequences) and move scenes from one beat to another." },
+      write: { title: "Write in screenplay format", body: "Tab changes the element type (action, character, dialogue…), Enter moves to the next one. Characters and locations from the Bible are suggested as you type." },
+    },
   },
 
   demo: {

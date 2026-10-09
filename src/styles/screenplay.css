@@ -1,0 +1,126 @@
+/* Scénario : liste des scènes, feuille au format standard, panneau « Dans cette scène ».
+   Couleurs : uniquement les jetons de src/styles.css (clair et sombre). */
+
+/* ---------- Scénario : liste des scènes, feuille, panneau « Dans cette scène » ---------- */
+/* La feuille passe d'abord : la colonne du milieu prend la largeur d'une page (850px) tant qu'il reste
+   de quoi loger les deux panneaux à leur largeur minimale ; ce sont eux qui se resserrent. */
+.screenplay { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 390px)), 1fr) minmax(200px, 300px); }
+.sp-scenes, .sp-side { overflow: auto; padding: 20px 14px; display: flex; flex-direction: column; gap: 10px; }
+.sp-scenes { border-right: 1px solid var(--line); }
+.sp-side { border-left: 1px solid var(--line); }
+.sp-empty { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.sp-detail { margin: 0; font-size: 13px; color: var(--ink-2); }
+.sp-scene-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.sp-scene-list button {
+  width: 100%; min-height: 44px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 13px; cursor: pointer;
+}
+.sp-scene-list button:hover { background: var(--hover); }
+.sp-scene-list button.is-current { background: var(--accent-soft); color: var(--accent-ink); }
+.sp-towrite-title { margin-top: 12px; }
+.sp-towrite { flex-shrink: 0; font-size: 12px; font-style: italic; color: var(--ink-2); }
+.sp-scene-select { display: none; }
+
+.sp-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.sp-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px; align-self: center; max-width: calc(100% - 32px);
+  margin: 16px 16px 0; padding: 6px; background: var(--surface); border-radius: 12px;
+}
+.sp-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.sp-bar button:hover { background: var(--hover); }
+.sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+.sp-bar-hint { padding: 0 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sp-focus { margin-left: auto; border: 1px solid var(--line) !important; }
+/* Mode focus : seule la feuille reste, avec la barre d'éléments. */
+.screenplay.is-focus { grid-template-columns: minmax(0, 1fr); }
+.screenplay.is-focus .sp-scenes, .screenplay.is-focus .sp-side, .screenplay.is-focus .sp-scene-select, .screenplay.is-focus .sp-bar-hint { display: none; }
+.sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
+
+/* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc
+   85ch = 8,5 pouces de large, marges de 1,5 pouce à gauche et 1 pouce à droite, 60 caractères de texte. */
+.sp-scroll { flex: 1; min-height: 0; overflow: auto; padding: 16px 16px 40vh; container: sp / inline-size; }
+/* Tout est en em : 1em = une ligne (6 par pouce), 0.6em = un caractère (10 par pouce). Une page
+   Letter fait donc 51em × 66em, une page A4 49.62em × 70.14em. Quand la place manque, c'est la
+   taille du texte qui diminue (100cqw = largeur disponible), et la page garde ses proportions. */
+.sp-page {
+  --sp-width: 51; --sp-height: 66; --sp-lines: 55;
+  position: relative; width: calc(var(--sp-width) * 1em); margin: 0 auto 2em; background: var(--page); color: var(--page-ink);
+  box-shadow: var(--shadow-card); font: 16px/1 var(--font-script); font-size: min(16px, calc(100cqw / var(--sp-width)));
+}
+/* A4 : 8,27 pouces de large, soit 57 caractères de texte au lieu de 60. */
+.sp-page[data-paper="a4"] { --sp-width: 49.62; --sp-height: 70.14; --sp-lines: 59; }
+/* Marges réelles : 1 pouce en haut et à droite (6em), 1,5 pouce à gauche (9em). Le bas de page est
+   ajouté par l'éditeur, page par page (voir .sp-pagebreak). */
+.sp-editor, .sp-editor:focus-visible { padding: 6em 6em 0 9em; outline: none; cursor: text; }
+.sp-el { margin: 1em 0 0; white-space: pre-wrap; overflow-wrap: break-word; }
+/* Entre deux pages : fin de page, marge basse, espace (bande de fond), marge haute et numéro. */
+.sp-pagebreak { position: relative; user-select: none; pointer-events: none; }
+.sp-pagebreak-gap { position: absolute; left: -9em; right: -6em; background: var(--ground); border-block: 1px solid var(--line); }
+.sp-pagebreak-number { position: absolute; right: 0; color: var(--page-ink); }
+
+/* Page de titre : la page de garde, aux mêmes dimensions. Titre au tiers de la page, contact en bas à gauche. */
+.sp-titlepage { height: calc(var(--sp-height) * 1em); display: flex; flex-direction: column; padding: 6em 6em 5em 9em; }
+.sp-title-center { margin-top: calc(var(--sp-lines) * 1em / 3); display: flex; flex-direction: column; gap: 1em; }
+.sp-title-bottom { margin-top: auto; display: flex; flex-direction: column; }
+.sp-title-field { display: block; width: 100%; padding: 0; border: 0; border-radius: 0.3em; outline-offset: 0.3em; background: transparent; color: inherit; font: inherit; resize: none; overflow: hidden; field-sizing: content; }
+.sp-title-center .sp-title-field { text-align: center; }
+.sp-title-field.is-title { font-weight: 700; }
+.sp-title-field::placeholder { color: var(--placeholder); }
+.sp-title-field:hover { background: var(--ground); }
+.sp-editor > :first-child { margin-top: 0; }
+.sp-sceneHeading { font-weight: 700; text-transform: uppercase; }
+.sp-character { margin-left: 22ch; max-width: 38ch; text-transform: uppercase; }
+.sp-parenthetical { margin-top: 0; margin-left: 16ch; max-width: 25ch; }
+.sp-dialogue { margin-top: 0; margin-left: 10ch; max-width: 35ch; }
+.sp-transition { text-align: right; text-transform: uppercase; }
+/* Numéros de scène (option du projet) : dans la marge gauche, comme sur le PDF. Un numéro écrit
+   dans le fichier (#12A#) passe devant le compteur. */
+.sp-page[data-numbers] .sp-editor { counter-reset: scene; }
+.sp-page[data-numbers] .sp-sceneHeading { counter-increment: scene; position: relative; }
+.sp-page[data-numbers] .sp-sceneHeading::after { content: counter(scene); position: absolute; top: 0; right: 100%; margin-right: 2ch; white-space: nowrap; }
+.sp-page[data-numbers] .sp-sceneHeading[data-number]::after { content: attr(data-number); }
+.sp-el.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
+.sp-transition.is-empty::before { float: right; }
+
+/* Complétion : le menu des cartes, posé sous le curseur (position donnée par ScreenplayView). */
+.sp-suggest { width: max-content; min-width: 220px; max-width: min(360px, calc(100% - 16px)); font: 14px var(--font-ui); color: var(--ink); }
+
+/* Éléments Fountain conservés tels quels (note, section, texte mis de côté…) */
+.sp-preserved {
+  margin: 1.3em 0 0; padding: 6px 10px; border-left: 3px solid var(--line-2); border-radius: 0 6px 6px 0;
+  background: var(--ground); color: var(--ink-2); font: 14px/1.45 var(--font-ui); white-space: pre-wrap; cursor: default;
+}
+.sp-preserved::before { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sp-preserved[data-preserved="note"]::before { content: var(--sp-label-note); }
+.sp-preserved[data-preserved="boneyard"]::before { content: var(--sp-label-boneyard); }
+.sp-preserved[data-preserved="section"]::before { content: var(--sp-label-section); }
+.sp-preserved[data-preserved="synopsis"]::before { content: var(--sp-label-synopsis); }
+.sp-preserved[data-preserved="pageBreak"]::before { content: var(--sp-label-pageBreak); }
+.sp-preserved[data-preserved="section"] { font-weight: 600; color: var(--page-ink); }
+.sp-preserved[data-preserved="synopsis"] { font-style: italic; }
+.sp-preserved[data-preserved="centered"] { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
+.sp-preserved[data-preserved="pageBreak"] { padding: 6px 0 0; border: 0; border-top: 1px dashed var(--line-2); border-radius: 0; background: none; text-align: center; }
+.sp-preserved.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Feuille plus étroite que 8,5 pouces : on garde la taille du texte, les retraits deviennent proportionnels. */
+/* Écran trop étroit pour une page entière (téléphone) : feuille continue, texte à sa taille normale,
+   retraits proportionnels. Même seuil que PAGE_MIN_WIDTH dans ScreenplayView. */
+@container sp (max-width: 640px) {
+  .sp-page { width: 100%; font-size: 16px; line-height: 1.35; }
+  /* Pas de marge où loger le numéro : il suit l'en-tête. */
+  .sp-page[data-numbers] .sp-sceneHeading::after { position: static; margin: 0 0 0 2ch; color: var(--muted); }
+  .sp-editor, .sp-editor:focus-visible { padding: 28px 5% 64px; }
+  .sp-character { margin-left: 34%; max-width: none; }
+  .sp-parenthetical { margin-left: 24%; margin-right: 14%; max-width: none; }
+  .sp-dialogue { margin-left: 13%; margin-right: 9%; max-width: none; }
+  .sp-titlepage { height: auto; padding: 28px 5%; gap: 2em; }
+  .sp-title-center { margin-top: 1em; }
+}
+
+.sp-footer { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); text-align: center; }
+.sp-box { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.sp-box-title { font-size: 14px; overflow-wrap: anywhere; }
+.sp-card-body { font: 14px/1.5 var(--font-text); color: var(--ink-2); }
+.sp-card-body p { margin: 0 0 6px; }
+.sp-speakers { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.sp-speakers li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }

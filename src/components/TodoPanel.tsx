@@ -7,7 +7,12 @@ import { fmt, useT } from "../i18n";
 import { collectTodos, type Todo, type TodoKind } from "../todos";
 import { typeColor } from "../types";
 
-const ORDER: TodoKind[] = ["task", "revisit", "question", "open"];
+// Trois groupes : les questions gardées dans un personnage et les cartes Question forment ensemble « À creuser ».
+const GROUPS: { key: "task" | "revisit" | "dig"; kinds: TodoKind[] }[] = [
+  { key: "task", kinds: ["task"] },
+  { key: "revisit", kinds: ["revisit"] },
+  { key: "dig", kinds: ["question", "open"] },
+];
 
 export function TodoPanel() {
   const t = useT();
@@ -84,13 +89,13 @@ export function TodoPanel() {
         <div className="settings-panel todo-panel" id={panelId} role="group" aria-label={d.title}>
           <div className="eyebrow">{d.title}</div>
           {todos.length === 0 && <p className="settings-hint">{d.empty}</p>}
-          {ORDER.map((kind) => {
-            const items = todos.filter((x) => x.kind === kind);
+          {GROUPS.map(({ key, kinds }) => {
+            const items = todos.filter((x) => kinds.includes(x.kind));
             if (items.length === 0) return null;
             return (
-              <section key={kind} className="todo-group" aria-label={d.kinds[kind]}>
+              <section key={key} className="todo-group" aria-label={d.kinds[key]}>
                 <h3>
-                  {d.kinds[kind]} <span className="toc-count">{items.length}</span>
+                  {d.kinds[key]} <span className="toc-count">{items.length}</span>
                 </h3>
                 <ul>
                   {items.map((todo) => {

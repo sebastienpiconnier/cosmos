@@ -356,24 +356,27 @@ export function Toile() {
       </button>
 
       <div className="history-buttons">
-        <button type="button" className="icon-button" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
+        <button type="button" className="icon-button has-label" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 3.2" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
           </svg>
+          <span className="tool-label" aria-hidden="true">{t.toile.frameShort}</span>
         </button>
-        <button type="button" className="icon-button" aria-label={t.research.button} title={t.research.hint} onClick={() => useCosmos.getState().showResearch()}>
+        <button type="button" className="icon-button has-label" aria-label={t.research.button} title={t.research.hint} onClick={() => useCosmos.getState().showResearch()}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 4.5h9a2 2 0 0 1 2 2V20l-6.5-3.5L3 20V6.5a2 2 0 0 1 2-2z" />
             <path d="M19 8v12" />
           </svg>
+          <span className="tool-label" aria-hidden="true">{t.research.button}</span>
         </button>
-        <button type="button" className="icon-button" aria-label={t.organize.button} title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>
+        <button type="button" className="icon-button has-label" aria-label={t.organize.button} title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
             <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
             <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
             <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
           </svg>
+          <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
         </button>
         <button type="button" className="icon-button" disabled={!canUndo} aria-label={t.toile.undo} title={t.toile.undoHint} onClick={undo}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

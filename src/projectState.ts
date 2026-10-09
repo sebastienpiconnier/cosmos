@@ -1,0 +1,282 @@
+// Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
+// Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
+
+import { type Edge, type Node } from "@xyflow/react";
+import { nanoid } from "nanoid";
+import { isProjectKind, type CardData, type Frame, type Project, type ProjectKind } from "./types";
+import type { Screenplay } from "./screenplay/model";
+import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
+import { useSettings } from "./settings";
+import { CARD_SIZE, type Box } from "./placement";
+import { type Manuscript } from "./manuscript";
+import { readGoals, readProgress, type Goals, type Progress } from "./stats";
+import { addQuestion, legacyParkedCards } from "./character";
+import { isEmptyPlan, prunePlan, readPlan, type Plan } from "./plan";
+import { storyScenes } from "./book";
+import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
+import { writeTitleField } from "./screenplay/titlePage";
+import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
+import { DICTIONARIES, getT } from "./i18n";
+
+export type CardNode = Node<CardData, "card">;
+/** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
+export type FrameNode = Node<{ title: string; kind?: "research" }, "frame">;
+
+export const FRAME_SIZE = { width: 520, height: 360 };
+/** Marge autour des cartes qu'un cadre entoure (plus haute en tête, pour son titre). */
+export const FRAME_PADDING = { side: 32, top: 64, bottom: 32 };
+
+export const toFrameNode = (frame: Frame): FrameNode => ({
+  id: frame.id,
+  type: "frame",
+  position: { x: frame.x, y: frame.y },
+  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}) },
+  width: frame.width,
+  height: frame.height,
+  // Derrière les cartes ; l'intérieur laisse passer les clics (voir styles.css).
+  zIndex: -1,
+  dragHandle: ".frame-handle",
+});
+
+export const frameBox = (f: FrameNode): Box => ({
+  x: f.position.x,
+  y: f.position.y,
+  width: f.width ?? f.measured?.width ?? FRAME_SIZE.width,
+  height: f.height ?? f.measured?.height ?? FRAME_SIZE.height,
+});
+export type View = "toile" | "plan" | "bible" | "manuscrit";
+export type SaveStatus = "enregistre" | "modifie" | "enregistrement" | "erreur";
+
+export const CARD_WIDTH = 240;
+
+export const newId = () => nanoid(10);
+
+/** Même carte si son texte ne change pas (les mentions ne touchent que les cartes concernées). */
+export const withHtml = (node: CardNode, html: string): CardNode => (html === node.data.html ? node : { ...node, data: { ...node.data, html } });
+
+export const toNode = (card: CardData, x: number, y: number, width = CARD_WIDTH): CardNode => ({
+  id: card.id,
+  type: "card",
+  position: { x, y },
+  data: card,
+  style: { width },
+  // L'en-tête et l'image déplacent la carte (le titre et le texte restent des zones d'écriture).
+  dragHandle: ".card-handle, .card-image",
+});
+
+export function fromProject(p: Project) {
+  const pos = new Map(p.meta.layout.map((l) => [l.id, l]));
+  const nodes = p.cards.map((c, i) => {
+    const l = pos.get(c.id);
+    return toNode(c, l?.x ?? 80 + (i % 5) * 280, l?.y ?? 80 + Math.floor(i / 5) * 220, l?.width);
+  });
+  const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating" }));
+  const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
+  const paperChosen = isPaper(p.meta.paper);
+  const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
+  const frames = (p.meta.frames ?? [])
+    .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
+    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta) };
+}
+
+/** Clés de cosmos.json que cette version lit ou écrit elle-même. */
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
+
+/** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
+export function unknownMeta(meta: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(meta).filter(([key]) => !KNOWN_META.has(key)));
+}
+
+/** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
+export const boxes = (nodes: CardNode[]): Box[] =>
+  nodes.map((n) => ({
+    x: n.position.x,
+    y: n.position.y,
+    width: typeof n.style?.width === "number" ? n.style.width : CARD_WIDTH,
+    height: n.measured?.height ?? CARD_SIZE.height,
+  }));
+
+/** Cartes Scène dans l'ordre de la toile, de haut en bas (en attendant le Séquencier). */
+export function sceneCards(nodes: CardNode[]): SceneCard[] {
+  return nodes
+    .filter((n) => n.data.type === "scene")
+    .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x)
+    .map((n) => ({ id: n.id, title: n.data.title }));
+}
+
+/**
+ * Cartes Scène du récit dans l'ordre par défaut du plan (celui du canevas), pour les fonctions de plan.ts.
+ * Les pages hors récit (dédicace, prologue…) n'y sont pas : voir book.ts.
+ */
+export const planScenes = (nodes: CardNode[]): string[] => storyScenes(nodes);
+
+/** Premier scénario d'un projet : la page de titre porte aussi l'auteur connu de l'appareil. */
+export function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
+  const screenplay = initialScreenplay(title, sceneCards(nodes));
+  const author = useSettings.getState().author.trim();
+  if (!author) return screenplay;
+  let titlePage = writeTitleField(screenplay.titlePage, "credit", getT().screenplay.titlePage.creditDefault);
+  titlePage = writeTitleField(titlePage, "author", author);
+  return { ...screenplay, titlePage };
+}
+
+/** L'en-tête fait foi : les cartes Scène liées prennent le texte de leur en-tête. */
+export function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode[] {
+  const titles = headingTitles(screenplay);
+  let changed = false;
+  const next = nodes.map((n) => {
+    const title = titles.get(n.id);
+    if (n.data.type !== "scene" || title === undefined || title === n.data.title) return n;
+    changed = true;
+    return { ...n, data: { ...n.data, title } };
+  });
+  return changed ? next : nodes;
+}
+
+/**
+ * Anciennes cartes Question « à creuser » (créées par l'assistant avant que les questions ne vivent dans
+ * la carte du personnage) : leur question passe dans le personnage, et elles quittent le canevas.
+ */
+export function adoptParkedCards(nodes: CardNode[], edges: Edge[]): { nodes: CardNode[]; edges: Edge[] } {
+  const labels = Object.values(DICTIONARIES).map((d) => d.assistant.linkLabel);
+  const found = legacyParkedCards(
+    nodes.map((n) => n.data),
+    edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
+    labels,
+  );
+  if (found.length === 0) return { nodes, edges };
+  const gone = new Set(found.map((f) => f.cardId));
+  const byCharacter = new Map<string, string[]>();
+  for (const f of found) byCharacter.set(f.characterId, [...(byCharacter.get(f.characterId) ?? []), f.question]);
+  return {
+    nodes: nodes
+      .filter((n) => !gone.has(n.id))
+      .map((n) => {
+        const added = byCharacter.get(n.id);
+        if (!added) return n;
+        const questions = added.reduce<string[] | undefined>((list, q) => addQuestion(list, q), n.data.questions);
+        return { ...n, data: { ...n.data, questions } };
+      }),
+    edges: edges.filter((e) => !gone.has(e.source) && !gone.has(e.target)),
+  };
+}
+
+/** État à adopter quand on ouvre un projet. `dirty` : l'ouverture a produit des changements à enregistrer. */
+export function openProject(p: Project) {
+  const read = fromProject(p);
+  const adopted = adoptParkedCards(read.nodes, read.edges);
+  const base = { ...read, ...adopted };
+  // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
+  const screenplay =
+    p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
+  const nodes = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
+  // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
+  // la pagination ne change pas d'un appareil à l'autre.
+  const paperChosen = base.paperChosen || base.kind === "scenario";
+  return {
+    // Un projet qu'on ouvre repart d'un historique vide.
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
+    dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
+  };
+}
+
+export function toProject(
+  s: ProjectSlice,
+): Project {
+  // Le plan écrit ne cite que des cartes qui existent encore.
+  const plan = prunePlan(s.plan, new Set(s.nodes.map((n) => n.id)));
+  return {
+    meta: {
+      // Ce qu'une version plus récente a écrit et que celle-ci ignore, d'abord : les clés connues l'emportent.
+      ...s.metaKeep,
+      version: 1,
+      title: s.title,
+      kind: s.kind,
+      ...(s.paperChosen ? { paper: s.paper } : {}),
+      ...(s.sceneNumbers ? { sceneNumbers: true } : {}),
+      layout: s.nodes.map((n) => ({
+        id: n.id,
+        x: Math.round(n.position.x),
+        y: Math.round(n.position.y),
+        width: typeof n.style?.width === "number" ? n.style.width : undefined,
+      })),
+      links: s.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: String(e.label ?? "") })),
+      ...(s.frames.length > 0
+        ? {
+            frames: s.frames.map((f) => {
+              const box = frameBox(f);
+              return {
+                id: f.id,
+                title: f.data.title,
+                x: Math.round(box.x),
+                y: Math.round(box.y),
+                width: Math.round(box.width),
+                height: Math.round(box.height),
+                ...(f.data.kind === "research" ? { kind: "research" as const } : {}),
+              };
+            }),
+          }
+        : {}),
+      ...(isEmptyPlan(plan) ? {} : { plan }),
+      ...(s.goals.daily || s.goals.total ? { goals: s.goals } : {}),
+      ...(Object.keys(s.progress).length > 0 ? { progress: s.progress } : {}),
+      ...(isEmptyPitch(s.pitch) ? {} : { pitch: s.pitch }),
+    },
+    cards: s.nodes.map((n) => n.data),
+    screenplay: s.screenplay,
+    manuscript: s.manuscript,
+  };
+}
+
+export const p = (text: string) => `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</p>`;
+
+/** Projet d'exemple affiché au premier lancement, dans la langue de l'interface. */
+export function demoProject(): Project {
+  const d = getT().demo;
+  const ines = newId(), phare = newId(), idee = newId(), scene = newId();
+  return {
+    meta: {
+      version: 1,
+      title: d.title,
+      kind: "roman",
+      layout: [
+        { id: idee, x: 60, y: 60 },
+        { id: ines, x: 120, y: 300 },
+        { id: phare, x: 620, y: 120 },
+        { id: scene, x: 560, y: 420 },
+      ],
+      links: [
+        { id: newId(), source: ines, target: phare, label: d.linkWorksAt },
+        { id: newId(), source: scene, target: phare, label: d.linkSetIn },
+      ],
+    },
+    cards: [
+      { id: idee, type: "idee", title: "", html: p(d.idea) },
+      { id: ines, type: "personnage", title: d.characterTitle, html: p(d.characterBody) },
+      { id: phare, type: "lieu", title: d.placeTitle, html: p(d.placeBody) },
+      { id: scene, type: "scene", title: d.sceneTitle, html: p(d.sceneBody) },
+    ],
+    screenplay: null,
+  };
+}
+
+
+/** Ce que l'enregistrement lit dans l'état du store (voir toProject). */
+export interface ProjectSlice {
+  title: string;
+  kind: ProjectKind;
+  paper: Paper;
+  paperChosen: boolean;
+  sceneNumbers: boolean;
+  nodes: CardNode[];
+  frames: FrameNode[];
+  edges: Edge[];
+  screenplay: Screenplay | null;
+  plan: Plan;
+  manuscript: Manuscript;
+  goals: Goals;
+  progress: Progress;
+  pitch: Pitch;
+  metaKeep: Record<string, unknown>;
+}

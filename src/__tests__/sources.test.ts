@@ -57,7 +57,7 @@ describe("zone Recherche dans le projet", () => {
     const b = state().addResearchClip("Le phare de Kerlaouen fut éteint en 1952.")!;
     const research = state().frames.filter((f) => f.data.kind === "research");
     expect(research).toHaveLength(1);
-    expect(research[0].data.title).toBe("Recherche");
+    expect(research[0].data.title).toBe("Sources");
     const card = (id: string) => state().nodes.find((n) => n.id === id)!;
     expect(card(a).data).toMatchObject({ type: "source", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare" } });
     expect(card(b).data.html).toContain("<blockquote>");

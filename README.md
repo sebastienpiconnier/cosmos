@@ -39,7 +39,7 @@ Cosmos est en cours de développement (version 0.1).
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et tu écris directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Sept types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
-- **Zone Recherche :** colle ou dépose un lien, un texte ou une image sur le canevas, une carte Source naît dans le cadre « Recherche » (créé à droite au premier collage, retrouvé par le bouton signet). Une source garde son adresse, son auteur, sa date de publication et le jour où tu l'as consultée ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
+- **Zone Sources :** colle ou dépose un lien, un texte ou une image sur le canevas, une carte Source naît dans le cadre « Sources » (créé à droite au premier collage, retrouvé par le bouton « Sources »). Une source garde son adresse, son auteur, sa date de publication et le jour où tu l'as consultée ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionne un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
@@ -81,7 +81,7 @@ Puis un sommaire et des fiches générés automatiquement à partir des cartes, 
 
 ### Le manuscrit
 
-- **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Retour arrière annule. Le titre du chapitre s'écrit en tête de page.
+- **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le titre du chapitre s'écrit en tête de page.
 - **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit.
 - **Une scène à la fois, en pages :** tu écris le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si tu veux (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
@@ -157,7 +157,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 ## Prise en main
 
 - **Choisir un projet :** à chaque lancement, l'accueil liste tes projets. Depuis un projet, le bouton « Projets » enregistre et y revient.
-- **Nouveau projet :** un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer. « Essayer avec un exemple » crée un petit projet pour découvrir.
+- **Nouveau projet :** un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer. « Essayer avec un exemple » crée un petit projet et ouvre une visite guidée en six étapes (elle reste dans les Réglages).
 - **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
 - **Changer le type :** taper `/` en début de ligne, ou toucher l'étiquette du type (« IDÉE »).
 - **Relier :** tirer un fil depuis un point au bord d'une carte vers une autre, puis nommer le lien.

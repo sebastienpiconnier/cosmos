@@ -53,7 +53,7 @@ export const isArcType = (v: unknown): v is ArcType => typeof v === "string" && 
 
 /** Champs montrés ailleurs que dans la liste de la fiche (bande du moteur, choix de l'arc). */
 export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
-  return card.type === "personnage" ? new Set<string>([...motorFields(card), "arcType"]) : new Set<string>();
+  return card.type === "personnage" ? new Set<string>([...motorFields(card), "arcType", "arc"]) : new Set<string>();
 }
 
 /** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */

@@ -215,6 +215,13 @@ export function Manuscript() {
   // Scène tout juste née d'une coupure (deux fois Entrée) : une Entrée de plus en fait un chapitre.
   const [fresh, setFresh] = useState<{ id: string; from: string } | null>(null);
   const [said, setSaid] = useState("");
+  // Coupure qu'on vient de faire (scène ou chapitre) : annoncée à l'écran, avec « Annuler ».
+  const [notice, setNotice] = useState<{ text: string; undo: () => void } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 10000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   const handlers = useRef<BreakHandlers | null>(null);
 
   // Arrivée depuis « À faire » : la bonne scène.
@@ -288,16 +295,34 @@ export function Manuscript() {
       if (pageKind) return false;
       const next = splitScene(current, rest);
       if (!next) return false;
-      setFresh({ id: next, from: current });
+      const from = current;
+      setFresh({ id: next, from });
       go(next);
       setSaid(b.newScene);
+      setNotice({
+        text: b.newScene,
+        undo: () => {
+          useCosmos.getState().joinScenes(next, from);
+          setFresh(null);
+          go(from);
+          setSaid(b.breakUndone);
+        },
+      });
       return true;
     },
     onChapterBreak: () => {
       if (!isFresh) return false;
-      startChapterAt(current);
+      const chapter = startChapterAt(current);
       setFresh(null);
       setSaid(b.newChapter);
+      if (chapter)
+        setNotice({
+          text: b.newChapter,
+          undo: () => {
+            deletePlanChapter(chapter);
+            setSaid(b.breakUndone);
+          },
+        });
       return true;
     },
     onUndoBreak: () => {
@@ -487,6 +512,21 @@ export function Manuscript() {
               focusStart={isFresh}
             />
           </div>
+          {notice && (
+            <div className="ms-notice" role="status">
+              <span>{notice.text}</span>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => {
+                  notice.undo();
+                  setNotice(null);
+                }}
+              >
+                {b.undoBreak}
+              </button>
+            </div>
+          )}
           {!pageKind && <p className="ms-hint">{b.enterHint}</p>}
           <div className="sr-only" aria-live="polite">
             {said}

@@ -103,7 +103,7 @@ export const fr = {
     intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
     source: { label: "Source", section: "Sources", titlePlaceholder: "Titre de la source" },
     theme: { label: "Thème", section: "Thèmes", titlePlaceholder: "Thème" },
-    question: { label: "Question ouverte", section: "Questions ouvertes", titlePlaceholder: "La question" },
+    question: { label: "Question", section: "À creuser", titlePlaceholder: "La question à creuser" },
   },
 
   card: {
@@ -129,6 +129,7 @@ export const fr = {
     addCard: "Nouvelle carte",
     addCardHint: "Raccourci : touche N",
     addFrame: "Nouveau cadre",
+    frameShort: "Cadre",
     addFrameHint: "Nouveau cadre, autour des cartes sélectionnées (touche C)",
     frameTitle: "Nom du cadre",
     frameTitleAria: "Nom du cadre",
@@ -734,13 +735,13 @@ export const fr = {
     offerField: "Reporter aussi dans « {field} »",
     offered: "Reporté dans la fiche.",
     addPortrait: "Ajouter un portrait",
-    moreDetails: "Plus de détails ({n} champs vides)",
-    fewerDetails: "Moins de détails",
+    moreDetails: "Afficher les champs vides ({n})",
+    fewerDetails: "Masquer les champs vides",
     notInText: "Pas encore dans le texte",
     mentionsOne: "Cité {n} fois · dès la scène {scene} « {title} »",
     mentionsMany: "Cité {n} fois · dès la scène {scene} « {title} »",
-    pendingOne: "{n} question à compléter",
-    pendingMany: "{n} questions à compléter",
+    pendingOne: "{n} question à creuser",
+    pendingMany: "{n} questions à creuser",
     pendingTab: "À creuser",
     pendingHint: "Les questions gardées pour plus tard. Elles restent dans la fiche, pas sur le canevas.",
     pendingEmpty: "Aucune question en attente.",
@@ -856,6 +857,8 @@ export const fr = {
     enterHint: "Entrée deux fois : nouvelle scène · trois fois : nouveau chapitre · Retour arrière dans la scène vide : annuler la coupure",
     newScene: "Nouvelle scène, la suite du texte y est passée.",
     newChapter: "Nouveau chapitre.",
+    undoBreak: "Annuler",
+    breakUndone: "Coupure annulée.",
   },
 
   // Raccourcis clavier (fenêtre d'aide, Ctrl ou Cmd + /) et « À propos ».
@@ -881,7 +884,7 @@ export const fr = {
       mention: "Citer une autre carte",
       width: "Élargir ou rétrécir la carte",
       delete: "Supprimer la sélection",
-      paste: "Coller un lien, un texte ou une image : une source dans la zone Recherche",
+      paste: "Coller un lien, un texte ou une image : une carte dans la zone Sources",
       bold: "Gras",
       italic: "Italique",
       strike: "Barré",
@@ -932,7 +935,7 @@ export const fr = {
     button: "À faire ({n}) · Ctrl ou Cmd + Maj + L",
     title: "À faire",
     empty: "Rien en attente. Coche des cases (- [ ] dans une carte), marque un passage « à reprendre » (Ctrl ou Cmd + Maj + X) ou garde une question pour plus tard : tout se retrouve ici.",
-    kinds: { task: "Cases à cocher", revisit: "À reprendre dans le manuscrit", question: "Questions sur les personnages", open: "Questions ouvertes" },
+    kinds: { task: "Cases à cocher", revisit: "À reprendre dans le manuscrit", dig: "À creuser" },
     inCard: "dans « {title} »",
     inScene: "scène « {title} »",
     check: "Cocher « {text} »",
@@ -977,9 +980,9 @@ export const fr = {
 
   // Zone « Recherche » du canevas et cartes Source.
   research: {
-    frameTitle: "Recherche",
-    button: "Recherche",
-    hint: "Aller à la zone Recherche (les liens, extraits et images collés ou déposés sur le canevas y arrivent)",
+    frameTitle: "Sources",
+    button: "Sources",
+    hint: "Aller à la zone Sources (les liens, extraits et images collés ou déposés sur le canevas y arrivent)",
     open: "Ouvrir {host}",
     fetch: "Compléter depuis la page",
     fetching: "Lecture de la page…",
@@ -1042,6 +1045,7 @@ export const fr = {
 
   // Rangement automatique du canevas.
   organize: {
+    short: "Organiser",
     button: "Organiser le canevas",
     hint: "Range toutes les cartes en cadres : personnages, lieux, thèmes, questions, scènes par case du gabarit et par chapitre, idées en vrac. Les scènes se suivent, reliées dans l’ordre. Annulable avec Ctrl ou Cmd + Z.",
   },
@@ -1069,6 +1073,28 @@ export const fr = {
     bookGoal: "Objectif du livre",
     goalPlaceholder: "Mots",
     estimate: "Pages estimées à {n} mots par page, comme un roman imprimé.",
+  },
+
+  // Visite guidée (projet d'exemple, ou Réglages › Visite guidée).
+  tour: {
+    open: "Visite guidée",
+    progress: "Étape {n} sur {total}",
+    close: "Fermer la visite",
+    prev: "Précédent",
+    next: "Suivant",
+    done: "À toi d’écrire",
+    steps: {
+      cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou appui long sur le canevas : une carte naît. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
+      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : ils arrivent dans la zone Sources. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre." },
+      bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
+      plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
+      write: { title: "Écris, scène par scène", body: "Le manuscrit suit l’ordre du plan, mis en pages comme un livre. Entrée deux fois coupe la scène, trois fois ouvre un chapitre : un bouton « Annuler » apparaît à chaque coupure." },
+      files: { title: "Tes textes t’appartiennent", body: "Tout est enregistré tout seul, en fichiers Markdown lisibles hors de Cosmos. Ctrl ou Cmd + / montre tous les raccourcis, et cette visite reste dans les Réglages." },
+    },
+    scenario: {
+      plan: { title: "Donne une forme au récit", body: "Le séquencier liste tes scènes dans l’ordre du scénario. Pose un gabarit (trois actes, Save the Cat, huit séquences) et déplace les scènes d’une case à l’autre." },
+      write: { title: "Écris au format scénario", body: "Tab change le type d’élément (action, personnage, dialogue…), Entrée passe à l’élément suivant. Les personnages et les décors de la Bible se proposent pendant que tu écris." },
+    },
   },
 
   // Projet d'exemple du premier lancement (devient le contenu de l'auteur ensuite).

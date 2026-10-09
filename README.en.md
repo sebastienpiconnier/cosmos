@@ -39,7 +39,7 @@ Cosmos is under active development (version 0.1).
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Seven card types:** Idea, Character, Place, Scene, Plot, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
-- **Research area:** paste or drop a link, a text or an image onto the canvas, a Source card is born in the “Research” frame (created on the right at the first paste, found again with the bookmark button). A source keeps its address, author, publication date and the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
+- **Sources area:** paste or drop a link, a text or an image onto the canvas, a Source card is born in the “Sources” frame (created on the right at the first paste, found again with the “Sources” button). A source keeps its address, author, publication date and the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
@@ -81,7 +81,7 @@ Then a table of contents and reference sheets generated automatically from your 
 
 ### The manuscript
 
-- **Chapters as you write, as in NEO:** Enter twice on an empty line breaks the scene, the rest goes into a new scene; Enter a third time starts a new chapter. Backspace undoes it. The chapter title is written at the top of the page.
+- **Chapters as you write, as in NEO:** Enter twice on an empty line breaks the scene, the rest goes into a new scene; Enter a third time starts a new chapter. Each break is announced at the bottom of the page with an “Undo” button; Backspace in the empty scene undoes it too. The chapter title is written at the top of the page.
 - **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story.
 - **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter.
 - **Focus mode:** the page alone on screen, typewriter-style if you like (the current line stays at eye level), with the sentence, line or paragraph in full ink and the rest faded. Ctrl/Cmd+Shift+X marks a passage “to revisit”.
@@ -157,7 +157,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 ## Getting started
 
 - **Choose a project:** on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
-- **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a small project to explore.
+- **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a small project and opens a six-step guided tour (it stays in Settings).
 - **New card:** double-click or right-click the canvas, press `N`, long-press with a finger, or use the “New card” button. Then just write.
 - **Change the type:** type `/` at the start of a line, or tap the type label (“IDEA”).
 - **Connect:** drag a thread from a point on a card’s edge to another card, then name the link.

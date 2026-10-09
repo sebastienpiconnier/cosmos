@@ -9,6 +9,7 @@ import { Sequencier } from "./components/Sequencier";
 import { Plan } from "./components/Plan";
 import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
+import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
 import { useT } from "./i18n";
 import { storage } from "./storage";
@@ -128,6 +129,7 @@ export function App() {
           {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Manuscript />)}
         </main>
       </div>
+      <Tour />
       <Dialogs />
     </ReactFlowProvider>
   );

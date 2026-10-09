@@ -110,7 +110,9 @@ Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/wor
 ```
 src/
   types.ts              Modèle : CardType, CardData, Link, ProjectMeta, CARD_TYPES (libellés, couleurs)
-  store.ts              État Zustand : nœuds React Flow (data = CardData), fils, vue, sauvegarde, historique d'annulation
+  store.ts              État Zustand : actions sur les cartes, fils, vue, sauvegarde, historique d'annulation
+  projectState.ts       Nœuds du canevas (CardNode, FrameNode) et passage projet sur disque <-> état (fromProject, openProject, toProject, projet d'exemple), fonctions pures
+  tour.ts               Visite guidée : étapes et vue de chacune (données pures)
   platform.ts           isTauri, isTouch, isMobileOS
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents), fonction pure
@@ -119,7 +121,7 @@ src/
   markdownText.ts       Reconnaître un texte collé en Markdown, ==à reprendre== → <mark> (fonctions pures)
   focusText.ts          Mode focus : bornes de la phrase du curseur, modes de mise en valeur (fonctions pures)
   clip.ts               Coller un lien ou un texte sur le canevas : la carte proposée (fonction pure)
-  research.ts           Zone Recherche : cadre à droite du contenu, case libre dans le cadre, date du jour, infos d'une page HTML (fonctions pures)
+  research.ts           Zone Sources : cadre à droite du contenu, case libre dans le cadre, date du jour, infos d'une page HTML (fonctions pures)
   web.ts                readPage(url) : lit une page (HTTP de Tauri ou fetch), 20 s et 2 Mo au plus
   shortcuts.ts          Liste des raccourcis clavier, pour la fenêtre d'aide (décrit, n'écoute rien)
   pitch.ts              Couverture du projet (tête de la Bible) : champs, lecture de cosmos.json, suggestions des pastilles (fonctions pures)
@@ -161,6 +163,7 @@ src/
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
+    Tour.tsx            Visite guidée : un panneau par étape, qui ouvre la vue dont il parle
     ProjectCover.tsx    Couverture du projet, première page de la Bible : jaquette (titre, tagline, pastilles), logline, résumé, comparables, volume, thèmes, note d'intention
     CharacterMotor.tsx  Moteur d'un personnage dans la Bible (Veut, A besoin de, Blessure ; antagoniste : Motivation, Force, Faille) et type d'arc dessiné
     RelationsMap.tsx    Carte des relations (Bible, Personnages › Relations) : portraits sur les fils du canevas, liste des relations
@@ -220,6 +223,7 @@ src/
     markdown.ts         Carte ↔ fichier .md (frontmatter), nettoyage HTML
     browser.ts          Dossiers simulés dans localStorage, une clé par projet
     tauri.ts            Vrais dossiers sur disque : un par projet (choisi sur ordinateur, privé sur mobile)
+  styles.css            Jetons de couleur (clair, sombre), base, accueil, barre du haut ; puis styles/ : canvas.css, bible.css, screenplay.css, writing.css, importés dans cet ordre par main.tsx
   assets/fonts/         Courier Prime en TTF pour le PDF (licence OFL jointe)
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 .github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
@@ -424,14 +428,20 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **« À faire »** n'a pas de données propres : tout est relu dans les textes (`collectTodos`). Cocher depuis le panneau réécrit le HTML de la carte ou de la scène (`toggleTodo`) ; l'éditeur de la scène se resynchronise sur le store.
 - **Mode focus du manuscrit** : `focusMode` du store, comme pour le scénario (la barre du haut s'efface). Réglages de l'appareil `settings.writing` (machine à écrire, mise en valeur). Phrase et paragraphe : décorations (`is-focus-on`) sur un texte estompé (`--page-ink-dim`) ; ligne : deux voiles posés au-dessus et au-dessous du curseur, sans toucher au texte. Échap ou Cmd/Ctrl+Maj+F en sortent ; quitter la vue aussi.
 - **Raccourcis globaux** (App.tsx) : Cmd/Ctrl+1 à 4 pour les vues, Cmd/Ctrl+/ pour la liste. Tout nouveau raccourci s'ajoute aussi dans `shortcuts.ts` et ses libellés dans `t.shortcuts.items`, sinon la fenêtre d'aide ment (un test le vérifie).
-- **Coller sur le canevas** : hors d'un champ, un lien, un texte (citation) ou une image collés ou déposés deviennent une carte Source dans la zone Recherche (`addResearchClip`, `addResearchImage`), une étape d'historique. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
-- **Zone Recherche** : un cadre ordinaire marqué `kind: "research"` dans `frames` (lu sans erreur par une version précédente). Il est créé à droite de tout le contenu au premier clip, grandit vers le bas quand il est plein, et « Organiser le canevas » le garde tel quel et n'y range pas les sources.
+- **Coller sur le canevas** : hors d'un champ, un lien, un texte (citation) ou une image collés ou déposés deviennent une carte Source dans la zone Sources (`addResearchClip`, `addResearchImage`), une étape d'historique. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
+- **Zone Sources (cadre)** : un cadre ordinaire marqué `kind: "research"` dans `frames` (lu sans erreur par une version précédente). Il est créé à droite de tout le contenu au premier clip, grandit vers le bas quand il est plein, et « Organiser le canevas » le garde tel quel et n'y range pas les sources.
 - **Couverture du projet** : `pitch` dans `cosmos.json`, écrit seulement quand un champ est rempli. Clés fixes (`tagline`, `logline`, `resume`, `comps`, `intention`, `genre`, `cible`, `format`, `pov`, `temps`, `ton`), jamais traduites ; les valeurs sont le texte de l'auteur (une pastille choisie garde le libellé de la langue du moment). Le volume n'est pas saisi (objectif de mots, ou pages du scénario) et les thèmes sont les cartes Thème : rien n'est recopié. Hors historique d'annulation, comme le titre du projet (les champs ont leur propre annulation). La Bible s'ouvre sur la couverture.
-- **Moteur d'un personnage** : ce sont des champs de la fiche (`objectif`, `besoin`, `blessure` ; `motivation`, `force`, `faille` pour un rôle qui dit « antagoniste », `isAntagonist`). `bandFields` les retire de la liste de `CardSheet` pour ne pas les montrer deux fois. `arcType` vaut `positif`, `negatif` ou `plat` (clé écrite dans le fichier, `readFiche` rejette toute autre valeur) ; export et IA l'écrivent en toutes lettres (`ficheText`).
+- **Moteur d'un personnage** (avec l'arc : type dessiné et « Évolution » en mots, une seule notion) : ce sont des champs de la fiche (`objectif`, `besoin`, `blessure` ; `motivation`, `force`, `faille` pour un rôle qui dit « antagoniste », `isAntagonist`). `bandFields` les retire de la liste de `CardSheet` pour ne pas les montrer deux fois. `arcType` vaut `positif`, `negatif` ou `plat` (clé écrite dans le fichier, `readFiche` rejette toute autre valeur) ; export et IA l'écrivent en toutes lettres (`ficheText`).
 - **Relations et Ambiance, sans données propres** : la carte des relations lit les fils entre deux cartes Personnage (et leurs étiquettes), le tableau d'ambiance les champs `image` et `images` des cartes. Rien n'est enregistré à part ; « Fiches » ou « Relations » est un état d'affichage. Les noms sont écrits sous les portraits : un fil qui part vers le bas commence après le nom, sinon son étiquette le recouvre.
 - **Questions par thème** : clés `<thème>.<rang>` (`passe.4`), textes dans `t.assistant.themeQuestions`, même nombre de questions dans chaque langue (un test le vérifie). Écrites pour Cosmos d'après les familles des questionnaires de personnage (ne pas recopier un questionnaire publié). Comme pour les niveaux, une question livrée ne se reformule pas, et on n'en retire pas du milieu d'une liste (les rangs suivants changeraient de clé, donc de champ reporté).
 - **Réponse reportée dans la fiche** : après une réponse à une question de l'assistant qui correspond à un champ vide (`QUESTION_FIELD`, assistant.ts), un bouton propose de l'y reporter aussi. C'est la réponse de l'auteur, telle quelle, et seulement sur son clic.
 - **Versions futures** : une carte garde dans `keep` (jamais affiché) ses lignes de frontmatter inconnues, ses champs de fiche inconnus et un type inconnu (elle s'affiche alors en Idée et réécrit son type tant que l'auteur n'en choisit pas un autre) ; `cardToFile` les réécrit. `cosmos.json` garde ses clés inconnues dans `metaKeep` (`unknownMeta`, liste `KNOWN_META` à tenir à jour quand on ajoute une clé). Un nouveau champ du frontmatter s'ajoute aussi à `KNOWN_FRONT` (markdown.ts), sinon il serait écrit deux fois.
 - **Fiche d'un personnage dans la Bible** : l'essentiel d'abord (portrait, moteur et arc, texte de l'auteur) ; la fiche d'identité est repliée, la galerie vide n'est qu'un bouton, l'assistant s'ouvre sur un clic. Ne pas rajouter de bloc toujours ouvert sans raison forte.
+- **Questions ouvertes = « À creuser »** : les questions gardées dans un personnage et les cartes Question (rubrique « À creuser » de la Bible) forment un seul groupe dans « À faire ». Ne pas réintroduire un autre nom (« Questions ouvertes », « à compléter »).
+- **Zone Sources** (ex-« Recherche », pour ne pas se confondre avec la loupe qui cherche une carte) : le cadre garde `kind: "research"` dans le fichier ; seul le libellé a changé, et un cadre déjà nommé « Recherche » garde son titre.
+- **Coupure de scène annoncée** : après une coupure (Entrée deux fois) ou un chapitre (trois fois), le manuscrit affiche dix secondes « Nouvelle scène… · Annuler ». Annuler une scène appelle `joinScenes` (le texte revient à la fin de la scène d'origine, la carte part) ; annuler un chapitre, `deletePlanChapter`.
+- **Visite guidée** : `tour` dans le store (état d'affichage). Elle s'ouvre seule avec le projet d'exemple (`tryExample`) et depuis les Réglages ; chaque étape fait `setView`. Rien n'est écrit dans le projet.
+- **Feuilles de style découpées** : l'ordre d'import dans main.tsx est l'ordre de la cascade (styles.css puis canvas, bible, screenplay, writing). Les couleurs restent définies uniquement dans les deux blocs de jetons de `src/styles.css`.
+- **Boutons du canevas** : Cadre, Sources et Organiser montrent un mot à côté de l'icône (pas seulement au survol) ; sous 560 px de large, l'icône seule.
 - **Ouvrir une page** : toujours `openExternal` (platform.ts), qui passe par `tauri-plugin-opener` (permission `opener:default`) ; `window.open` ne fait rien dans l'app de bureau.
 
