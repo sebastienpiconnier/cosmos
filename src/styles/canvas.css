@@ -242,3 +242,5 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .toile-notice { position: absolute; z-index: 6; left: 50%; bottom: 140px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
 .toile-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
 .toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }
+/* Cartes Lien et Image de la zone Recherche : un corps vide ne s'affiche que quand on écrit dans la carte. */
+.card:is(.is-image-card, .is-lien-card):not(:focus-within) .card-body:has(.ProseMirror > p.is-editor-empty:only-child) { display: none; }

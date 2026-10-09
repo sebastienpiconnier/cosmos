@@ -208,10 +208,10 @@
 /* Moteur d'un personnage : trois cases lues d'un coup d'œil, puis le type d'arc dessiné. */
 .motor { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .motor-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; }
-.motor-cell { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 8px; border-radius: 12px; background: var(--ground); border-top: 3px solid var(--line-2); }
-.motor-cell.is-filled { border-top-color: var(--type, var(--accent)); }
-.motor-band.is-antagonist .motor-cell.is-filled { border-top-color: var(--type-intrigue); }
+/* Sans trait au-dessus du titre : une case remplie se reconnaît à son titre en couleur. */
+.motor-cell { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 8px; border-radius: 12px; background: var(--ground); }
 .motor-cell label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.motor-cell.is-filled label { color: var(--accent-ink); }
 .motor-cell textarea { width: 100%; min-height: 28px; padding: 2px 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink); font: 16px/1.4 var(--font-text); resize: none; field-sizing: content; }
 .motor-cell textarea::placeholder { color: var(--placeholder); }
 .motor-cell textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

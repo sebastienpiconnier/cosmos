@@ -11,7 +11,7 @@ import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { sourceUrl } from "../character";
 import { openExternal } from "../platform";
-import { hostOf } from "./SourceTools";
+import { hostOf, sourceKind } from "../research";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
@@ -253,6 +253,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [data.title, slugline, width]);
 
   const source = sourceUrl(data);
+  // Carte de la zone Recherche : un lien, une image ou un extrait (même type « source » dans le fichier).
+  const clipKind = sourceKind(data);
 
   // Texte trop long : la carte se replie (hauteur mesurée, suit les modifications et la largeur).
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -306,7 +308,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card${selected ? " is-selected" : ""}${clipKind ? ` is-${clipKind}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -362,7 +364,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           }}
         >
           <span className="card-dot" />
-          {types[data.type].label}
+          {clipKind ? t.research.kinds[clipKind] : types[data.type].label}
         </button>
         <button
           type="button"
@@ -394,7 +396,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         rows={1}
         className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
         value={data.title}
-        placeholder={types[data.type].titlePlaceholder}
+        placeholder={clipKind === "image" ? t.research.captionPlaceholder : types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
         onChange={(e) => updateCard(id, { title: e.target.value.replace(/\n/g, " ") })}
         onKeyDown={(e) => {

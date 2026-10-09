@@ -62,7 +62,7 @@ describe("zone Recherche dans le projet", () => {
     const b = state().addResearchClip("Le phare de Kerlaouen fut éteint en 1952.")!;
     const research = state().frames.filter((f) => f.data.kind === "research");
     expect(research).toHaveLength(1);
-    expect(research[0].data.title).toBe("Sources");
+    expect(research[0].data.title).toBe("Recherche");
     const card = (id: string) => state().nodes.find((n) => n.id === id)!;
     expect(card(a).data).toMatchObject({ type: "source", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare" } });
     expect(card(b).data.html).toContain("<blockquote>");
@@ -104,5 +104,17 @@ describe("zone Recherche dans le projet", () => {
     expect(a).toBe(b);
     expect(state().nodes.filter((n) => n.data.type === "source")).toHaveLength(1);
     expect(state().nodes.find((n) => n.id === a)!.data.fiche?.url).toBe("https://x.fr/page");
+  });
+});
+
+describe("cartes de la zone Recherche (recette d'octobre, suite)", () => {
+  it("lien, image ou extrait selon ce qu'on a collé ; l'ancien titre de la zone est remplacé", async () => {
+    const { sourceKind, renamedZone } = await import("../research");
+    expect(sourceKind({ type: "source", fiche: { url: "https://exemple.fr/a" }, image: "a.jpg" })).toBe("lien");
+    expect(sourceKind({ type: "source", image: "a.jpg" })).toBe("image");
+    expect(sourceKind({ type: "source" })).toBe("extrait");
+    expect(sourceKind({ type: "idee", image: "a.jpg" })).toBeNull();
+    expect(renamedZone("Sources", ["Sources"], "Recherche")).toBe("Recherche");
+    expect(renamedZone("Mes lectures", ["Sources"], "Recherche")).toBe("Mes lectures");
   });
 });

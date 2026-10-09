@@ -336,19 +336,6 @@ export function Bible() {
               </span>
             </button>
           </li>
-          <li>
-            <button type="button" className={`toc-cover${onMood ? " is-current" : ""}`} aria-current={onMood ? "true" : undefined} onClick={() => setCurrent("ambiance")}>
-              <span className="toc-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="8" height="10" rx="1.5" />
-                  <rect x="13" y="3" width="8" height="6" rx="1.5" />
-                  <rect x="13" y="11" width="8" height="10" rx="1.5" />
-                  <rect x="3" y="15" width="8" height="6" rx="1.5" />
-                </svg>
-                {t.mood.toc}
-              </span>
-            </button>
-          </li>
           {sections.map((s) => (
             <li key={s.type}>
               <button
@@ -365,6 +352,20 @@ export function Bible() {
               </button>
             </li>
           ))}
+          {/* Le moodboard ferme le sommaire : toutes les images du projet, après les fiches. */}
+          <li>
+            <button type="button" className={`toc-cover${onMood ? " is-current" : ""}`} aria-current={onMood ? "true" : undefined} onClick={() => setCurrent("ambiance")}>
+              <span className="toc-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="8" height="10" rx="1.5" />
+                  <rect x="13" y="3" width="8" height="6" rx="1.5" />
+                  <rect x="13" y="11" width="8" height="10" rx="1.5" />
+                  <rect x="3" y="15" width="8" height="6" rx="1.5" />
+                </svg>
+                {t.mood.toc}
+              </span>
+            </button>
+          </li>
         </ul>
         )}
         <div className="toc-tools">

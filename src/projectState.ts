@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import { renamedZone } from "./research";
 import type { TrashedCard } from "./trash";
 import { type Edge, type Node } from "@xyflow/react";
 import { nanoid } from "nanoid";
@@ -188,7 +189,17 @@ export function openProject(p: Project) {
   const read = fromProject(p);
   const parked = adoptParkedCards(read.nodes, read.edges);
   const adopted = { ...parked, nodes: adoptTextAnswers(parked.nodes) };
-  const base = { ...read, ...adopted };
+  // La zone Recherche gardait le titre par défaut d'avant (« Sources ») : elle prend celui d'aujourd'hui.
+  const r = getT().research;
+  let renamed = false;
+  const frames = read.frames.map((f) => {
+    if (f.data.kind !== "research") return f;
+    const title = renamedZone(f.data.title, Object.values(DICTIONARIES).flatMap((d) => d.research.oldTitles), r.frameTitle);
+    if (title === f.data.title) return f;
+    renamed = true;
+    return { ...f, data: { ...f.data, title } };
+  });
+  const base = { ...read, ...adopted, frames };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplay =
     p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
@@ -199,7 +210,7 @@ export function openProject(p: Project) {
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
     state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
-    dirty: screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
+    dirty: renamed || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
 }
 

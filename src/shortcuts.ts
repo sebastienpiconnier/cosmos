@@ -43,6 +43,7 @@ export const SHORTCUT_GROUPS = {
     ["elementType", ["Tab"]],
     ["nextElement", ["Entrée"]],
     ["elementBar", ["Échap"]],
+    ["moveScene", ["Alt", "↑ ↓"]],
   ],
 } as const;
 

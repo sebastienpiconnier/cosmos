@@ -17,6 +17,14 @@
 }
 .sp-scene-list button:hover { background: var(--hover); }
 .sp-scene-list button.is-current { background: var(--accent-soft); color: var(--accent-ink); }
+/* Déplacer une scène : glisser dans la liste, ou les flèches de la scène en cours. */
+.sp-scene-list li[draggable] { cursor: grab; border-radius: 8px; }
+.sp-scene-list li.is-dragged { opacity: 0.5; }
+.sp-scene-list li.is-over { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
+.sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 13px; }
+.sp-scene-moves .icon-button:disabled { opacity: 0.3; cursor: default; }
+@media (pointer: coarse) { .sp-scene-moves .icon-button { width: 44px; height: 44px; } }
 .sp-towrite-title { margin-top: 12px; }
 .sp-towrite { flex-shrink: 0; font-size: 12px; font-style: italic; color: var(--ink-2); }
 .sp-scene-select { display: none; }

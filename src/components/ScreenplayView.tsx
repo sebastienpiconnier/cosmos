@@ -2,6 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SynopsisField } from "./SynopsisField";
@@ -298,6 +299,11 @@ export function ScreenplayView() {
 
   // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
   const rootRef = useRef<HTMLDivElement>(null);
+  // Scène glissée dans la liste (ref : le dépôt peut arriver avant le rendu suivant).
+  const dragRef = useRef<number | null>(null);
+  const [dragScene, setDragScene] = useState<number | null>(null);
+  const [overScene, setOverScene] = useState<number | null>(null);
+  const [announce, setAnnounce] = useState("");
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport || !isTouch()) return;
@@ -330,6 +336,32 @@ export function ScreenplayView() {
 
   const plural = (n: number, one: string, many: string) =>
     fmt(new Intl.PluralRules(lang).select(n) === "one" ? one : many, { n });
+
+  /**
+   * Déplace la scène qui commence à l'élément `from` à la place de celle qui commence à `to` (blocs du
+   * séquencier : la scène entière, texte compris). Le curseur suit la scène déplacée.
+   */
+  const moveScene = (from: number, to: number, keepFocus = false) => {
+    emit();
+    const current = useCosmos.getState().screenplay;
+    if (!current) return;
+    const list = blocks(current.elements);
+    const a = list.findIndex((b) => b.start === from);
+    const b = list.findIndex((x) => x.start === to);
+    if (a < 0 || b < 0 || a === b) return;
+    const elements = moveBlock(current.elements, a, b);
+    if (elements === current.elements) return;
+    setAnnounce(fmt(sp.sequencer.moved, { title: list[a].text || sp.untitledScene, n: blocks(elements)[b].number ?? 0 }));
+    const next = { ...current, elements };
+    // L'éditeur est rechargé ici même (pas d'aller-retour par l'effet), puis le curseur va dans la scène déplacée.
+    synced.current = next;
+    useCosmos.getState().setScreenplay(next, true);
+    editor.commands.setContent(toDoc(next), { emitUpdate: false });
+    editor.commands.setTextSelection(posOf(editor.state.doc, blocks(elements)[b].start) + 1);
+    const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
+    if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
+    if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
+  };
 
   const goTo = (index: number) => {
     emit();
@@ -437,13 +469,52 @@ export function ScreenplayView() {
         <div className="eyebrow">{sp.scenesTitle}</div>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
         <ol className="sp-scene-list">
-          {scenes.map((s) => (
-            <li key={s.index}>
+          {scenes.map((s, k) => (
+            <li
+              key={s.index}
+              className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
+              // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
+              draggable
+              onDragStart={(e) => {
+                if ((e.target as HTMLElement).closest("textarea")) return e.preventDefault();
+                dragRef.current = s.index;
+                setDragScene(s.index);
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", s.text);
+              }}
+              onDragEnd={() => {
+                dragRef.current = null;
+                setDragScene(null);
+                setOverScene(null);
+              }}
+              onDragOver={(e) => {
+                if (dragRef.current === null) return;
+                e.preventDefault();
+                setOverScene(s.index);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const from = dragRef.current;
+                dragRef.current = null;
+                setDragScene(null);
+                setOverScene(null);
+                if (from !== null) moveScene(from, s.index);
+              }}
+            >
               <button
                 type="button"
                 className={s.index === scene?.index ? "is-current" : ""}
                 aria-current={s.index === scene?.index ? "true" : undefined}
+                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
                 onClick={() => goTo(s.index)}
+                onKeyDown={(e) => {
+                  // Au clavier : Alt + flèche déplace la scène d'un cran.
+                  if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                  const other = scenes[k + (e.key === "ArrowUp" ? -1 : 1)];
+                  if (!other) return;
+                  e.preventDefault();
+                  moveScene(s.index, other.index, true);
+                }}
               >
                 <span className="is-slugline">
                   {s.number}. {s.text || sp.untitledScene}
@@ -452,6 +523,20 @@ export function ScreenplayView() {
                   <span className="sp-towrite">{fmt(sp.pageShort, { n: pagination.startPage[s.index] })}</span>
                 )}
               </button>
+              {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
+              {s.index === scene?.index && scenes.length > 1 && (
+                <span className="sp-scene-moves">
+                  {(["up", "down"] as const).map((way) => {
+                    const other = scenes[k + (way === "up" ? -1 : 1)];
+                    const label = fmt(way === "up" ? sp.sequencer.moveUp : sp.sequencer.moveDown, { title: s.text || sp.untitledScene });
+                    return (
+                      <button key={way} type="button" className="icon-button" disabled={!other} aria-label={label} title={label} onClick={() => other && moveScene(s.index, other.index)}>
+                        <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                      </button>
+                    );
+                  })}
+                </span>
+              )}
               {/* Le synopsis s'écrit ici ; il apparaît dans le séquencier. */}
               <SynopsisField
                 value={sceneSynopsis(elements, s.index)}
@@ -462,6 +547,9 @@ export function ScreenplayView() {
           ))}
         </ol>
 
+        <div className="sr-only" aria-live="polite">
+          {announce}
+        </div>
         {toWrite.length > 0 && (
           <>
             <div className="eyebrow sp-towrite-title">{sp.toWriteTitle}</div>

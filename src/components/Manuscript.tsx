@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { DropCap } from "./dropCap";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
@@ -117,6 +118,7 @@ function SceneEditor({
         onLayout: (n) => onPagesRef.current(n),
       }),
       BookKeys.configure({ handlers }),
+      DropCap,
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
       FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
     ],

@@ -49,9 +49,10 @@
 .ms-page .ms-editor > p:first-child, .ms-page .ms-editor h2 + p, .ms-page .ms-editor h3 + p { text-indent: 0; }
 .ms-page .ms-editor h2, .ms-page .ms-editor h3 { margin: 0; padding: 0.8em 0 0.8em; text-align: center; font-size: 1em; line-height: 1.6; letter-spacing: 0.08em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
-.ms-page.opens-chapter .ms-editor > p:first-child:not(.is-editor-empty)::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
-/* Le premier paragraphe contient sa lettrine : un paragraphe court ne laisse pas la suite coincée à côté d'elle. */
-.ms-page.opens-chapter .ms-editor > p:first-child:not(.is-editor-empty) { display: flow-root; }
+.ms-page.opens-chapter .ms-editor > p.has-dropcap:first-child::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
+/* Le premier paragraphe contient sa lettrine : un paragraphe court ne laisse pas la suite coincée à côté d'elle.
+   La classe vient de dropCap.ts : pas de lettrine dans le paragraphe où l'on écrit (WebKit y perdait le curseur). */
+.ms-page.opens-chapter .ms-editor > p.has-dropcap:first-child { display: flow-root; }
 .ms-page .sp-pagebreak-gap { left: -4em; right: -4em; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
 .ms-chapter-heading { margin: 8px 0 0; font: 600 13px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }

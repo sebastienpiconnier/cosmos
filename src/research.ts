@@ -81,3 +81,19 @@ export function pageInfo(html: string, base = ""): { title: string; site: string
     image: absolute(meta("og:image:secure_url", "og:image", "twitter:image", "twitter:image:src") || doc.querySelector('link[rel="image_src"]')?.getAttribute("href") || "", base),
   };
 }
+
+/**
+ * Ce qu'est une carte Source, selon ce qu'on y a collé : un lien (adresse web), une image, ou un extrait
+ * de texte. Seul l'affichage change (étiquette, légende) : le type écrit dans le fichier reste `source`.
+ */
+export type SourceKind = "lien" | "image" | "extrait";
+export function sourceKind(card: { type: string; fiche?: Record<string, string>; image?: string }): SourceKind | null {
+  if (card.type !== "source") return null;
+  if (/^https?:\/\/\S+$/i.test(card.fiche?.url?.trim() ?? "")) return "lien";
+  return card.image ? "image" : "extrait";
+}
+
+/** Le cadre Recherche portait-il un titre par défaut d'une version d'avant ? Il prend alors le nouveau. */
+export function renamedZone(title: string, oldTitles: readonly string[], current: string): string {
+  return oldTitles.includes(title.trim()) ? current : title;
+}
