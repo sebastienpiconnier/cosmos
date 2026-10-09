@@ -13,6 +13,8 @@ export interface TypesetLine {
   column: number;
   text: string;
   bold?: boolean;
+  /** En-tête de scène souligné (option du projet). */
+  underline?: boolean;
 }
 
 export interface TypesetPage {
@@ -44,6 +46,8 @@ const SPEECH = new Set(["parenthetical", "dialogue"]);
 export interface TypesetOptions {
   /** Numéroter toutes les scènes (1, 2, 3…). Un numéro écrit dans le fichier (#12A#) passe toujours devant. */
   numberScenes?: boolean;
+  /** Souligner les en-têtes de scène. */
+  underlineHeadings?: boolean;
 }
 
 export function typeset(
@@ -66,9 +70,10 @@ export function typeset(
     index++;
     used = 0;
   };
-  const put = (text: string, column: number, bold = false) => {
+  const put = (text: string, column: number, bold = false, underline = false) => {
     const line: TypesetLine = { row: used, column, text };
     if (bold) line.bold = true;
+    if (underline) line.underline = true;
     page().lines.push(line);
     used++;
   };
@@ -107,7 +112,7 @@ export function typeset(
           page().lines.push({ row: used, column: -(number.length + 2), text: number, bold: true });
           page().lines.push({ row: used, column: width + 2, text: number, bold: true });
         }
-        for (const line of lines) put(line, 0, true);
+        for (const line of lines) put(line, 0, true, !!options.underlineHeadings);
         break;
       }
       case "action":

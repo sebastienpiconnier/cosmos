@@ -1,7 +1,8 @@
-// Assistant personnage : des questions par niveau, pour creuser une fiche. Fonctions pures.
-// L'assistant questionne, l'auteur écrit. Une réponse s'ajoute au texte de la fiche (la question en
-// gras, la réponse dessous), et « Je ne sais pas encore » range la question dans la carte du personnage
-// (champ `questions`), sans rien poser sur le canevas : la carte affiche seulement leur nombre.
+// Assistant personnage : des questions rangées par thème, pour creuser une fiche. Fonctions pures.
+// L'assistant questionne, l'auteur écrit. Deux chemins vers les mêmes données : une question liée à un
+// champ de la fiche (« Que veut ce personnage ? » → Veut) remplit ce champ ; les autres réponses vont dans
+// `reponses` (frontmatter de la carte), montrées repliées dans la Bible. « Je ne sais pas encore » range la
+// question dans la carte (champ `questions`), sans rien poser sur le canevas.
 
 import type { CardData, Link } from "./types";
 import type { CharacterField } from "./character";
@@ -19,32 +20,56 @@ export const ASSISTANT_QUESTIONS = {
 export type AssistantQuestion = (typeof ASSISTANT_QUESTIONS)[AssistantLevel][number];
 
 /**
- * Questions par thème (onglet « Par thème »), pour creuser un domaine précis : le passé, le corps, la voix…
- * Clé d'une question : `<thème>.<rang>`, texte dans `t.assistant.themeQuestions[thème][rang]`.
- * Questions écrites pour Cosmos (inspirées des grandes familles des questionnaires de personnage) :
- * ouvertes, une à la fois. Ne pas reformuler une question livrée (elle redeviendrait ouverte, voir isAnswered).
+ * Questions par thème. Les textes viennent de `t.assistant.questions` (questions d'origine, par clé) et de
+ * `t.assistant.themeQuestions` (clé `<thème>.<rang>`). Questions écrites pour Cosmos, ouvertes, une à la fois.
+ * Ne pas reformuler une question livrée, ni retirer une question du milieu d'une liste de `themeQuestions`
+ * (les rangs suivants changeraient de clé) : pour en écarter une, la retirer de THEME_KEYS.
  */
+export const THEMES = ["essentiel", "passe", "corps", "voix", "travail", "emotions", "colere", "relations", "espoirs", "pensee", "ombres"] as const;
+export type Theme = (typeof THEMES)[number];
+/** Thèmes dont les textes sont dans `t.assistant.themeQuestions` (tous sauf « essentiel »). */
 export const ASSISTANT_THEMES = ["passe", "corps", "voix", "travail", "emotions", "colere", "relations", "espoirs", "pensee", "ombres"] as const;
 export type AssistantTheme = (typeof ASSISTANT_THEMES)[number];
 
-/** Clés des questions d'un thème, d'après le nombre de textes de la langue courante. */
+const range = (theme: AssistantTheme, ranks: number[]) => ranks.map((i) => `${theme}.${i}`);
+
+/**
+ * Les questions de chaque thème, sans doublon : les questions d'origine (niveaux Essentiel, Approfondi,
+ * Intime d'avant) sont rangées dans le thème qui leur correspond, et une question de thème qui les
+ * répétait est écartée (passe.4, voix.0, emotions.3, relations.0, pensee.4).
+ */
+export const THEME_KEYS: Record<Theme, readonly string[]> = {
+  essentiel: ["want", "need", "obstacle", "role", "look", "strength", "flaw", "change"],
+  passe: ["past", "loss", "regret", ...range("passe", [0, 1, 2, 3, 5, 6])],
+  corps: range("corps", [0, 1, 2, 3, 4, 5]),
+  voix: ["voice", ...range("voix", [1, 2, 3, 4, 5, 6])],
+  travail: ["work", "habit", ...range("travail", [0, 1, 2, 3, 4, 5])],
+  emotions: ["fear", "night", ...range("emotions", [0, 1, 2, 4, 5, 6])],
+  colere: range("colere", [0, 1, 2, 3, 4, 5]),
+  relations: ["relation", ...range("relations", [1, 2, 3, 4, 5, 6])],
+  espoirs: ["joy", "last", ...range("espoirs", [0, 1, 2, 3, 4, 5, 6])],
+  pensee: ["contradiction", "lie", ...range("pensee", [0, 1, 2, 3, 5])],
+  ombres: ["secret", "shame", "limit", ...range("ombres", [0, 1, 2, 3, 4, 5])],
+};
+
+/** Clés des questions d'un thème de `themeQuestions`, d'après le nombre de textes de la langue courante. */
 export const themeKeys = (theme: AssistantTheme, texts: Record<AssistantTheme, readonly string[]>) => texts[theme].map((_, i) => `${theme}.${i}`);
 
 /** Textes à plat, par clé (`passe.0`…), pour `bankQuestions`. */
 export const flatThemeTexts = (texts: Record<AssistantTheme, readonly string[]>): Record<string, string> =>
   Object.fromEntries(ASSISTANT_THEMES.flatMap((theme) => texts[theme].map((text, i) => [`${theme}.${i}`, text])));
 
+/** Tous les textes de questions d'une langue, par clé. */
+export const allQuestionTexts = (a: { questions: Record<string, string>; themeQuestions: Record<AssistantTheme, readonly string[]> }): Record<string, string> => ({
+  ...a.questions,
+  ...flatThemeTexts(a.themeQuestions),
+});
+
 /**
- * Champ de la fiche auquel répond une question. Après une réponse, si ce champ est vide, l'assistant
- * propose de l'y reporter aussi (la réponse de l'auteur, telle quelle, sur son clic).
+ * Champ de la fiche auquel répond une question : y répondre remplit ce champ, et un champ rempli (à la
+ * main ou par une réponse) rend la question « répondue ». Un seul champ par question, et inversement.
  */
 export const QUESTION_FIELD: Partial<Record<string, CharacterField>> = {
-  "passe.4": "blessure",
-  "ombres.0": "blessure",
-  "corps.3": "apparence",
-  "voix.0": "voix",
-  "emotions.3": "peur",
-  "relations.0": "relations",
   want: "objectif",
   need: "besoin",
   past: "blessure",
@@ -55,7 +80,9 @@ export const QUESTION_FIELD: Partial<Record<string, CharacterField>> = {
   secret: "secret",
   role: "role",
   look: "apparence",
-};
+  change: "arc",
+  relation: "relations",
+}
 
 /** Champ où reporter une réponse, s'il existe et qu'il est encore vide. */
 export function fieldToFill(key: string | null | undefined, character: Pick<CardData, "fiche">): CharacterField | null {
@@ -124,9 +151,80 @@ export function bankQuestions(
 ): AskedQuestion[] {
   return keys.filter((key) => texts[key]).map((key) => {
     const text = texts[key];
-    const state: QuestionState = isAnswered(character.html, text) ? "answered" : isParked(cards, links, character.id, text) ? "parked" : "open";
+    const state: QuestionState = hasAnswer(character, key, text) ? "answered" : isParked(cards, links, character.id, text) ? "parked" : "open";
     return { key, text, state };
   });
+}
+
+/** Clé d'une réponse à une question hors de la banque (question sur mesure, posée par l'IA). */
+export const customKey = (question: string) => `q:${question.trim()}`;
+
+/** Une réponse existe : champ lié rempli, réponse rangée, ou (projets d'avant) question en gras dans le texte. */
+export function hasAnswer(character: Pick<CardData, "html" | "fiche" | "reponses">, key: string, text: string): boolean {
+  const field = QUESTION_FIELD[key];
+  if (field && character.fiche?.[field]?.trim()) return true;
+  if (character.reponses?.[key]?.trim()) return true;
+  return isAnswered(character.html, text);
+}
+
+/**
+ * Où va une réponse : le champ lié s'il est vide (la fiche se remplit), sinon `reponses`.
+ * Rend le changement à appliquer à la carte, ou null si la réponse est vide.
+ */
+export function placeAnswer(card: Pick<CardData, "fiche" | "reponses">, key: string, answer: string): { fiche?: Record<string, string>; reponses?: Record<string, string> } | null {
+  const text = answer.trim();
+  if (!text) return null;
+  const field = QUESTION_FIELD[key];
+  if (field && !card.fiche?.[field]?.trim()) return { fiche: { ...(card.fiche ?? {}), [field]: text } };
+  return { reponses: { ...(card.reponses ?? {}), [key]: text } };
+}
+
+/** Réponses lues sur disque : des textes non vides, sous des clés sûres. */
+export function readReponses(raw: unknown): Record<string, string> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "string" && value.trim() && key.length <= 400 && !/[\n\r]/.test(key)) out[key] = value.slice(0, 6000);
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Texte d'une question d'après sa clé (banque de la langue courante, ou question sur mesure). */
+export const questionText = (key: string, texts: Record<string, string>) => texts[key] ?? (key.startsWith("q:") ? key.slice(2) : key);
+
+/**
+ * Projets d'avant : les réponses écrites dans le texte (la question en gras, la réponse dessous) quittent
+ * le texte pour `reponses`, quand la question est connue (dans une des langues). Le texte libre reste.
+ * Rend le même HTML et `null` quand il n'y a rien à reprendre.
+ */
+export function extractAnswers(html: string, keyOf: (text: string) => string | undefined): { html: string; reponses: Record<string, string> } | null {
+  if (!/<strong>/i.test(html)) return null;
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  const nodes = Array.from(doc.body.children);
+  const reponses: Record<string, string> = {};
+  const remove: Element[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const el = nodes[i];
+    const strong = el.tagName === "P" && el.children.length === 1 && el.firstElementChild?.tagName === "STRONG" && el.textContent?.trim() === el.firstElementChild.textContent?.trim();
+    const key = strong ? keyOf((el.textContent ?? "").replace(/\s+/g, " ").trim()) : undefined;
+    if (!key) continue;
+    const parts: string[] = [];
+    let j = i + 1;
+    for (; j < nodes.length; j++) {
+      const next = nodes[j];
+      const nextStrong = next.tagName === "P" && next.children.length === 1 && next.firstElementChild?.tagName === "STRONG" && (next.textContent ?? "").trim().endsWith("?");
+      if (nextStrong || /^H[1-6]$/.test(next.tagName)) break;
+      const text = (next.textContent ?? "").trim();
+      if (text) parts.push(text);
+    }
+    if (parts.length === 0) continue;
+    reponses[key] = reponses[key] ? `${reponses[key]}\n${parts.join("\n")}` : parts.join("\n");
+    remove.push(...nodes.slice(i, j));
+    i = j - 1;
+  }
+  if (remove.length === 0) return null;
+  for (const el of remove) el.remove();
+  return { html: doc.body.innerHTML, reponses };
 }
 
 /** Prochaine question ouverte après `after` (en boucle), ou null si le niveau est fait. */

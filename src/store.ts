@@ -1,6 +1,7 @@
 // État global de Cosmos (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
@@ -14,13 +15,16 @@ import { clampCardWidth, imageExtension } from "./media";
 import { removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
-import { appendAnswer, isParked } from "./assistant";
+import { isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
-import { EMPTY_PLAN, arrange, assignChapter, chapterOf, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, type Plan, type PlanTemplate } from "./plan";
+import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, type Plan, type PlanTemplate } from "./plan";
 import { organize } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
-import { newResearchBox, researchSpot, today } from "./research";
+import { hostOf, newResearchBox, researchSpot, today } from "./research";
+import { fetchImage, readPage } from "./web";
+import { sourceUrl } from "./character";
+import type { Box } from "./placement";
 import { clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
 import { markdownToHtml } from "./storage/markdown";
@@ -59,10 +63,15 @@ interface CosmosState {
   renamePlanChapter: (id: string, title: string) => void;
   /** Supprime un chapitre ; ses scènes rejoignent le chapitre précédent. */
   deletePlanChapter: (id: string) => void;
+  /** Déplace un chapitre entier avant la scène `before` (null : à la fin du récit). */
+  movePlanChapter: (id: string, before: string | null) => void;
   /** Range toutes les cartes du canevas en cadres (type, gabarit, chapitres) et relie les scènes. */
   organizeCanvas: () => void;
   /** Assistant personnage : ajoute la question (en gras) et la réponse au texte de la fiche. */
-  answerQuestion: (id: string, question: string, answer: string) => void;
+  /** Réponse à une question de l'assistant : le champ lié de la fiche s'il est vide, sinon les réponses rangées. */
+  answerQuestion: (id: string, key: string, question: string, answer: string) => void;
+  /** Modifie (ou efface, texte vide) une réponse rangée. */
+  setReponse: (id: string, key: string, answer: string) => void;
   /** Assistant personnage, « Je ne sais pas encore » : crée une carte Question reliée au personnage. */
   parkQuestion: (id: string, question: string) => boolean;
   /** Retire une question gardée pour plus tard (répondue ailleurs, ou plus utile). */
@@ -80,14 +89,21 @@ interface CosmosState {
   addResearchImage: (file: { name: string; data: Uint8Array }) => Promise<string | null>;
   /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
   addResearchClip: (text: string) => string | null;
+  /**
+   * Complète une source depuis sa page : titre (s'il n'est que le nom du site), auteur, publication, et
+   * image du site si la carte n'en a pas. Ne remplace jamais ce que l'auteur a écrit. Hors historique.
+   */
+  completeSource: (id: string) => Promise<boolean>;
+  /** Dernière source ajoutée par collage ou dépôt : le canevas l'annonce (« Voir »). */
+  lastClip: { id: string; at: number } | null;
   /** Montre la zone Recherche (créée au besoin). */
   showResearch: () => void;
   /** Cadre à montrer sur le canevas (zone Recherche), puis remis à null. */
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | null;
-  setDialog: (dialog: "shortcuts" | "about" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | null) => void;
   /** Ouvre une scène dans le manuscrit. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
@@ -115,6 +131,17 @@ interface CosmosState {
   progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
+  /** Corbeille : cartes supprimées, restaurables (corbeille/<id>.md). */
+  trash: TrashedCard[];
+  /** Cartes qui viennent de partir à la corbeille (message « Annuler · Voir la corbeille »). */
+  trashNotice: { count: number; title: string; at: number } | null;
+  clearTrashNotice: () => void;
+  /** Remet une carte de la corbeille à sa place, avec ses fils et sa scène du scénario. */
+  restoreFromTrash: (id: string) => void;
+  /** Séquencier : met à la corbeille la scène du scénario qui commence à l'élément `start` (avec sa carte). */
+  trashScreenplayScene: (start: number) => void;
+  /** Supprime définitivement une carte de la corbeille (ou toutes, sans identifiant). */
+  purgeTrash: (id?: string) => void;
   /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
   setTitle: (title: string) => void;
   /** Format de page du scénario (estimation des pages, puis PDF). */
@@ -125,6 +152,9 @@ interface CosmosState {
   /** Scénario : numéroter les scènes dans l'éditeur et les exports. */
   sceneNumbers: boolean;
   setSceneNumbers: (on: boolean) => void;
+  /** Scénario : souligner les en-têtes de scène dans l'éditeur et les exports. */
+  underlineHeadings: boolean;
+  setUnderlineHeadings: (on: boolean) => void;
   /** Mode focus de l'éditeur de scénario : seule la feuille reste à l'écran. */
   focusMode: boolean;
   setFocusMode: (on: boolean) => void;
@@ -222,6 +252,8 @@ interface CosmosState {
   /** Une photo de la galerie devient l'image principale (le portrait) ; l'ancienne rejoint la galerie. */
   useAsMainImage: (id: string, name: string) => void;
   deleteCard: (id: string) => void;
+  /** Retire un fil (« Délier »), une étape d'historique. */
+  removeLink: (id: string) => void;
   renameLink: (id: string, label: string) => void;
 
   setView: (view: View, focusId?: string | null) => void;
@@ -238,6 +270,7 @@ export interface Snapshot {
   edges: Edge[];
   screenplay: Screenplay | null;
   plan: Plan;
+  trash: TrashedCard[];
 }
 
 /** Hauteur réservée pour l'image d'une carte créée par dépôt (voir .card-image dans styles.css). */
@@ -250,6 +283,34 @@ const HISTORY_MERGE_MS = 800;
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
 
+  /**
+   * Cartes `ids` à la corbeille, à partir de l'état donné : leurs fils et leur scène du scénario partent
+   * avec elles, leurs mentions dans les autres cartes redeviennent du texte. Pas d'étape d'historique ici.
+   */
+  const toTrash = (ids: string[], from: { nodes: CardNode[]; edges: Edge[]; screenplay: Screenplay | null }) => {
+    const gone = new Set(ids);
+    let { screenplay } = from;
+    const entries: TrashedCard[] = [];
+    const date = dayKey(new Date());
+    for (const id of ids) {
+      const node = from.nodes.find((n) => n.id === id);
+      if (!node) continue;
+      const out = trashCard(node.data, { x: node.position.x, y: node.position.y, width: typeof node.style?.width === "number" ? node.style.width : undefined }, from.edges, screenplay, date);
+      entries.push(out.entry);
+      screenplay = out.screenplay;
+    }
+    let nodes = from.nodes.filter((n) => !gone.has(n.id));
+    for (const id of ids) nodes = nodes.map((n) => withHtml(n, removeMentions(n.data.html, id)));
+    const first = entries[0];
+    return {
+      nodes,
+      edges: from.edges.filter((e) => !gone.has(e.source) && !gone.has(e.target)),
+      screenplay,
+      trash: [...entries, ...get().trash.filter((c) => !gone.has(c.id))],
+      trashNotice: first ? { count: entries.length, title: first.title.trim(), at: Date.now() } : get().trashNotice,
+    };
+  };
+
   // Historique : chaque action qui change les cartes, les fils ou leur lien avec le scénario
   // appelle record() AVANT de modifier l'état.
   let lastTag = "";
@@ -260,20 +321,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
     lastTag = tag;
     lastAt = now;
     if (merge) return;
-    const { nodes, frames, edges, screenplay, plan, past } = get();
-    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan }], future: [] });
+    const { nodes, frames, edges, screenplay, plan, trash, past } = get();
+    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan, trash }], future: [] });
   };
   const forgetHistory = () => {
     lastTag = "";
     if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
   };
   const restore = (from: "past" | "future") => {
-    const { past, future, nodes, frames, edges, screenplay, plan } = get();
+    const { past, future, nodes, frames, edges, screenplay, plan, trash } = get();
     const stack = from === "past" ? past : future;
     const target = stack[stack.length - 1];
     if (!target) return;
     lastTag = "";
-    const here: Snapshot = { nodes, frames, edges, screenplay, plan };
+    const here: Snapshot = { nodes, frames, edges, screenplay, plan, trash };
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
@@ -282,6 +343,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       edges: target.edges,
       screenplay: target.screenplay,
       plan: target.plan,
+      trash: target.trash,
+      trashNotice: null,
       pendingFocusId: null,
     });
     touch();
@@ -341,14 +404,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
     },
-    answerQuestion: (id, question, answer) => {
+    answerQuestion: (id, key, question, answer) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
       if (!card) return;
-      const html = appendAnswer(card.html, question, answer);
-      if (html === card.html) return;
+      const patch = placeAnswer(card, key, answer);
+      if (!patch) return;
       // Une question gardée pour plus tard, qui reçoit enfin sa réponse, quitte la liste.
       const questions = removeQuestion(card.questions, question);
-      get().updateCard(id, questions === card.questions ? { html } : { html, questions });
+      get().updateCard(id, questions === card.questions ? patch : { ...patch, questions });
+    },
+    setReponse: (id, key, answer) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || (card.reponses?.[key] ?? "") === answer) return;
+      record(`card:${id}:reponse:${key}`);
+      const reponses = { ...(card.reponses ?? {}) };
+      if (answer.trim()) reponses[key] = answer;
+      else delete reponses[key];
+      const next = Object.keys(reponses).length > 0 ? reponses : undefined;
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, reponses: next } } : n)) });
+      touch();
     },
     parkQuestion: (id, question) => {
       const { nodes, edges } = get();
@@ -380,7 +454,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     bibleTarget: null,
     clearBibleTarget: () => set({ bibleTarget: null }),
     dialog: null,
-    setDialog: (dialog) => set({ dialog }),
+    // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
+    setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}) }),
     addResearchCard: ({ title, html, fiche, image, type = "source" }) => {
       record();
       const { frame, frames } = ensureResearch();
@@ -410,11 +485,53 @@ export const useCosmos = create<CosmosState>((set, get) => {
     addResearchClip: (text) => {
       const clip = clipFromText(text);
       if (!clip) return null;
-      return get().addResearchCard({
+      // Le même lien collé deux fois : on montre la source existante au lieu d'en créer une autre.
+      const same = clip.url ? get().nodes.find((n) => n.data.type === "source" && n.data.fiche?.url === clip.url) : undefined;
+      if (same) {
+        set({ focusId: same.id, lastClip: { id: same.id, at: Date.now() } });
+        return same.id;
+      }
+      const id = get().addResearchCard({
         title: clip.title,
         html: clip.markdown ? markdownToHtml(markHighlights(clip.markdown)) : "",
         fiche: { ...(clip.url ? { url: clip.url } : {}), consulte: today(useSettings.getState().lang) },
       });
+      set({ lastClip: { id, at: Date.now() } });
+      // Un lien : le titre, l'auteur et l'image du site arrivent d'eux-mêmes, si la page se laisse lire.
+      if (clip.url) void get().completeSource(id);
+      return id;
+    },
+    lastClip: null,
+    completeSource: async (id) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      const url = card ? sourceUrl(card) : null;
+      if (!card || !url) return false;
+      try {
+        const info = await readPage(url);
+        let image: string | undefined;
+        if (info.image && !card.image) {
+          const file = await fetchImage(info.image).catch(() => null);
+          if (file) {
+            image = `${newId()}.${imageExtension(file.name)}`;
+            await storage.writeMedia(image, file.data);
+          }
+        }
+        const host = hostOf(url);
+        // La carte a pu changer pendant la lecture : on part de son état du moment.
+        const now = get().nodes.find((n) => n.id === id)?.data;
+        if (!now) return false;
+        const fiche = { ...(now.fiche ?? {}) };
+        if (!fiche.auteur && info.author) fiche.auteur = info.author;
+        if (!fiche.publication && (info.site || info.published)) fiche.publication = [info.site, info.published].filter(Boolean).join(", ");
+        const title = info.title && (!now.title.trim() || now.title.trim() === host) ? info.title : now.title;
+        const patch: Partial<CardData> = { title, fiche, ...(image && !now.image ? { image } : {}) };
+        set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)) });
+        touch();
+        return true;
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
     },
     showResearch: () => {
       const existing = get().frames.find((f) => f.data.kind === "research");
@@ -488,7 +605,52 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ pitch: next });
       touch();
     },
+    trash: [],
+    trashNotice: null,
+    clearTrashNotice: () => set({ trashNotice: null }),
+    restoreFromTrash: (id) => {
+      const entry = get().trash.find((c) => c.id === id);
+      if (!entry || get().nodes.some((n) => n.id === id)) return;
+      record();
+      const { nodes, edges, frames } = get();
+      const out = restoreCard(entry, new Set(nodes.map((n) => n.id)), get().screenplay);
+      // Sa place d'avant si elle est libre, sinon la première place libre à côté.
+      const width = entry.trashed.width ?? CARD_WIDTH;
+      const spot = freeSpot({ x: entry.trashed.x, y: entry.trashed.y }, [...boxes(nodes), ...frames.filter((f) => f.data.kind === "research").map(frameBox)], { width, height: CARD_SIZE.height });
+      set({
+        nodes: [...nodes, toNode(out.card, spot.x, spot.y, entry.trashed.width)],
+        edges: [...edges, ...out.links.filter((l) => !edges.some((e) => e.id === l.id)).map((l) => ({ ...l, type: "floating" }))],
+        screenplay: out.screenplay,
+        trash: get().trash.filter((c) => c.id !== id),
+        focusId: id,
+      });
+      touch();
+    },
+    trashScreenplayScene: (start) => {
+      const { screenplay, nodes } = get();
+      const heading = screenplay?.elements[start];
+      if (!screenplay || heading?.type !== "sceneHeading") return;
+      if (heading.cardId && nodes.some((n) => n.id === heading.cardId)) return get().deleteCard(heading.cardId);
+      // Scène sans carte : elle en reçoit une (comme toute scène écrite), qui part avec elle à la corbeille.
+      record();
+      const id = newId();
+      const elements = screenplay.elements.slice();
+      elements[start] = { ...heading, cardId: id };
+      const spot = firstFreeCell(boxes(nodes));
+      const card: CardData = { id, type: "scene", title: heading.text, html: "" };
+      set(toTrash([id], { nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: get().edges, screenplay: { ...screenplay, elements } }));
+      touch();
+    },
+    purgeTrash: (id) => {
+      const trash = id ? get().trash.filter((c) => c.id !== id) : [];
+      if (trash.length === get().trash.length) return;
+      record();
+      set({ trash });
+      touch();
+    },
     restoreScene: (id) => {
+      // Texte sans carte dont la carte est à la corbeille : elle revient telle qu'elle était.
+      if (get().trash.some((c) => c.id === id)) return get().restoreFromTrash(id);
       if (get().nodes.some((n) => n.id === id) || !(id in get().manuscript)) return;
       record();
       const card: CardData = { id, type: "scene", title: "", html: "" };
@@ -592,6 +754,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ plan });
       touch();
     },
+    movePlanChapter: (id, before) => {
+      const plan = moveChapter(get().plan, planScenes(get().nodes), id, before);
+      if (plan === get().plan) return;
+      record();
+      set({ plan });
+      touch();
+    },
     deletePlanChapter: (id) => {
       const plan = removeChapter(get().plan, planOrder(get().plan, planScenes(get().nodes)), id);
       if (plan === get().plan) return;
@@ -604,6 +773,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // La zone Recherche et ses sources ne bougent pas : c'est l'établi de l'auteur, pas le récit.
       const research = frames.filter((f) => f.data.kind === "research");
       const arranged = nodes.filter((n) => n.data.type !== "source");
+      const sources = nodes.filter((n) => n.data.type === "source");
       if (arranged.length === 0) return;
       const t = getT();
       const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
@@ -630,13 +800,47 @@ export const useCosmos = create<CosmosState>((set, get) => {
         if (linked(source, target)) continue;
         nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
       }
+      const positions = new Map(result.positions);
+      // Les sources se rangent dans la zone Sources : celles qui traînent ailleurs y entrent, et la zone se
+      // place à droite de tout le reste (avec ses cartes) pour ne rien chevaucher.
+      let zone = research[0] ?? null;
+      const placed = arranged.map((n, i) => ({ ...sizes[i], ...(positions.get(n.id) ?? n.position) }));
+      const framed = [...placed, ...result.frames.map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height }))];
+      const strays = sources.filter((n) => {
+        if (!zone) return true;
+        const z = frameBox(zone);
+        const [b] = boxes([n]);
+        const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+        return cx < z.x || cx > z.x + z.width || cy < z.y || cy > z.y + z.height;
+      });
+      if (!zone && strays.length > 0) zone = toFrameNode({ id: newId(), title: t.research.frameTitle, kind: "research", ...newResearchBox(framed) });
+      if (zone) {
+        const right = Math.max(...framed.map((b) => b.x + b.width));
+        const z = frameBox(zone);
+        const dx = z.x < right + 160 ? right + 160 - z.x : 0;
+        const dy = framed.length > 0 ? Math.min(...framed.map((b) => b.y)) - z.y : 0;
+        let box: Box = { ...z, x: z.x + dx, y: z.y + dy };
+        for (const n of sources) {
+          if (strays.includes(n)) continue;
+          positions.set(n.id, { x: n.position.x + dx, y: n.position.y + dy });
+        }
+        const inZone = sources.filter((n) => !strays.includes(n)).map((n) => ({ ...boxes([n])[0], ...positions.get(n.id)! }));
+        for (const n of strays) {
+          const [b] = boxes([n]);
+          const { spot, frame } = researchSpot(box, inZone, { width: b.width, height: b.height });
+          box = frame;
+          positions.set(n.id, spot);
+          inZone.push({ ...b, ...spot });
+        }
+        zone = { ...zone, position: { x: box.x, y: box.y }, width: box.width, height: box.height };
+      }
       set({
         nodes: nodes.map((n) => {
-          const at = result.positions.get(n.id);
+          const at = positions.get(n.id);
           return at ? { ...n, position: at, selected: false } : n;
         }),
-        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, sauf la zone Recherche.
-        frames: [...result.frames.map(toFrameNode), ...research],
+        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, plus la zone Sources.
+        frames: [...result.frames.map(toFrameNode), ...(zone ? [zone] : [])],
         edges: nextEdges,
         view: "toile",
         fitRequest: Date.now(),
@@ -652,6 +856,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     sceneNumbers: false,
     setSceneNumbers: (sceneNumbers) => {
       set({ sceneNumbers });
+      touch();
+    },
+    underlineHeadings: false,
+    setUnderlineHeadings: (underlineHeadings) => {
+      set({ underlineHeadings });
       touch();
     },
     focusMode: false,
@@ -898,10 +1107,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
         }
       }
 
-      let { screenplay } = get();
-      // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, son lien avec le scénario est défait.
-      if (screenplay) for (const id of removed) screenplay = releaseCard(screenplay, id);
-      let nextNodes = applyNodeChanges(cardChanges, nodes);
+      // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, elle part à la corbeille.
+      const trashed = removed.length > 0 ? toTrash(removed, { nodes, edges: get().edges, screenplay: get().screenplay }) : null;
+      const { screenplay } = trashed ?? get();
+      let nextNodes = applyNodeChanges(
+        cardChanges.filter((c) => c.type !== "remove"),
+        trashed ? trashed.nodes : nodes,
+      );
       // Carte élargie par son bord : seule la largeur est retenue, la hauteur suit toujours le contenu.
       if (widened.size > 0) {
         nextNodes = nextNodes.map((n) => {
@@ -913,7 +1125,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       let nextFrames = frameChanges.length > 0 ? applyNodeChanges(frameChanges, frames) : frames;
       if (carried.size > 0) nextFrames = nextFrames.map((f) => (carried.has(f.id) ? { ...f, position: carried.get(f.id)! } : f));
-      set({ nodes: nextNodes, frames: nextFrames, screenplay });
+      set({ nodes: nextNodes, frames: nextFrames, screenplay, ...(trashed ? { edges: trashed.edges, trash: trashed.trash, trashNotice: trashed.trashNotice } : {}) });
       if (changed) touch();
     },
     onEdgesChange: (changes) => {
@@ -1071,15 +1283,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().updateCard(id, { image: name, images: images.length > 0 ? images : undefined });
     },
     deleteCard: (id) => {
+      if (!get().nodes.some((n) => n.id === id)) return;
       record();
-      const { screenplay } = get();
-      set({
-        // Ses mentions dans les autres cartes redeviennent du texte : le nom reste écrit.
-        nodes: get().nodes.filter((n) => n.id !== id).map((n) => withHtml(n, removeMentions(n.data.html, id))),
-        edges: get().edges.filter((e) => e.source !== id && e.target !== id),
-        // Le texte de la scène reste dans le scénario ; un en-tête encore sans texte part avec sa carte.
-        screenplay: screenplay && releaseCard(screenplay, id),
-      });
+      // À la corbeille, pas effacée : la carte, ses fils et sa scène du scénario peuvent revenir.
+      set(toTrash([id], get()));
+      touch();
+    },
+    removeLink: (id) => {
+      if (!get().edges.some((e) => e.id === id)) return;
+      record();
+      set({ edges: get().edges.filter((e) => e.id !== id) });
       touch();
     },
     renameLink: (id, label) => {

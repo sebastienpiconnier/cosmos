@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
 // Cartes Source et zone Recherche du canevas.
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Pas de réseau dans les tests : la page d'une source ne se lit pas.
+vi.mock("../web", () => ({ readPage: async () => { throw new Error("hors ligne"); }, fetchImage: async () => null }));
 import { newResearchBox, pageInfo, researchSpot, today } from "../research";
 import { clipFromText } from "../clip";
 import { sourceUrl } from "../character";
@@ -27,7 +30,9 @@ describe("zone Recherche, fonctions pures", () => {
 
   it("ce que dit une page d'elle-même", () => {
     const html = '<html><head><title>Phare — Wikipédia</title><meta property="og:title" content="Phare"><meta property="og:site_name" content="Wikipédia"><meta name="author" content="Collectif"><meta property="article:published_time" content="2024-03-02T10:00:00Z"></head></html>';
-    expect(pageInfo(html)).toEqual({ title: "Phare", site: "Wikipédia", author: "Collectif", published: "2024-03-02" });
+    expect(pageInfo(html)).toEqual({ title: "Phare", site: "Wikipédia", author: "Collectif", published: "2024-03-02", image: "" });
+    expect(pageInfo('<meta property="og:image" content="/img/phare.jpg">', "https://x.fr/a/b").image).toBe("https://x.fr/img/phare.jpg");
+    expect(pageInfo('<meta property="og:image" content="javascript:alert(1)">', "https://x.fr/").image).toBe("");
     expect(pageInfo("<title> Un   titre </title>").title).toBe("Un titre");
   });
 
@@ -76,12 +81,28 @@ describe("zone Recherche dans le projet", () => {
     expect(state().nodes.some((n) => n.id === b)).toBe(false);
   });
 
-  it("« Organiser le canevas » laisse la zone Recherche et ses sources en place", () => {
+  it("« Organiser le canevas » range les sources dans la zone Sources, à droite du reste", () => {
     state().addTitledCard("personnage", "Inès");
     const a = state().addResearchClip("https://x.fr/a")!;
-    const before = state().nodes.find((n) => n.id === a)!.position;
+    // Une source posée ailleurs (créée à la main) rejoint la zone.
+    const b = state().addTitledCard("source", "Archives");
     state().organizeCanvas();
-    expect(state().frames.some((f) => f.data.kind === "research")).toBe(true);
-    expect(state().nodes.find((n) => n.id === a)!.position).toEqual(before);
+    const zone = state().frames.find((f) => f.data.kind === "research")!;
+    for (const id of [a, b]) {
+      const p = state().nodes.find((n) => n.id === id)!.position;
+      expect(p.x).toBeGreaterThanOrEqual(zone.position.x);
+      expect(p.y).toBeGreaterThanOrEqual(zone.position.y);
+      expect(p.x).toBeLessThan(zone.position.x + (zone.width ?? 0));
+    }
+    const ines = state().nodes.find((n) => n.data.type === "personnage")!.position;
+    expect(ines.x).toBeLessThan(zone.position.x);
+  });
+
+  it("un lien collé deux fois ne fait qu'une source ; la ponctuation qui le suit est ignorée", () => {
+    const a = state().addResearchClip("https://x.fr/page'")!;
+    const b = state().addResearchClip("https://x.fr/page")!;
+    expect(a).toBe(b);
+    expect(state().nodes.filter((n) => n.data.type === "source")).toHaveLength(1);
+    expect(state().nodes.find((n) => n.id === a)!.data.fiche?.url).toBe("https://x.fr/page");
   });
 });

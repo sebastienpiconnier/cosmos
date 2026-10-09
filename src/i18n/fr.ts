@@ -143,6 +143,8 @@ export const fr = {
     hintLink: "Tire un fil depuis un bord",
     hintTransform: "ou l’étiquette pour transformer",
     labelPlaceholder: "Nature du lien (ex. soupçonne)",
+    unlink: "Délier ces deux cartes (retirer le fil)",
+    unlinkShort: "Délier",
     labelAria: "Étiquette du fil",
   },
 
@@ -156,6 +158,7 @@ export const fr = {
     toDig: "À creuser… écris ici",
     bodyAria: "Texte de la fiche « {title} »",
     bodyAriaUntitled: "Texte de la fiche",
+    unlink: "Délier de « {title} »",
     linkedTo: "Relié à",
     arrange: "Choisir et ranger les rubriques",
     arrangeDone: "Terminé",
@@ -252,10 +255,13 @@ export const fr = {
     custom: "Sur mesure",
     customHint: "Une question posée par l’IA d’après la fiche. Elle questionne, c’est toi qui réponds.",
     ask: "Demander une question",
-    themesTab: "Par thème",
+    themesTab: "Questions",
+    addedToField: "Réponse ajoutée à la fiche : {field}.",
+    fillsField: "Ta réponse remplira « {field} » dans la fiche.",
     themeDone: "Tu as fait le tour de ce thème. Choisis-en un autre ci-dessus.",
     themesAria: "Thèmes des questions",
     themes: {
+      essentiel: "L’essentiel",
       passe: "Passé",
       corps: "Corps",
       voix: "Voix",
@@ -268,6 +274,7 @@ export const fr = {
       ombres: "Zones sombres",
     },
     themeHints: {
+      essentiel: "Ce qu’il faut savoir pour écrire la première scène.",
       passe: "D’où il ou elle vient, et ce qui en reste.",
       corps: "Ce que son corps dit avant qu’il ou elle parle.",
       voix: "Comment il ou elle parle : utile pour les dialogues.",
@@ -426,6 +433,15 @@ export const fr = {
     title: "Plan",
     template: "Gabarit",
     templates: { libre: "Libre", troisActes: "Trois actes", saveTheCat: "Save the Cat", voyageHeros: "Voyage du héros", huitSequences: "Huit séquences", episode: "Épisode de série" },
+    // Ce qu'est chaque gabarit, affiché sous le choix.
+    templateAbout: {
+      libre: "Aucune case : les scènes dans l’ordre où tu les ranges.",
+      troisActes: "La structure classique : exposition, confrontation, résolution, avec leurs tournants.",
+      saveTheCat: "Les quinze étapes de Blake Snyder, de l’image d’ouverture à l’image finale.",
+      voyageHeros: "Les douze étapes du voyage du héros (Christopher Vogler, d’après Joseph Campbell).",
+      huitSequences: "Le film en huit séquences d’environ un quart d’heure chacune, chacune avec sa petite question.",
+      episode: "Un épisode de série en actes : un pré-générique, quatre actes (à la télévision, séparés par les coupures publicitaires), un épilogue. Sans coupures (plateformes), les actes restent des repères de rythme.",
+    },
     noTemplate: "Aucun",
     modeAria: "Présentation du plan",
     timeline: "Chronologie",
@@ -502,12 +518,12 @@ export const fr = {
       q_6: { label: "Séquence 6 · Tout se referme", hint: "Le point le plus bas de l’acte II." },
       q_7: { label: "Séquence 7 · Nouvelle tension", hint: "Un dernier plan, une fausse résolution." },
       q_8: { label: "Séquence 8 · Résolution", hint: "L’affrontement final et ce qu’il laisse." },
-      e_teaser: { label: "Pré-générique", hint: "L’accroche, avant le titre." },
-      e_act1: { label: "Acte 1", hint: "Le problème de l’épisode se pose." },
-      e_act2: { label: "Acte 2", hint: "Les complications." },
-      e_act3: { label: "Acte 3", hint: "Le pire moment." },
-      e_act4: { label: "Acte 4", hint: "La résolution." },
-      e_tag: { label: "Épilogue", hint: "Une dernière note, ou l’amorce de la suite." },
+      e_teaser: { label: "Pré-générique", hint: "Pré-générique (cold open) : une scène courte qui accroche avant le générique, souvent l’énigme ou l’incident de l’épisode." },
+      e_act1: { label: "Acte 1", hint: "Le problème de l’épisode se pose. L’acte finit sur un moment fort qui donne envie de rester (à la télévision, avant la pub)." },
+      e_act2: { label: "Acte 2", hint: "Les personnages s’attaquent au problème et ça se complique. Fin d’acte : un rebondissement." },
+      e_act3: { label: "Acte 3", hint: "Tout va de mal en pis : le pire moment de l’épisode." },
+      e_act4: { label: "Acte 4", hint: "Le problème se résout (ou pas), et l’arc de la saison avance d’un pas." },
+      e_tag: { label: "Épilogue", hint: "Épilogue (tag) : une dernière scène courte, une chute ou l’amorce de l’épisode suivant." },
     },
   },
 
@@ -523,6 +539,7 @@ export const fr = {
     paperHint: "Sert à estimer les pages et la durée du scénario.",
     sceneNumbers: "Numéroter les scènes",
     sceneNumbersHint: "Dans l’éditeur, le PDF et l’export Final Draft. Un numéro écrit dans le fichier (#12A#) est gardé.",
+    underlineHeadings: "Souligner les en-têtes de scène",
   },
 
   // Vocabulaire propre aux scénarios : remplace celui du roman quand le projet est un scénario.
@@ -566,6 +583,10 @@ export const fr = {
     focus: "Mode focus",
     focusExit: "Quitter le focus",
     focusHint: "Ne garder que la feuille à l’écran (Ctrl ou Cmd + Maj + F)",
+    numbersToggle: "Numéros",
+    numbersToggleHint: "Numéroter les scènes (éditeur, PDF et Final Draft)",
+    underlineToggle: "Souligner",
+    underlineToggleHint: "Souligner les en-têtes de scène (éditeur, PDF et Final Draft)",
     keyTab: "Tab",
     keyEnter: "Entrée",
     keyEscape: "Échap",
@@ -735,6 +756,8 @@ export const fr = {
     offerField: "Reporter aussi dans « {field} »",
     offered: "Reporté dans la fiche.",
     addPortrait: "Ajouter un portrait",
+    answers: "Réponses aux questions",
+    answersCount: "{n}",
     moreDetails: "Afficher les champs vides ({n})",
     fewerDetails: "Masquer les champs vides",
     notInText: "Pas encore dans le texte",
@@ -850,8 +873,24 @@ export const fr = {
       remerciements: "Remerciements",
       auteur: "À propos de l’auteur",
     },
+    // Texte indicatif de chaque page : ce qu'on y écrit d'habitude.
+    placeholders: {
+      titre: "Le titre du livre, puis ton nom…",
+      copyright: "© 2026 Ton nom. Tous droits réservés…",
+      dedicace: "À qui dédies-tu ce livre ?",
+      epigraphe: "Une citation qui ouvre le livre, et son auteur…",
+      prologue: "Ce qui se passe avant le début de l’histoire…",
+      epilogue: "Ce qui se passe après la fin de l’histoire…",
+      remerciements: "Ceux que tu veux remercier…",
+      auteur: "Quelques lignes sur toi, pour la fin du livre…",
+    },
+    chapterOpening: "Le chapitre commence ici…",
+    toolbar: "Scène",
     addPage: "Ajouter une page…",
     startChapter: "Commencer un chapitre ici",
+    chapterUp: "Monter le chapitre {title}",
+    chapterDown: "Descendre le chapitre {title}",
+    chapterDrag: "Glisse le chapitre pour le déplacer, ou utilise les flèches",
     chapterTitle: "Titre du chapitre",
     removeChapter: "Retirer ce chapitre (les scènes restent)",
     enterHint: "Entrée deux fois : nouvelle scène · trois fois : nouveau chapitre · Retour arrière dans la scène vide : annuler la coupure",
@@ -859,6 +898,28 @@ export const fr = {
     newChapter: "Nouveau chapitre.",
     undoBreak: "Annuler",
     breakUndone: "Coupure annulée.",
+  },
+
+  // Corbeille : les cartes supprimées attendent ici, restaurables.
+  trash: {
+    title: "Corbeille",
+    open: "Corbeille ({n})",
+    empty: "La corbeille est vide. Ce que tu supprimes y attend, et peut revenir à sa place.",
+    intro: "Les cartes supprimées attendent ici avec leurs fils, et dans un scénario avec le texte de leur scène. Remets-les à leur place, ou supprime-les pour de bon.",
+    deletedOn: "supprimée le {date}",
+    withScene: "avec le texte de sa scène",
+    restore: "Remettre",
+    restoreAria: "Remettre « {title} » à sa place",
+    purge: "Supprimer",
+    purgeAria: "Supprimer définitivement « {title} »",
+    purgeAll: "Vider la corbeille",
+    moved: "« {title} » est dans la corbeille.",
+    movedMany: "{n} cartes sont dans la corbeille.",
+    movedUntitled: "La carte est dans la corbeille.",
+    undo: "Annuler",
+    see: "Voir la corbeille",
+    remove: "Mettre à la corbeille",
+    removeAria: "Mettre « {title} » à la corbeille",
   },
 
   // Raccourcis clavier (fenêtre d'aide, Ctrl ou Cmd + /) et « À propos ».
@@ -980,6 +1041,8 @@ export const fr = {
 
   // Zone « Recherche » du canevas et cartes Source.
   research: {
+    added: "Rangée dans la zone Sources.",
+    see: "Voir",
     frameTitle: "Sources",
     button: "Sources",
     hint: "Aller à la zone Sources (les liens, extraits et images collés ou déposés sur le canevas y arrivent)",
@@ -992,7 +1055,7 @@ export const fr = {
 
   // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
   fiche: {
-    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", source: "Référence" },
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", source: "Référence", scene: "Fiche de la scène" },
     fields: {
       epoque: "Époque",
       ambiance: "Ambiance",
@@ -1009,6 +1072,7 @@ export const fr = {
       auteur: "Auteur",
       publication: "Publication",
       consulte: "Consultée le",
+      synopsis: "Synopsis",
     },
     placeholders: {
       epoque: "Aujourd’hui, 1912, l’an 3000…",
@@ -1026,6 +1090,7 @@ export const fr = {
       auteur: "Qui l’a écrit",
       publication: "Site, livre, revue, date",
       consulte: "8 octobre 2026",
+      synopsis: "Ce qui se passe dans la scène, en une phrase",
     },
   },
 
@@ -1064,6 +1129,8 @@ export const fr = {
     average: "Mots par scène",
     thisScene: "Cette scène",
     sceneValue: "{n} mots · ≈ {pages} p.",
+    scenePlace: "Dans le livre",
+    onePage: "Page {n}",
     pagesFrom: "Pages {first} à {last}",
     today: "Aujourd’hui : {n} mots",
     dailyProgress: "{pct} % de l’objectif ({goal})",
@@ -1085,7 +1152,7 @@ export const fr = {
     done: "À toi d’écrire",
     steps: {
       cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou appui long sur le canevas : une carte naît. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
-      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : ils arrivent dans la zone Sources. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre." },
+      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : ils se rangent dans la zone Sources, avec le titre et l’image du site. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre." },
       bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
       plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
       write: { title: "Écris, scène par scène", body: "Le manuscrit suit l’ordre du plan, mis en pages comme un livre. Entrée deux fois coupe la scène, trois fois ouvre un chapitre : un bouton « Annuler » apparaît à chaque coupure." },

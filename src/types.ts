@@ -44,11 +44,15 @@ export interface CardData {
   page?: string;
   /** Questions gardées pour plus tard (« Je ne sais pas encore »). Elles vivent dans la carte, pas sur le canevas. */
   questions?: string[];
+  /** Personnage : réponses aux questions de l'assistant qui ne remplissent pas un champ de la fiche, par clé de question. */
+  reponses?: Record<string, string>;
   /**
    * Ce qu'une version plus récente de Cosmos a écrit et que celle-ci ne connaît pas : lignes du
    * frontmatter, champs de la fiche, type de carte. Gardé tel quel et réécrit, jamais affiché.
    */
   keep?: { front?: Record<string, string>; fiche?: Record<string, string>; type?: string };
+  /** Carte dans la corbeille (fichier de corbeille/) : jour, place sur le canevas, fils, scène du scénario. */
+  trashed?: import("./trash").TrashInfo;
   [key: string]: unknown; // requis par React Flow pour data
 }
 
@@ -90,6 +94,8 @@ export interface ProjectMeta {
   paper?: Paper;
   /** Scénario : numéroter les scènes (éditeur, PDF, FDX). Absent : non. */
   sceneNumbers?: boolean;
+  /** Scénario : en-têtes de scène soulignés (éditeur, PDF, FDX). Absent : non. */
+  underlineHeadings?: boolean;
   layout: CardLayout[];
   links: Link[];
   /** Cadres de regroupement. Absent : aucun. Les cartes n'y sont pas rattachées : c'est leur position qui compte. */
@@ -113,4 +119,6 @@ export interface Project {
   screenplay: Screenplay | null;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte. Absent : rien d'écrit. */
   manuscript?: Record<string, string>;
+  /** Cartes de la corbeille (corbeille/<id>.md). Absent : corbeille vide. */
+  trash?: CardData[];
 }

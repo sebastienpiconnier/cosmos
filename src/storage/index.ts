@@ -2,6 +2,7 @@
 //   cosmos.json        positions, fils, titre du projet
 //   cartes/<id>.md     une carte par fichier, Markdown + frontmatter
 //   scenario.fountain  texte du scénario (projets scénario uniquement)
+//   corbeille/<id>.md  cartes supprimées, restaurables
 //
 // - Tauri sur ordinateur (macOS, Windows, Linux) : un dossier par projet, choisi par l'auteur.
 // - Tauri sur mobile (iOS, Android) : un dossier par projet dans l'espace privé de l'app.
@@ -13,7 +14,7 @@ import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdo
 import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, cardPath, manuscriptPath, type FileMap } from "./paths";
+import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, manuscriptPath, trashPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
@@ -84,6 +85,8 @@ export const storage: Storage = isTauri() ? tauriStorage : browserStorage;
 export function serialize(project: Project): FileMap {
   const files: FileMap = { [META_FILE]: JSON.stringify(project.meta, null, 2) };
   for (const card of project.cards) files[cardPath(card.id)] = cardToFile(card);
+  // Corbeille : une carte n'y est écrite qu'avec sa ligne `corbeille:` (sinon elle reviendrait comme carte).
+  for (const card of project.trash ?? []) if (card.trashed) files[trashPath(card.id)] = cardToFile(card);
   // Un projet roman n'a pas de scénario : le fichier n'est jamais créé pour lui.
   if (project.screenplay) files[SCREENPLAY_FILE] = serializeScreenplay(project.screenplay);
   // Manuscrit : un fichier par scène écrite. Une scène sans texte n'a pas de fichier.
@@ -102,6 +105,11 @@ export function deserialize(files: FileMap): Project | null {
     .filter(([path]) => path.startsWith(`${CARDS_DIR}/`) && path.endsWith(".md"))
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null);
+  const live = new Set(cards.map((c) => c.id));
+  const trash = Object.entries(files)
+    .filter(([path]) => path.startsWith(`${TRASH_DIR}/`) && path.endsWith(".md"))
+    .map(([, text]) => fileToCard(text))
+    .filter((c): c is NonNullable<typeof c> => c !== null && !!c.trashed && !live.has(c.id));
   const screenplay = SCREENPLAY_FILE in files ? parseScreenplay(files[SCREENPLAY_FILE]) : null;
   const manuscript: Record<string, string> = {};
   for (const [path, text] of Object.entries(files)) {
@@ -110,5 +118,5 @@ export function deserialize(files: FileMap): Project | null {
     const html = isCardId(id) ? markdownToHtml(text.replace(/\r\n/g, "\n")).trim() : "";
     if (html) manuscript[id] = html;
   }
-  return { meta, cards, screenplay, manuscript };
+  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}) };
 }

@@ -68,13 +68,17 @@ export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte"] as con
 export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
+/** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
+export const SCENE_FIELDS = ["synopsis"] as const;
+
 export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
+  scene: SCENE_FIELDS,
   personnage: CHARACTER_FIELDS,
   lieu: PLACE_FIELDS,
   intrigue: PLOT_FIELDS,
   source: SOURCE_FIELDS,
 };
-export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number];
+export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof SCENE_FIELDS)[number];
 export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */

@@ -7,6 +7,7 @@ import { useT } from "../i18n";
 import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
 import { isAppleKeyboard, openExternal } from "../platform";
 import { version } from "../../package.json";
+import { TrashList } from "./TrashList";
 
 const REPO = "https://github.com/sebastienpiconnier/cosmos";
 
@@ -53,6 +54,7 @@ export function Dialogs() {
           </div>
         </>
       )}
+      {dialog === "trash" && <TrashList />}
       {dialog === "about" && (
         <div className="about">
           <h2 id="app-dialog-title">

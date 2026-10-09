@@ -14,6 +14,7 @@ import { bookOrder, isPageKind } from "../book";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
 import { bibleDoc, manuscriptDoc } from "../export/doc";
+import { visibleSections } from "../bibleSections";
 
 export function ExportMenu() {
   const { t: all, types, kind } = useVocab();
@@ -74,7 +75,7 @@ export function ExportMenu() {
   };
 
   const screenplayFile = (format: ExportFormat) => async () => {
-    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers } = useCosmos.getState();
+    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = useCosmos.getState();
     if (!screenplay) return null;
     return exportScreenplay(screenplay, format, {
       title,
@@ -82,6 +83,7 @@ export function ExportMenu() {
       locale: useSettings.getState().lang,
       strings: { more: all.screenplay.more, contd: all.screenplay.contd },
       numberScenes: sceneNumbers,
+      underlineHeadings,
       // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
       source: screenplay === savedScreenplay ? lastFiles[SCREENPLAY_FILE] : undefined,
     });
@@ -122,8 +124,12 @@ export function ExportMenu() {
         cover: { title: all.pitch.toc, fields: all.pitch.fields },
       },
       pitch,
+      // Les rubriques de la Bible, dans son ordre : ce qu'on masque dans la Bible ne s'exporte pas.
+      visibleSections(useSettings.getState().bibleSections),
     );
-    return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
+    // Le Markdown cite les images de medias/ ; le PDF et le Word les intègrent.
+    const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (name) => storage.mediaUrl(name));
+    return exportDocument(full, format, { name: doc.title, paper, contents: x.contents });
   };
 
   const groups = [

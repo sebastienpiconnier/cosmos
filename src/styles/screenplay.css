@@ -30,7 +30,11 @@
 .sp-bar button:hover { background: var(--hover); }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
-.sp-focus { margin-left: auto; border: 1px solid var(--line) !important; }
+.sp-focus { border: 1px solid var(--line) !important; }
+/* Options du scénario (numéros, soulignement) : à droite de la barre, avant le mode focus. */
+.sp-option { border: 1px solid var(--line) !important; }
+.sp-bar-hint + .sp-option { margin-left: auto; }
+.sp-option.is-underline { text-decoration: underline; text-underline-offset: 0.2em; }
 /* Mode focus : seule la feuille reste, avec la barre d'éléments. */
 .screenplay.is-focus { grid-template-columns: minmax(0, 1fr); }
 .screenplay.is-focus .sp-scenes, .screenplay.is-focus .sp-side, .screenplay.is-focus .sp-scene-select, .screenplay.is-focus .sp-bar-hint { display: none; }
@@ -75,6 +79,7 @@
 .sp-transition { text-align: right; text-transform: uppercase; }
 /* Numéros de scène (option du projet) : dans la marge gauche, comme sur le PDF. Un numéro écrit
    dans le fichier (#12A#) passe devant le compteur. */
+.sp-page[data-underline] .sp-sceneHeading { text-decoration: underline; text-underline-offset: 0.15em; }
 .sp-page[data-numbers] .sp-editor { counter-reset: scene; }
 .sp-page[data-numbers] .sp-sceneHeading { counter-increment: scene; position: relative; }
 .sp-page[data-numbers] .sp-sceneHeading::after { content: counter(scene); position: absolute; top: 0; right: 100%; margin-right: 2ch; white-space: nowrap; }

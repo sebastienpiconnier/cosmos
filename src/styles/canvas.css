@@ -32,11 +32,13 @@
 .toile-hint strong { color: var(--ink); }
 
 .label-editor {
-  position: absolute; transform: translate(-50%, -50%); z-index: 10;
-  min-width: 220px; height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 2px solid var(--accent); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
-  box-shadow: var(--shadow-pop); outline: none;
+  position: absolute; transform: translate(-50%, -50%); z-index: 10; display: flex; align-items: center; gap: 4px;
+  padding: 4px; border-radius: 999px; border: 2px solid var(--accent); background: var(--surface); box-shadow: var(--shadow-pop);
 }
+.label-editor input { min-width: 200px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; outline: none; }
+.label-unlink { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13px; cursor: pointer; }
+.label-unlink:hover { color: var(--danger); border-color: var(--danger); }
+@media (pointer: coarse) { .label-editor input, .label-unlink { min-height: 44px; } }
 
 /* ---------- Cadre de regroupement ---------- */
 /* Le cadre est derrière les cartes et son intérieur laisse passer les clics (créer une carte dedans,
@@ -235,3 +237,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   .history-buttons .icon-button.has-label { width: 44px; padding: 0; }
   .history-buttons .tool-label { display: none; }
 }
+
+/* Source collée ou déposée : annoncée quelques secondes, avec « Voir » (elle arrive souvent hors de la vue). */
+.toile-notice { position: absolute; z-index: 6; left: 50%; bottom: 140px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
+.toile-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
+.toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }

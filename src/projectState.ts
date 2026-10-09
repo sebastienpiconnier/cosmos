@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import type { TrashedCard } from "./trash";
 import { type Edge, type Node } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { isProjectKind, type CardData, type Frame, type Project, type ProjectKind } from "./types";
@@ -17,6 +18,7 @@ import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
 import { writeTitleField } from "./screenplay/titlePage";
 import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
 import { DICTIONARIES, getT } from "./i18n";
+import { allQuestionTexts, extractAnswers } from "./assistant";
 
 export type CardNode = Node<CardData, "card">;
 /** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
@@ -77,11 +79,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -163,9 +165,29 @@ export function adoptParkedCards(nodes: CardNode[], edges: Edge[]): { nodes: Car
 }
 
 /** État à adopter quand on ouvre un projet. `dirty` : l'ouverture a produit des changements à enregistrer. */
+/**
+ * Projets d'avant : les réponses de l'assistant écrites dans le texte d'un personnage (question en gras,
+ * réponse dessous) rejoignent ses réponses rangées. Seulement pour les questions connues, dans une des langues.
+ */
+export function adoptTextAnswers(nodes: CardNode[]): CardNode[] {
+  const byText = new Map<string, string>();
+  for (const d of Object.values(DICTIONARIES)) for (const [key, text] of Object.entries(allQuestionTexts(d.assistant))) byText.set(text, key);
+  let changed = false;
+  const next = nodes.map((n) => {
+    if (n.data.type !== "personnage") return n;
+    const found = extractAnswers(n.data.html, (text) => byText.get(text));
+    if (!found) return n;
+    changed = true;
+    const reponses = { ...found.reponses, ...(n.data.reponses ?? {}) };
+    return { ...n, data: { ...n.data, html: found.html, reponses } };
+  });
+  return changed ? next : nodes;
+}
+
 export function openProject(p: Project) {
   const read = fromProject(p);
-  const adopted = adoptParkedCards(read.nodes, read.edges);
+  const parked = adoptParkedCards(read.nodes, read.edges);
+  const adopted = { ...parked, nodes: adoptTextAnswers(parked.nodes) };
   const base = { ...read, ...adopted };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplay =
@@ -195,6 +217,7 @@ export function toProject(
       kind: s.kind,
       ...(s.paperChosen ? { paper: s.paper } : {}),
       ...(s.sceneNumbers ? { sceneNumbers: true } : {}),
+      ...(s.underlineHeadings ? { underlineHeadings: true } : {}),
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -226,6 +249,7 @@ export function toProject(
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
     manuscript: s.manuscript,
+    ...(s.trash.length > 0 ? { trash: s.trash } : {}),
   };
 }
 
@@ -269,6 +293,7 @@ export interface ProjectSlice {
   paper: Paper;
   paperChosen: boolean;
   sceneNumbers: boolean;
+  underlineHeadings: boolean;
   nodes: CardNode[];
   frames: FrameNode[];
   edges: Edge[];
@@ -279,4 +304,5 @@ export interface ProjectSlice {
   progress: Progress;
   pitch: Pitch;
   metaKeep: Record<string, unknown>;
+  trash: TrashedCard[];
 }

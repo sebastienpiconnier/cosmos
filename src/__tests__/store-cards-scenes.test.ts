@@ -47,7 +47,7 @@ describe("carte Scène créée sur le canevas (scénario)", () => {
     expect(order()).toEqual(["Inès trouve le journal"]);
   });
 
-  it("supprimer la carte d'une scène encore vide retire son en-tête ; une scène écrite garde son texte", () => {
+  it("supprimer la carte d'une scène l'envoie à la corbeille avec son texte ; elle en revient", () => {
     const empty = state().addCard({ x: 0, y: 0 }, "scene");
     state().updateCard(empty, { title: "INT. PHARE - NUIT" });
     const written = state().addCard({ x: 0, y: 200 }, "scene");
@@ -58,7 +58,12 @@ describe("carte Scène créée sur le canevas (scénario)", () => {
     state().deleteCard(empty);
     expect(order()).toEqual(["EXT. PORT - JOUR"]);
     state().deleteCard(written);
-    expect(fountain()).toBe("Title: Kerlaouen\n\nEXT. PORT - JOUR\n\nHugo attend.\n");
+    expect(fountain()).toBe("Title: Kerlaouen\n");
+    expect(state().trash.map((c) => c.id)).toEqual([written, empty]);
+    state().restoreFromTrash(written);
+    expect(fountain()).toBe(`Title: Kerlaouen\n\nEXT. PORT - JOUR [[cosmos:${written}]]\n\nHugo attend.\n`);
+    state().undo();
+    expect(fountain()).toBe("Title: Kerlaouen\n");
   });
 
   it("le corps de la carte ne change rien au scénario", () => {

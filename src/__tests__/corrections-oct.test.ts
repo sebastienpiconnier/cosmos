@@ -181,7 +181,7 @@ describe("exports", () => {
     const of = (id: string) => (id === "s3" ? null : { id: "c1", title: "Chapitre 1 · Le phare" });
     const doc = manuscriptDoc({ title: "K", author: "", lang: "fr" }, ["s1", "s2", "s3"], cards, { s1: "<p>Un.</p>", s2: "<p>Deux.</p>", s3: "<p>Trois.</p>" }, "Sans titre", of);
     expect(doc.chapters.map((c) => c.title)).toEqual(["Chapitre 1 · Le phare", "Seule"]);
-    expect(doc.chapters[0].blocks.map((b) => b.runs.map((r) => r.text).join(""))).toEqual(["Un.", SCENE_BREAK, "Deux."]);
+    expect(doc.chapters[0].blocks.map((b) => ("runs" in b ? b.runs : []).map((r) => r.text).join(""))).toEqual(["Un.", SCENE_BREAK, "Deux."]);
     const bible = bibleDoc({ title: "K", author: "", lang: "fr" }, [{ ...card("p1", "personnage", "Inès"), fiche: { age: "34" } }], [], {
       sections: { personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", source: "Sources", idee: "Idées" },
       untitled: "Sans titre",

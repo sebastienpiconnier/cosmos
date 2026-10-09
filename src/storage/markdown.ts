@@ -8,12 +8,15 @@
 // image: k3x9a7bq2m.jpg     (facultatif : un fichier du dossier medias/)
 // fiche: {"age":"34"}       (facultatif, personnage : caractéristiques standard, voir character.ts)
 // questions: ["…"]          (facultatif : questions gardées pour plus tard)
+// corbeille: {…}             (seulement dans corbeille/ : jour, place, fils et scène du scénario)
 // images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 // Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
 
+import { readReponses } from "../assistant";
+import { readTrashInfo } from "../trash";
 import { marked } from "marked";
 import TurndownService from "turndown";
 import { CARD_TYPES, type CardData, type CardType } from "../types";
@@ -126,6 +129,8 @@ export function cardToFile(card: CardData): string {
     ...(fiche && Object.keys(fiche).length > 0 ? [`fiche: ${JSON.stringify(fiche)}`] : []),
     ...(card.images && card.images.length > 0 ? [`images: ${JSON.stringify(card.images)}`] : []),
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
+    ...(card.reponses && Object.keys(card.reponses).length > 0 ? [`reponses: ${JSON.stringify(card.reponses)}`] : []),
+    ...(card.trashed ? [`corbeille: ${JSON.stringify(card.trashed)}`] : []),
     // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
     ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
     "---",
@@ -166,6 +171,10 @@ export function fileToCard(text: string): CardData | null {
   if (fiche) card.fiche = fiche;
   const questions = readQuestions(parseJson(fields.questions));
   if (questions) card.questions = questions;
+  const reponses = readReponses(parseJson(fields.reponses));
+  if (reponses) card.reponses = reponses;
+  const trashed = readTrashInfo(parseJson(fields.corbeille));
+  if (trashed) card.trashed = trashed;
   const keep = keepUnknown(fields, rawFiche, fiche);
   if (fields.type && fields.type !== type && KEY_RE.test(fields.type)) keep.type = fields.type;
   if (Object.keys(keep).length > 0) card.keep = keep;
@@ -173,7 +182,7 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "page", "fiche", "images", "questions"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "page", "fiche", "images", "questions", "reponses", "corbeille"]);
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

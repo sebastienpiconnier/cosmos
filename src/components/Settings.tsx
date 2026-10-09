@@ -16,6 +16,7 @@ import { fmt } from "../i18n";
 const OTHER_MODEL = "\u0000other";
 
 export function Settings({ project = true }: { project?: boolean }) {
+  const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
   const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi } = useSettings();
   const [models, setModels] = useState<string[]>([]);
@@ -49,6 +50,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const paper = useCosmos((s) => s.paper);
   const setPaper = useCosmos((s) => s.setPaper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
+  const underlineHeadings = useCosmos((s) => s.underlineHeadings);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -167,9 +169,15 @@ export function Settings({ project = true }: { project?: boolean }) {
               <p className="settings-hint" id={ids.numbersHint}>
                 {t.kinds.sceneNumbersHint}
               </p>
+              <label className="settings-check">
+                <input type="checkbox" checked={underlineHeadings} onChange={(e) => useCosmos.getState().setUnderlineHeadings(e.target.checked)} />
+                {t.kinds.underlineHeadings}
+              </label>
             </>
           )}
-
+          <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().setDialog("trash"); }}>
+            {fmt(t.trash.open, { n: trashCount })}
+          </button>
             </>
           )}
 

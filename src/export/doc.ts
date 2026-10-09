@@ -4,6 +4,7 @@
 
 import type { CardData, CardType, Link } from "../types";
 import { BIBLE_ORDER } from "../types";
+import { isMediaName } from "../media";
 import { isBlank, type Manuscript } from "../manuscript";
 import { ficheText, sheetFields } from "../character";
 import { PITCH_CHIPS, PITCH_TEXTS, type Pitch } from "../pitch";
@@ -16,7 +17,16 @@ export interface Run {
 
 export type Block =
   | { kind: "heading"; runs: Run[] }
-  | { kind: "paragraph"; runs: Run[]; quote?: boolean; list?: "bullet" | "number"; index?: number };
+  | { kind: "paragraph"; runs: Run[]; quote?: boolean; list?: "bullet" | "number"; index?: number }
+  /** Image d'une carte (nom d'un fichier de medias/) ; ses octets sont dans `ExportDoc.images`. */
+  | { kind: "image"; name: string };
+
+/** Image prête à l'export : JPEG réduit et ses dimensions en pixels. */
+export interface DocImage {
+  data: Uint8Array;
+  width: number;
+  height: number;
+}
 
 export interface Chapter {
   title: string;
@@ -32,7 +42,12 @@ export interface ExportDoc {
   chapters: Chapter[];
   /** Manuscrit : alinéa en début de paragraphe dans le PDF. */
   indent?: boolean;
+  /** Images citées par les blocs `image`, chargées avant l'export. Une image absente est ignorée. */
+  images?: Record<string, DocImage>;
 }
+
+/** Noms des images citées par un document, sans doublon. */
+export const docImageNames = (doc: ExportDoc) => [...new Set(doc.chapters.flatMap((c) => c.blocks.flatMap((b) => (b.kind === "image" ? [b.name] : []))))];
 
 const BLOCK_TAGS = new Set(["P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "BLOCKQUOTE", "UL", "OL", "PRE", "DIV"]);
 
@@ -194,14 +209,25 @@ function coverChapter(pitch: Pitch, cover: NonNullable<BibleStrings["cover"]>): 
   return blocks.length > 0 ? { title: cover.title, blocks } : null;
 }
 
-/** Bible : une partie par type de carte, une fiche par carte (triées par titre), avec ses liens. */
-export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], strings: BibleStrings, pitch: Pitch = {}): ExportDoc {
+/**
+ * Bible : une partie par type de carte, une fiche par carte (triées par titre), avec ses images et ses liens.
+ * `order` : les rubriques à exporter, dans l'ordre (celles de la Bible, réglage de l'appareil).
+ */
+export function bibleDoc(
+  info: DocInfo,
+  cards: CardData[],
+  links: Pick<Link, "source" | "target" | "label">[],
+  strings: BibleStrings,
+  pitch: Pitch = {},
+  order: CardType[] = BIBLE_ORDER,
+): ExportDoc {
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || strings.untitled;
-  const chapters = BIBLE_ORDER.map((type) => {
+  const chapters = order.map((type) => {
     const entries = cards.filter((c) => c.type === type).sort((a, b) => a.title.localeCompare(b.title, info.lang));
     const blocks: Block[] = [];
     for (const card of entries) {
       blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }] });
+      for (const name of new Set([card.image, ...(card.images ?? [])])) if (name && isMediaName(name)) blocks.push({ kind: "image", name });
       // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
       if (strings.fields && card.fiche) {
         for (const key of sheetFields(card.type)) {

@@ -31,6 +31,8 @@ export const PLAN_TEMPLATES = {
 } as const satisfies Record<PlanTemplate, readonly string[]>;
 
 export type PlanBeat = (typeof PLAN_TEMPLATES)[PlanTemplate][number];
+const ALL_BEATS = new Set<string>(Object.values(PLAN_TEMPLATES).flat());
+export const isBeat = (key: string): key is PlanBeat => ALL_BEATS.has(key);
 
 export const PLAN_TEMPLATE_KEYS = Object.keys(PLAN_TEMPLATES) as PlanTemplate[];
 /** Gabarits proposés pour un roman, dans l'ordre du menu. */
@@ -317,4 +319,40 @@ export function removeChapter(plan: Plan, order: string[], id: string): Plan {
     plan,
     plan.chapters!.filter((c) => c.id !== id).map((c) => (c.id === previous?.id ? { ...c, scenes: [...c.scenes, ...chapter.scenes] } : c)),
   );
+}
+
+/**
+ * Déplace un chapitre entier (toutes ses scènes, dans leur ordre) juste avant la scène `before`, ou à la
+ * fin du récit (`before` null). Avec un gabarit, les scènes déplacées prennent la case de leur nouvelle
+ * voisine (celle d'avant, sinon celle d'après) : le récit se lit dans le nouvel ordre. Même objet si
+ * rien ne change.
+ */
+export function moveChapter(plan: Plan, sceneIds: string[], id: string, before: string | null): Plan {
+  const chapter = plan.chapters?.find((c) => c.id === id);
+  if (!chapter) return plan;
+  const { beats, unplaced } = arrange(plan, sceneIds);
+  const entries: { id: string; beat: string | null }[] = [...beats.flatMap((b) => b.ids.map((x) => ({ id: x, beat: b.key }))), ...unplaced.map((x) => ({ id: x, beat: null }))];
+  const inChapter = new Set(chapter.scenes);
+  const moved = entries.filter((e) => inChapter.has(e.id));
+  if (moved.length === 0 || (before !== null && inChapter.has(before))) return plan;
+  const rest = entries.filter((e) => !inChapter.has(e.id));
+  const at = before === null ? rest.length : rest.findIndex((e) => e.id === before);
+  if (at < 0) return plan;
+  const beat = (rest[at - 1] ?? rest[at])?.beat ?? (plan.template === "libre" ? "libre" : null);
+  const next = [...rest.slice(0, at), ...moved.map((e) => ({ ...e, beat })), ...rest.slice(at)];
+  if (next.every((e, i) => e.id === entries[i].id && e.beat === entries[i].beat)) return plan;
+  return withBeats(
+    plan,
+    beats.map((b) => ({ key: b.key, ids: next.filter((e) => e.beat === b.key).map((e) => e.id) })),
+  );
+}
+
+/** Chapitre précédent ou suivant dans le récit : la scène avant laquelle le poser (null : à la fin). Undefined : il ne peut pas bouger. */
+export function chapterStep(plan: Plan, order: string[], id: string, way: "up" | "down"): string | null | undefined {
+  const groups = groupByChapter(plan, order);
+  const i = groups.findIndex((g) => g.chapter?.id === id);
+  if (i < 0) return undefined;
+  if (way === "up") return i > 0 ? groups[i - 1].ids[0] : undefined;
+  if (i >= groups.length - 1) return undefined;
+  return groups[i + 2]?.ids[0] ?? null;
 }

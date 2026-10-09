@@ -32,11 +32,23 @@ export interface ProseLine {
   segments: ProseSegment[];
 }
 
+/** Image posée sur une page : ligne du haut, colonne de gauche, taille en points. */
+export interface ProseImage {
+  row: number;
+  name: string;
+  width: number;
+  height: number;
+}
+
 export interface ProsePage {
   /** Numéro affiché en haut de page ; absent sur la page de titre. */
   number?: number;
   lines: ProseLine[];
+  images?: ProseImage[];
 }
+
+/** Côté maximal d'une image dans le PDF (points) : 3 pouces. */
+export const PROSE_IMAGE_BOX = 216;
 
 interface Word {
   text: string;
@@ -174,10 +186,24 @@ export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): Pros
     if (!doc.indent) skip(1);
   };
 
+  const image = (name: string) => {
+    const source = doc.images?.[name];
+    if (!source) return;
+    const box = Math.min(PROSE_IMAGE_BOX, rows * PROSE_LINE);
+    const scale = Math.min(box / Math.max(source.width, 1), box / Math.max(source.height, 1));
+    const width = Math.max(1, Math.round(source.width * scale));
+    const height = Math.max(1, Math.round(source.height * scale));
+    const need = Math.ceil(height / PROSE_LINE);
+    if (!page || row + need > rows) newPage();
+    (page!.images ??= []).push({ row, name, width, height });
+    row += need + 1;
+  };
+
   for (const chapter of doc.chapters) {
     heading([{ text: chapter.title }], true);
     for (const block of chapter.blocks) {
       if (block.kind === "heading") heading(block.runs, false);
+      else if (block.kind === "image") image(block.name);
       else paragraph(block);
     }
   }

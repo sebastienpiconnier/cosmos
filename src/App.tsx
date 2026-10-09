@@ -11,6 +11,7 @@ import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
 import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
+import { TrashNotice } from "./components/TrashList";
 import { useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
@@ -46,7 +47,7 @@ export function App() {
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.screen !== "project" || s.status !== "modifie") return;
       const same =
-        s.nodes === prev.nodes && s.frames === prev.frames && s.edges === prev.edges && s.screenplay === prev.screenplay && s.title === prev.title && s.kind === prev.kind && s.paper === prev.paper && s.sceneNumbers === prev.sceneNumbers;
+        s.nodes === prev.nodes && s.frames === prev.frames && s.edges === prev.edges && s.screenplay === prev.screenplay && s.title === prev.title && s.kind === prev.kind && s.paper === prev.paper && s.sceneNumbers === prev.sceneNumbers && s.underlineHeadings === prev.underlineHeadings;
       if (same && s.status === prev.status) return;
       clearTimeout(timer);
       timer = setTimeout(() => useCosmos.getState().save(), AUTOSAVE_DELAY);
@@ -130,6 +131,7 @@ export function App() {
         </main>
       </div>
       <Tour />
+      <TrashNotice />
       <Dialogs />
     </ReactFlowProvider>
   );

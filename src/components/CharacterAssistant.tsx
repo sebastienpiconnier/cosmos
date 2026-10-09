@@ -11,12 +11,11 @@ import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import type { CardData } from "../types";
-import { ASSISTANT_LEVELS, ASSISTANT_THEMES, bankQuestions, fieldToFill, flatThemeTexts, levelQuestions, nextOpen, themeKeys, type AssistantLevel, type AssistantTheme } from "../assistant";
-import type { CharacterField } from "../character";
+import { QUESTION_FIELD, THEMES, THEME_KEYS, allQuestionTexts, bankQuestions, customKey, nextOpen, questionText, type Theme } from "../assistant";
 import { AiError, complete, isReady } from "../ai/providers";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
 
-type Tab = AssistantLevel | "themes" | "custom" | "pending";
+type Tab = "themes" | "custom" | "pending";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -37,8 +36,8 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   const pending = card.questions ?? [];
 
   const [open, setOpen] = useState(startOpen);
-  const [chosen, setTab] = useState<Tab>(startOpen && pending.length > 0 ? "pending" : "essentiel");
-  const tab: Tab = chosen === "custom" && !ai ? "essentiel" : chosen;
+  const [chosen, setTab] = useState<Tab>(startOpen && pending.length > 0 ? "pending" : "themes");
+  const tab: Tab = chosen === "custom" && !ai ? "themes" : chosen;
   useEffect(() => {
     if (!startOpen) return;
     setOpen(true);
@@ -57,31 +56,28 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   const [error, setError] = useState("");
   const [synthesis, setSynthesis] = useState<string[] | null>(null);
   const asked = useRef<string[]>([]);
-  // Réponse qu'on peut reporter aussi dans un champ vide de la fiche (« Veut », « Blessure »…).
-  const [offer, setOffer] = useState<{ field: CharacterField; value: string } | null>(null);
-  const setFiche = useCosmos((s) => s.setFiche);
   const panelId = useId();
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
-  const byLevel = useMemo(
-    () => Object.fromEntries(ASSISTANT_LEVELS.map((l) => [l, levelQuestions(l, t.questions, card, cards, edges)])) as Record<AssistantLevel, ReturnType<typeof levelQuestions>>,
-    [t, card, cards, edges],
-  );
-  // Questions par thème : le thème choisi, ou le premier qui a encore des questions ouvertes.
-  const [themeChosen, setTheme] = useState<AssistantTheme | null>(null);
-  const themeTexts = useMemo(() => flatThemeTexts(t.themeQuestions), [t]);
+  // Une seule banque de questions, rangée par thème (« L'essentiel » d'abord), sans doublon.
+  const texts = useMemo(() => allQuestionTexts(t), [t]);
   const byTheme = useMemo(
-    () => Object.fromEntries(ASSISTANT_THEMES.map((th) => [th, bankQuestions(themeKeys(th, t.themeQuestions), themeTexts, card, cards, edges)])) as Record<AssistantTheme, ReturnType<typeof bankQuestions>>,
-    [t, themeTexts, card, cards, edges],
+    () => Object.fromEntries(THEMES.map((th) => [th, bankQuestions(THEME_KEYS[th], texts, card, cards, edges)])) as Record<Theme, ReturnType<typeof bankQuestions>>,
+    [texts, card, cards, edges],
   );
-  const theme: AssistantTheme = themeChosen ?? ASSISTANT_THEMES.find((th) => byTheme[th].some((q) => q.state === "open")) ?? ASSISTANT_THEMES[0];
-  const isLevel = tab !== "custom" && tab !== "pending";
-  const questions = tab === "themes" ? byTheme[theme] : isLevel ? byLevel[tab] : [];
+  // Le thème choisi, ou le premier qui a encore des questions ouvertes.
+  const [themeChosen, setTheme] = useState<Theme | null>(null);
+  const theme: Theme = themeChosen ?? THEMES.find((th) => byTheme[th].some((q) => q.state === "open")) ?? THEMES[0];
+  const isLevel = tab === "themes";
+  const questions = isLevel ? byTheme[theme] : [];
   const fromBank = isLevel ? (questions.find((q) => q.key === shownKey && q.state === "open") ?? nextOpen(questions, null)) : null;
   const question = tab === "custom" ? custom : tab === "pending" ? (pendingShown && pending.includes(pendingShown) ? pendingShown : "") : (fromBank?.text ?? "");
   const name = card.title.trim();
-  const done = (l: AssistantLevel) => byLevel[l].filter((q) => q.state !== "open").length;
-  const themeDone = (th: AssistantTheme) => byTheme[th].filter((q) => q.state !== "open").length;
+  const themeDone = (th: Theme) => byTheme[th].filter((q) => q.state !== "open").length;
+  // Clé de la question affichée : celle de la banque, celle d'une question gardée (retrouvée par son texte), ou sur mesure.
+  const keyOfText = (text: string) => Object.keys(texts).find((k) => texts[k] === text) ?? customKey(text);
+  const questionKey = fromBank?.key ?? (question ? keyOfText(question) : "");
+  const field = questionKey ? QUESTION_FIELD[questionKey] : undefined;
 
   const pickTab = (next: Tab) => {
     setTab(next);
@@ -126,7 +122,15 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     setSynthesis(null);
     try {
       const { data, self } = selfNow();
-      const prompt = synthesisPrompt(self, data, linksNow(), lang, ct.fields, ct.arcTypes);
+      const prompt = synthesisPrompt(
+        self,
+        data,
+        linksNow(),
+        lang,
+        ct.fields,
+        ct.arcTypes,
+        Object.entries(self.reponses ?? {}).map(([key, value]) => ({ question: questionText(key, texts), answer: value })),
+      );
       const paragraphs = parseSynthesis(await complete(config, prompt.system, prompt.user, 1200));
       if (paragraphs.length === 0) throw new AiError("empty");
       setSynthesis(paragraphs);
@@ -155,10 +159,9 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   };
   const save = () => {
     if (!question || !answer.trim()) return;
-    answerQuestion(card.id, question, answer);
-    setSaid(t.added);
-    const field = isLevel ? fieldToFill(fromBank?.key, card) : null;
-    setOffer(field ? { field, value: answer.trim() } : null);
+    answerQuestion(card.id, questionKey, question, answer);
+    // La réponse a rempli un champ de la fiche, ou rejoint les réponses rangées (repliées sous la fiche).
+    setSaid(field && !card.fiche?.[field]?.trim() ? fmt(t.addedToField, { field: ct.fields[field] }) : t.added);
     if (tab === "custom") {
       setCustom("");
       setAnswer("");
@@ -252,11 +255,6 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
       {open && (
         <div id={panelId} className="assistant-panel">
           <div className="sq-modes" role="group" aria-label={t.levelAria}>
-            {ASSISTANT_LEVELS.map((l) => (
-              <button key={l} type="button" aria-pressed={tab === l} onClick={() => pickTab(l)}>
-                {t.levels[l]} <span className="assistant-count">{fmt(t.progress, { done: done(l), total: byLevel[l].length })}</span>
-              </button>
-            ))}
             <button type="button" aria-pressed={tab === "themes"} onClick={() => pickTab("themes")}>
               {t.themesTab}
             </button>
@@ -271,7 +269,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
           </div>
           {tab === "themes" && (
             <div className="assistant-themes" role="group" aria-label={t.themesAria}>
-              {ASSISTANT_THEMES.map((th) => (
+              {THEMES.map((th) => (
                 <button
                   key={th}
                   type="button"
@@ -288,7 +286,8 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
               ))}
             </div>
           )}
-          <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : tab === "themes" ? t.themeHints[theme] : t.levelHints[tab]}</p>
+          <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : t.themeHints[theme]}</p>
+          {question && field && <p className="assistant-field">{fmt(t.fillsField, { field: ct.fields[field] })}</p>}
 
           {tab === "pending" && !question ? (
             pending.length === 0 ? (
@@ -321,24 +320,6 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
           ) : (
             <p className="assistant-done">{tab === "themes" ? t.themeDone : t.levelDone}</p>
           )}
-        </div>
-      )}
-      {offer && !card.fiche?.[offer.field]?.trim() && (
-        <div className="assistant-offer">
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => {
-              setFiche(card.id, offer.field, offer.value);
-              setOffer(null);
-              setSaid(ct.offered);
-            }}
-          >
-            {fmt(ct.offerField, { field: ct.motor.labels[offer.field as keyof typeof ct.motor.labels] ?? ct.fields[offer.field] })}
-          </button>
-          <button type="button" className="link-button" onClick={() => setOffer(null)}>
-            {all.ai.ignore}
-          </button>
         </div>
       )}
       {error && (

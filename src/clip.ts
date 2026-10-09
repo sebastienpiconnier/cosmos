@@ -12,9 +12,14 @@ export interface Clip {
 
 const URL_RE = /^https?:\/\/[^\s<>"]+$/i;
 
+/** Un lien copié traîne parfois une ponctuation ou un guillemet (`'`, `"`, `»`, `)`, `.`) : on les retire. */
+const trimLink = (text: string) => text.replace(/^[\s'"«“‘(<]+/, "").replace(/[\s'"»”’)>.,;]+$/, "");
+
 export function clipFromText(raw: string): Clip | null {
-  const text = raw.replace(/\r\n/g, "\n").trim();
+  let text = raw.replace(/\r\n/g, "\n").trim();
   if (!text) return null;
+  const link = trimLink(text);
+  if (!/\s/.test(link) && URL_RE.test(link)) text = link;
   if (URL_RE.test(text)) {
     let host = "";
     try {

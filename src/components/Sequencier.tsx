@@ -3,6 +3,8 @@
 // Changer l'ordre ici déplace la scène entière dans scenario.fountain.
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
+import { isBeat, type PlanBeat } from "../plan";
+import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
@@ -16,7 +18,6 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, sectionLabel } from "../screenplay/template";
-import type { PlanBeat } from "../plan";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
 
@@ -133,6 +134,7 @@ export function Sequencier() {
           )}
         </header>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
+        {template && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
         {template && <p className="sp-empty">{sq.templateHint}</p>}
 
         <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} aria-label={sq.listAria}>
@@ -155,7 +157,11 @@ export function Sequencier() {
             if (block.kind === "section") {
               return (
                 <li key={`section-${block.start}`} className={`sq-section${dropClass}`} {...drop}>
-                  <span>{labelOf(block.text)}</span>
+                  <span className="sq-section-name">
+                    <span>{labelOf(block.text)}</span>
+                    {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
+                    {beatOf(block.text) && isBeat(beatOf(block.text)!) && <span className="sq-section-hint">{t.plan.beats[beatOf(block.text) as PlanBeat].hint}</span>}
+                  </span>
                   {(sectionPages.get(i) ?? 0) > 0 && (
                     <span className="sq-section-length">
                       {fmt(sp.lengthShort, { n: number.format(sectionPages.get(i)!) })}
@@ -267,6 +273,15 @@ export function Sequencier() {
                   {/* Sous la demi-page, une durée arrondie à la minute ne voudrait rien dire. */}
                   {pages >= 0.5 && <div>{fmt(sp.minutes, { n: minutesFor(pages) })}</div>}
                 </div>
+                <button
+                  type="button"
+                  className="icon-button sq-trash"
+                  aria-label={fmt(t.trash.removeAria, { title })}
+                  title={fmt(t.trash.removeAria, { title })}
+                  onClick={() => useCosmos.getState().trashScreenplayScene(block.start)}
+                >
+                  <TrashIcon />
+                </button>
               </li>
             );
           })}

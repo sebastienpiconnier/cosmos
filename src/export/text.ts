@@ -1,7 +1,7 @@
 // Exports en texte balisé : Markdown, Word (.docx) et EPUB. Fonctions pures à partir du modèle de doc.ts.
 // Le .docx et le .epub sont des archives ZIP de fichiers XML, fabriquées ici sans dépendance.
 
-import type { Block, ExportDoc, Run } from "./doc";
+import type { Block, DocImage, ExportDoc, Run } from "./doc";
 import { zip } from "./zip";
 
 const xml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -35,6 +35,10 @@ export function toMarkdown(doc: ExportDoc): string {
       if (block.kind === "heading") {
         flush();
         out.push(`### ${mdRuns(block.runs)}`);
+      } else if (block.kind === "image") {
+        // Adresse relative au dossier du projet : l'image reste dans medias/.
+        flush();
+        out.push(`![](medias/${encodeURI(block.name)})`);
       } else if (block.list) {
         list.push(`${block.quote ? "> " : ""}${block.list === "number" ? `${block.index ?? 1}.` : "-"} ${mdRuns(block.runs)}`);
       } else {
@@ -65,19 +69,59 @@ function docxRuns(runs: Run[], prefix = ""): string {
 
 const docxPara = (style: string, inner: string, extra = "") => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${inner}</w:p>`;
 
+/** Taille d'une image dans un document : 3 pouces au plus de côté, proportions gardées (points). */
+export const IMAGE_BOX = 216;
+export function imageSize(image: Pick<DocImage, "width" | "height">, box = IMAGE_BOX): { width: number; height: number } {
+  const scale = Math.min(box / Math.max(image.width, 1), box / Math.max(image.height, 1));
+  return { width: Math.max(1, Math.round(image.width * scale)), height: Math.max(1, Math.round(image.height * scale)) };
+}
+
+/** Images du .docx : identifiant de relation et fichier, dans l'ordre de première apparition. */
+function docxImages(doc: ExportDoc): { name: string; rel: string; path: string; image: DocImage }[] {
+  const out: { name: string; rel: string; path: string; image: DocImage }[] = [];
+  for (const chapter of doc.chapters)
+    for (const block of chapter.blocks) {
+      const image = block.kind === "image" ? doc.images?.[block.name] : undefined;
+      if (block.kind === "image" && image && !out.some((x) => x.name === block.name)) {
+        const n = out.length + 1;
+        out.push({ name: block.name, rel: `rImg${n}`, path: `media/image${n}.jpeg`, image });
+      }
+    }
+  return out;
+}
+
+const EMU = 12700; // par point
+function docxDrawing(rel: string, n: number, image: DocImage): string {
+  const { width, height } = imageSize(image);
+  const cx = width * EMU;
+  const cy = height * EMU;
+  return (
+    `<w:p><w:pPr><w:spacing w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Image ${n}"/>` +
+    `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="image${n}.jpeg"/><pic:cNvPicPr/></pic:nvPicPr>` +
+    `<pic:blipFill><a:blip r:embed="${rel}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+    `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>` +
+    `</a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`
+  );
+}
+
 export function documentXml(doc: ExportDoc): string {
+  const images = docxImages(doc);
   const body: string[] = [docxPara("Title", docxRuns([{ text: doc.title }]))];
   if (doc.author) body.push(docxPara("Subtitle", docxRuns([{ text: doc.author }])));
   for (const chapter of doc.chapters) {
     body.push(docxPara("Heading1", docxRuns([{ text: chapter.title }])));
     for (const block of chapter.blocks) {
       if (block.kind === "heading") body.push(docxPara("Heading2", docxRuns(block.runs)));
-      else body.push(docxPara(block.quote ? "Quote" : "Normal", docxRuns(block.runs, marker(block)), block.list ? '<w:ind w:left="360"/>' : ""));
+      else if (block.kind === "image") {
+        const i = images.findIndex((x) => x.name === block.name);
+        if (i >= 0) body.push(docxDrawing(images[i].rel, i + 1, images[i].image));
+      } else body.push(docxPara(block.quote ? "Quote" : "Normal", docxRuns(block.runs, marker(block)), block.list ? '<w:ind w:left="360"/>' : ""));
     }
   }
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join("")}` +
+    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body.join("")}` +
     `<w:sectPr><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
   );
 }
@@ -103,12 +147,13 @@ function stylesXml(lang: string): string {
 }
 
 export function toDocx(doc: ExportDoc): Uint8Array {
+  const images = docxImages(doc);
   return zip([
     {
       path: "[Content_Types].xml",
       data:
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
-        `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>` +
+        `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/>` +
         `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
         `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`,
     },
@@ -122,8 +167,11 @@ export function toDocx(doc: ExportDoc): Uint8Array {
       path: "word/_rels/document.xml.rels",
       data:
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+        images.map((x) => `<Relationship Id="${x.rel}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${x.path}"/>`).join("") +
+        `</Relationships>`,
     },
+    ...images.map((x) => ({ path: `word/${x.path}`, data: x.image.data })),
     { path: "word/document.xml", data: documentXml(doc) },
     { path: "word/styles.xml", data: stylesXml(doc.lang) },
   ]);
@@ -150,6 +198,8 @@ export function chapterXhtml(blocks: Block[]): string {
     open = "";
   };
   for (const block of blocks) {
+    // Les images ne vont pas dans un EPUB (seul le manuscrit s'y exporte, et il n'en a pas).
+    if (block.kind === "image") continue;
     if (block.kind === "heading") {
       close();
       out.push(`<h2>${htmlRuns(block.runs)}</h2>`);

@@ -24,11 +24,12 @@ export interface PdfOptions {
   locale: string;
   strings: TypesetStrings;
   numberScenes?: boolean;
+  underlineHeadings?: boolean;
 }
 
 export async function buildPdf(
   screenplay: Screenplay,
-  { layout, locale, strings, numberScenes }: PdfOptions,
+  { layout, locale, strings, numberScenes, underlineHeadings }: PdfOptions,
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -42,7 +43,10 @@ export async function buildPdf(
     const page = pdf.addPage([width, height]);
     const text = (value: string, x: number, y: number, font: PDFFont) => page.drawText(value, { x, y, size: SIZE, font });
     for (const line of lines) {
-      text(line.text, left + line.column * CHAR, top - line.row * LINE - ASCENT, line.bold ? bold : regular);
+      const x = left + line.column * CHAR;
+      const y = top - line.row * LINE - ASCENT;
+      text(line.text, x, y, line.bold ? bold : regular);
+      if (line.underline) page.drawLine({ start: { x, y: y - 2 }, end: { x: x + line.text.length * CHAR, y: y - 2 }, thickness: 0.6 });
     }
     if (number !== undefined && number > 1) {
       const label = `${number}.`;
@@ -52,7 +56,7 @@ export async function buildPdf(
 
   const titleLines = typesetTitlePage(screenplay.titlePage, layout);
   if (titleLines.length > 0) draw(titleLines);
-  const pages = typeset(screenplay.elements, layout, locale, strings, { numberScenes });
+  const pages = typeset(screenplay.elements, layout, locale, strings, { numberScenes, underlineHeadings });
   for (const page of pages) draw(page.lines, page.number);
   // Un PDF sans page n'est pas valide : scénario vide, une feuille blanche.
   if (titleLines.length === 0 && pages.length === 0) pdf.addPage([width, height]);

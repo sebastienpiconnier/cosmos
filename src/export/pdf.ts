@@ -21,8 +21,22 @@ export async function buildProsePdf(doc: ExportDoc, paper: "a4" | "letter"): Pro
   const [width, height] = paper === "a4" ? PageSizes.A4 : PageSizes.Letter;
   const top = height - PROSE_MARGIN;
 
+  // Chaque image n'est intégrée qu'une fois, même citée plusieurs fois.
+  const embedded = new Map<string, Awaited<ReturnType<typeof pdf.embedJpg>>>();
+  for (const [name, image] of Object.entries(doc.images ?? {})) {
+    try {
+      embedded.set(name, await pdf.embedJpg(image.data));
+    } catch {
+      // Image illisible : le PDF se fait sans elle.
+    }
+  }
+
   for (const sheet of layoutProse(doc, proseGeometry(width, height))) {
     const page = pdf.addPage([width, height]);
+    for (const image of sheet.images ?? []) {
+      const jpg = embedded.get(image.name);
+      if (jpg) page.drawImage(jpg, { x: PROSE_MARGIN, y: top - image.row * PROSE_LINE - image.height, width: image.width, height: image.height });
+    }
     for (const line of sheet.lines) {
       const y = top - line.row * PROSE_LINE - ASCENT;
       for (const segment of line.segments) {

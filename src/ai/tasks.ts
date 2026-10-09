@@ -8,7 +8,7 @@
 import { CARD_TYPES, type CardData, type CardType, type Link } from "../types";
 import { plainText } from "../search";
 import { CHARACTER_FIELDS, ficheText } from "../character";
-import { splitAnswers } from "../assistant";
+import { splitAnswers, type Answered } from "../assistant";
 
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
@@ -119,7 +119,7 @@ export function parseQuestion(reply: string): string {
  * court portrait. L'IA ne doit rien ajouter : chaque phrase vient de ce qui est écrit. Le résultat est
  * proposé à l'auteur, qui l'ajoute à la fiche ou l'ignore.
  */
-export function synthesisPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, fieldLabels: Record<string, string>, arcLabels?: Record<string, string>): Prompt {
+export function synthesisPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, fieldLabels: Record<string, string>, arcLabels?: Record<string, string>, stored: Answered[] = []): Prompt {
   const related = links.flatMap((l) => {
     const other = l.source === character.id ? l.target : l.target === character.id ? l.source : null;
     const card = other ? cards.find((c) => c.id === other) : undefined;
@@ -127,7 +127,10 @@ export function synthesisPrompt(character: CardData, cards: CardData[], links: P
   });
   const sheet = Object.fromEntries(CHARACTER_FIELDS.flatMap((key) => (character.fiche?.[key]?.trim() ? [[fieldLabels[key] ?? key, ficheText(key, character.fiche[key].trim(), arcLabels)]] : [])));
   // Les réponses aux questions de l'assistant, à part : noyées dans les notes, un petit modèle les ignorait.
-  const { notes, answers } = splitAnswers(character.html);
+  const split = splitAnswers(character.html);
+  const notes = split.notes;
+  // Réponses rangées dans la carte (questions en clair), puis celles restées dans le texte (projets d'avant).
+  const answers = [...stored, ...split.answers];
   return {
     system:
       `You help a writer see their character clearly. Write a synthesis of the character from three sources written by the writer: "sheet" (standard traits), "answers" (the writer's answers to interview questions about the character) and "notes". ` +

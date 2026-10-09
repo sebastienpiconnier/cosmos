@@ -127,7 +127,7 @@ describe("assistant par thème", () => {
     const qs = bankQuestions(themeKeys("passe", fr.assistant.themeQuestions), texts, card, [card], []);
     expect(qs.find((q) => q.key === "passe.4")?.state).toBe("answered");
     expect(qs.filter((q) => q.state === "open")).toHaveLength(qs.length - 1);
-    expect(fieldToFill("passe.4", { fiche: {} })).toBe("blessure");
-    expect(fieldToFill("voix.0", { fiche: {} })).toBe("voix");
+    expect(fieldToFill("past", { fiche: {} })).toBe("blessure");
+    expect(fieldToFill("voice", { fiche: {} })).toBe("voix");
   });
 });

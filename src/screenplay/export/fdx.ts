@@ -19,7 +19,7 @@ const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
 const escape = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = false): string {
+export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = false, underlineHeadings = false): string {
   const paragraphs: string[] = [];
   let scene = 0;
   for (const el of screenplay.elements) {
@@ -33,7 +33,8 @@ export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = 
       el.type === "sceneHeading" && (el.sceneNumber || numberScenes) ? ` Number="${escape(el.sceneNumber ?? String(scene))}"` : "",
       ` Type="${type}"`,
     ].join("");
-    paragraphs.push(`    <Paragraph${attributes}>\n      <Text>${escape(text)}</Text>\n    </Paragraph>`);
+    const style = el.type === "sceneHeading" && underlineHeadings ? ' Style="Underline"' : "";
+    paragraphs.push(`    <Paragraph${attributes}>\n      <Text${style}>${escape(text)}</Text>\n    </Paragraph>`);
   }
 
   const field = (...names: string[]) => {

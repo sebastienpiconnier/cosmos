@@ -126,15 +126,19 @@ describe("manuscrit dans le projet", () => {
     expect(planOrder(state().plan, planScenes(state().nodes))).toEqual([b, a]);
   });
 
-  it("carte supprimée : le texte reste dans le projet, et la carte peut être recréée", async () => {
+  it("carte supprimée : le texte reste dans le projet, et la carte revient de la corbeille", async () => {
     state().setManuscriptText(a, "<p>Inès arrive au phare.</p>");
+    const title = state().nodes.find((n) => n.id === a)!.data.title;
     state().deleteCard(a);
     await state().save();
-    expect((await storage.readAll())![`manuscrit/${a}.md`]).toBe("Inès arrive au phare.\n");
+    const files = (await storage.readAll())!;
+    expect(files[`manuscrit/${a}.md`]).toBe("Inès arrive au phare.\n");
+    expect(files[`corbeille/${a}.md`]).toContain("corbeille: {");
     expect(orphanTexts(state().manuscript, planScenes(state().nodes))).toEqual([a]);
 
     state().restoreScene(a);
-    expect(state().nodes.find((n) => n.id === a)!.data).toMatchObject({ type: "scene", title: "" });
+    expect(state().nodes.find((n) => n.id === a)!.data).toMatchObject({ type: "scene", title });
+    expect(state().trash).toEqual([]);
     expect(orphanTexts(state().manuscript, planScenes(state().nodes))).toEqual([]);
     // Sans effet pour une carte qui existe ou un texte inconnu.
     const count = state().nodes.length;

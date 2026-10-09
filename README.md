@@ -39,17 +39,18 @@ Cosmos est en cours de développement (version 0.1).
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et tu écris directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Sept types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
-- **Zone Sources :** colle ou dépose un lien, un texte ou une image sur le canevas, une carte Source naît dans le cadre « Sources » (créé à droite au premier collage, retrouvé par le bouton « Sources »). Une source garde son adresse, son auteur, sa date de publication et le jour où tu l'as consultée ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
+- **Zone Sources :** colle ou dépose un lien, un texte ou une image sur le canevas, une carte Source naît dans le cadre « Sources » (créé à droite au premier collage). Pour un lien, Cosmos lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Une source garde le jour où tu l'as consultée ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page. « Organiser le canevas » range dans la zone les sources posées ailleurs.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionne un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
 - **Raccourcis clavier** pour tout ce qui compte ; Ctrl/Cmd+/ en donne la liste.
-- **Fils étiquetés :** tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Double-clic sur le fil (ou simple appui au doigt) pour le renommer.
+- **Fils étiquetés :** tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, la croix d'un lien fait de même.
 - **Mentions :** tape `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si tu renommes la carte, et tu peux créer la carte citée sans quitter ta phrase.
 - **Images :** dépose une image sur une carte ou sur le canevas, ou utilise le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **Largeur des cartes :** tire la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
 - **Cadres :** un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche C ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes et les cadres qu'il contient.
 - **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit. Ctrl/Cmd+Z remet tout comme avant.
+- **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
 - **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la montre sur le canevas.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
@@ -60,34 +61,35 @@ La Bible s'ouvre sur **la couverture du projet**, comme une quatrième de couver
 
 Juste après, **Ambiance** rassemble toutes les images du projet en mosaïque (portraits, lieux, sources), et la rubrique Personnages propose une **carte des relations** : les portraits reliés par les fils du canevas, avec leurs étiquettes (« sœur de », « trahit »).
 
-Puis un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Toutes les rubriques sont affichées, même vides ; tu choisis lesquelles garder et dans quel ordre. Tout s'y modifie sur place, titre et texte. Personnages et lieux ont une galerie de photos (ajout par bouton ou par dépôt, agrandissement, choix de l'image principale), lieux et intrigues ont aussi leur fiche (ambiance, époque ; question dramatique, enjeu, déclencheur, obstacles, résolution), et un personnage a son portrait dans un cercle, son **moteur** en trois cases lues d'un coup d'œil (Veut, A besoin de, Blessure ; pour un antagoniste : Motivation, Force, Faille), son type d'arc dessiné (positif, tragique, plat), un assistant qui pose des questions par niveau ou **par thème** (passé, corps, voix, émotions, colère, relations…) et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, voix, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
+Puis toutes les fiches, générées à partir des cartes, sur une seule page et groupées par rubrique, avec leurs images et leurs liens ; le sommaire mène à chaque rubrique. La Bible se lit comme le document qu'elle exporte : mêmes rubriques, même ordre. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Toutes les rubriques sont affichées, même vides ; tu choisis lesquelles garder et dans quel ordre, et l'export suit ce choix. Tout s'y modifie sur place, titre et texte. Chaque fiche peut avoir sa galerie de photos (ajout par bouton ou par dépôt, agrandissement, choix de l'image principale), lieux et intrigues ont aussi leur fiche (ambiance, époque ; question dramatique, enjeu, déclencheur, obstacles, résolution), et un personnage a son portrait dans un cercle, son **moteur** en trois cases lues d'un coup d'œil (Veut, A besoin de, Blessure ; pour un antagoniste : Motivation, Force, Faille), son type d'arc dessiné (positif, tragique, plat), un assistant qui pose des questions **par thème** (l'essentiel, passé, corps, voix, émotions, colère, relations…), dont les réponses remplissent la fiche et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, voix, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
 
 ### Le plan
 
 - **Quatre gabarits :** libre, trois actes, Save the Cat, voyage du héros. Chaque case rappelle en une ligne ce qu'on y attend.
 - **Ranger les scènes :** glisse une scène dans une case, déplace-la avec les flèches ou choisis sa case dans un menu. Les scènes du canevas qui n'ont pas encore leur place attendent dans « À placer ».
-- **Écrire depuis le plan :** une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés.
+- **Écrire depuis le plan :** une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés. Chaque scène a son **synopsis** (ce qui s'y passe, en une phrase), écrit directement dans le plan.
 - **Chapitres :** dans chaque case, les scènes se regroupent par chapitre. « Nouveau chapitre à partir d'ici » coupe le récit à une scène ; le numéro suit tout seul, le titre est facultatif.
+- **Chaque gabarit s'explique :** sous le choix, une phrase dit ce qu'il est.
 - **Changer d'avis :** passer d'un gabarit à l'autre ne perd rien, chaque gabarit garde son rangement.
 - **Liste ou fiches :** le plan s'affiche en liste ou en fiches.
 - **Chronologie par intrigue :** un tableau des scènes où chaque intrigue (une carte Thème), chaque personnage et chaque lieu a sa ligne. Tu vois d'un coup d'œil où une intrigue disparaît trop longtemps, et tu relies une carte à une scène en touchant une case.
 
 ### L'assistant personnage
 
-- **Des questions, pas des réponses :** dans la fiche d'un personnage, « Questionner » pose une question à la fois, sur trois niveaux (Essentiel, Approfondi, Intime).
-- Ta réponse rejoint la fiche, sous la question. Tu peux aussi passer à une autre question.
+- **Des questions, pas des réponses :** dans la fiche d'un personnage, « Questionner » pose une question à la fois, rangées par thème (l'essentiel d'abord, puis passé, corps, voix, quotidien, émotions…). Remplir la fiche ou se laisser guider : les deux mènent au même endroit.
+- Ta réponse remplit le champ de la fiche qui lui correspond (Veut, Blessure, Voix…) s'il est vide ; les autres réponses se rangent dans « Réponses aux questions », repliées sous la fiche et modifiables. Tu peux aussi passer à une autre question.
 - **« Je ne sais pas encore »** garde la question pour plus tard, dans l'onglet « À creuser » de la fiche. Sur le canevas, la carte du personnage affiche seulement « 3 questions à compléter », qui ouvre sa fiche.
 - **Synthèse par l'IA** (si une IA est branchée) : elle remet en ordre ce que tu as écrit du personnage (fiche, notes, réponses), sans rien inventer. Tu l'ajoutes à la fiche ou tu l'ignores.
 
 ### Le manuscrit
 
-- **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le titre du chapitre s'écrit en tête de page.
-- **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit.
-- **Une scène à la fois, en pages :** tu écris le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre.
+- **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le numéro et le titre du chapitre s'écrivent en tête de page, comme dans un livre.
+- **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit, et chacune dit ce qu'on y écrit (« À qui dédies-tu ce livre ? »).
+- **Une scène à la fois, en pages :** tu écris le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre ; un chapitre se déplace en le glissant dans la colonne de gauche, ou avec ses flèches. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si tu veux (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
 - **Statistiques et objectifs :** mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
 - **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
-- **Tes fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte.
+- **Tes fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
 ### Romans et scénarios
 
@@ -111,10 +113,11 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 - **Relié au canevas :** renommer un en-tête de scène renomme sa carte, et inversement. Une scène, son décor ou un personnage que tu écris dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes :** le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence.
 - **Séquencier :** les scènes dans l'ordre, en liste ou en fiches, avec leur synopsis, leurs personnages et leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier.
-- **Gabarits du séquencier :** trois actes, Save the Cat, huit séquences ou épisode de série. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
+- **Gabarits du séquencier :** trois actes, Save the Cat, huit séquences ou épisode de série (pré-générique, quatre actes, épilogue). Chaque gabarit et chaque case expliquent ce qu'on y met. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
+- **Supprimer une scène :** depuis le séquencier, la scène part à la corbeille avec son texte.
 - **Synopsis :** une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
 - **Import :** un fichier `.fountain` existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
-- **Numéros de scène et mode focus :** numérotation en option dans la marge, et un mode qui ne garde que la feuille à l'écran.
+- **Numéros de scène, en-têtes soulignés et mode focus :** deux boutons de la barre numérotent les scènes dans la marge et soulignent les en-têtes (à l'écran, dans le PDF et dans Final Draft), et un mode ne garde que la feuille à l'écran.
 - **Un format ouvert :** le texte est enregistré dans `scenario.fountain`, au format Fountain, lisible par les autres logiciels de scénario.
 
 </details>
@@ -140,7 +143,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 - **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
 - **Scénario :** PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
-- **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les fiches rangées par type et leurs liens.
+- **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les rubriques choisies dans la Bible, dans son ordre, avec les images de chaque fiche et leurs liens.
 - **Sans rien installer :** tout est fabriqué par l'app elle-même.
 
 ### Confort
@@ -161,7 +164,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
 - **Changer le type :** taper `/` en début de ligne, ou toucher l'étiquette du type (« IDÉE »).
 - **Relier :** tirer un fil depuis un point au bord d'une carte vers une autre, puis nommer le lien.
-- **Réglages** (icône en haut à droite) : type de projet, langue de l'interface, apparence, et branchement d'une IA.
+- **Réglages** (icône en haut à droite) : type de projet, corbeille, langue de l'interface, apparence, et branchement d'une IA.
 
 ### Tes fichiers
 
@@ -172,6 +175,7 @@ Chaque projet est un dossier :
 - `manuscrit/` : le texte des scènes (roman)
 - `scenario.fountain` : le texte du scénario
 - `medias/` : les images
+- `corbeille/` : les cartes supprimées, restaurables
 
 ```markdown
 ---

@@ -217,15 +217,22 @@ describe("lien scène ↔ carte", () => {
     expect(state().status).toBe("modifie");
   });
 
-  it("supprimer une carte Scène garde le texte de la scène, sans la note de lien", async () => {
+  it("supprimer une carte Scène met la scène et son texte à la corbeille, d'où elle revient", async () => {
     state().deleteCard("lanterne");
     await state().save();
 
-    const fountain = disk()[SCREENPLAY_FILE];
-    expect(fountain).toContain("INT. PHARE, LANTERNE - NUIT\n\nLa lampe est froide.");
-    expect(fountain).not.toContain("[[cosmos:");
+    let fountain = disk()[SCREENPLAY_FILE];
+    expect(fountain).not.toContain("LANTERNE");
     expect(fountain).toBe(serialize(state().screenplay!));
     expect(disk()).not.toHaveProperty(cardPath("lanterne"));
+    expect(disk()["corbeille/lanterne.md"]).toContain("La lampe est froide.");
+
+    state().restoreFromTrash("lanterne");
+    await state().save();
+    fountain = disk()[SCREENPLAY_FILE];
+    expect(fountain).toContain("INT. PHARE, LANTERNE - NUIT [[cosmos:lanterne]]\n\nLa lampe est froide.");
+    expect(disk()).toHaveProperty(cardPath("lanterne"));
+    expect(disk()).not.toHaveProperty("corbeille/lanterne.md");
   });
 
   it("carte créée depuis le scénario : sur une place libre, sans focus, reliée une seule fois", async () => {

@@ -39,11 +39,30 @@ export function researchSpot(frame: Box, cards: Box[], size = CARD_SIZE): { spot
   return { spot: { x: frame.x + PAD.side, y: frame.y + frame.height }, frame };
 }
 
+/** Nom du site d'une adresse, sans « www. ». */
+export const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};
+
 /** La date du jour, pour « consultée le » (format de la langue de l'interface). */
 export const today = (lang: string, date = new Date()) => new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" }).format(date);
 
+const absolute = (href: string, base: string) => {
+  if (!href.trim()) return "";
+  try {
+    const url = new URL(href.trim(), base || undefined);
+    return /^https?:$/.test(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+};
+
 /** Ce qu'une page web dit d'elle-même : titre, site, auteur, date (balises <title> et <meta>). */
-export function pageInfo(html: string): { title: string; site: string; author: string; published: string } {
+export function pageInfo(html: string, base = ""): { title: string; site: string; author: string; published: string; image: string } {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const meta = (...names: string[]) => {
     for (const name of names) {
@@ -58,5 +77,7 @@ export function pageInfo(html: string): { title: string; site: string; author: s
     site: clean(meta("og:site_name", "application-name")),
     author: clean(meta("author", "article:author", "dc.creator")),
     published: clean(meta("article:published_time", "date", "dc.date").slice(0, 10)),
+    // Image de partage du site (og:image), en adresse absolue, seulement en http(s).
+    image: absolute(meta("og:image:secure_url", "og:image", "twitter:image", "twitter:image:src") || doc.querySelector('link[rel="image_src"]')?.getAttribute("href") || "", base),
   };
 }

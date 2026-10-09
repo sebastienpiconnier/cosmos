@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
@@ -20,7 +21,7 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, getT, useT } from "../i18n";
 import { typeColor } from "../types";
-import { chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
+import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, QUIET_PAGES, bookOrder, isPageKind, type PageKind } from "../book";
 import { countWords, detectCards, orphanTexts } from "../manuscript";
 import { plainText } from "../search";
@@ -73,8 +74,27 @@ const BookKeys = Extension.create<{ handlers: { current: BreakHandlers | null } 
   },
 });
 
-function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { id: string; title: string; firstPage: number; onPages: (n: number) => void; handlers: { current: BreakHandlers | null }; focusStart: boolean }) {
+function SceneEditor({
+  id,
+  title,
+  placeholder,
+  firstPage,
+  onPages,
+  handlers,
+  focusStart,
+}: {
+  id: string;
+  title: string;
+  /** Texte indicatif selon la page (dédicace, prologue…) ou la scène. */
+  placeholder: string;
+  firstPage: number;
+  onPages: (n: number) => void;
+  handlers: { current: BreakHandlers | null };
+  focusStart: boolean;
+}) {
   const lang = useSettings((s) => s.lang);
+  const placeholderRef = useRef(placeholder);
+  placeholderRef.current = placeholder;
   const firstRef = useRef(firstPage);
   firstRef.current = firstPage;
   const onPagesRef = useRef(onPages);
@@ -83,7 +103,7 @@ function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { 
     extensions: [
       ...richTextExtensions({ link: false }),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
-      Placeholder.configure({ placeholder: () => getT().manuscript.placeholder }),
+      Placeholder.configure({ placeholder: () => placeholderRef.current }),
       // Vraies pages, comme dans un livre : la hauteur des paragraphes est mesurée à l'écran.
       Pages.configure({
         geometry: () => {
@@ -115,7 +135,7 @@ function SceneEditor({ id, title, firstPage, onPages, handlers, focusStart }: { 
       editorProps: { ...editor.options.editorProps, attributes: { class: "ms-editor", "aria-label": fmt(getT().manuscript.editorAria, { title }) } },
     });
     editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang));
-  }, [lang, title, editor]);
+  }, [lang, title, placeholder, editor]);
 
   // Texte changé hors de l'éditeur (case cochée depuis « À faire ») : l'éditeur suit.
   const stored = useCosmos((s) => s.manuscript[id] ?? "");
@@ -191,6 +211,11 @@ export function Manuscript() {
   const startChapterAt = useCosmos((s) => s.startChapterAt);
   const renamePlanChapter = useCosmos((s) => s.renamePlanChapter);
   const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
+  const movePlanChapter = useCosmos((s) => s.movePlanChapter);
+  // Chapitre qu'on glisse dans la colonne : une ref, le dépôt peut arriver avant le rendu suivant.
+  const draggedRef = useRef<string | null>(null);
+  const [dragged, setDragged] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   const deleteCard = useCosmos((s) => s.deleteCard);
   const b = t.book;
@@ -397,11 +422,57 @@ export function Manuscript() {
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         {groupByChapter(plan, order).map((group) => (
-          <div key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`} className={group.chapter ? "ms-chapter" : undefined}>
+          <div
+            key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
+            className={`${group.chapter ? "ms-chapter" : ""}${over === group.ids[0] ? " is-over" : ""}`}
+            // Dépôt d'un chapitre sur un groupe : avant lui en remontant, après lui en descendant.
+            onDragOver={(e) => {
+              const id = draggedRef.current;
+              if (!id || group.chapter?.id === id || !story.includes(group.ids[0])) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setOver(group.ids[0]);
+            }}
+            onDragLeave={() => setOver((o) => (o === group.ids[0] ? null : o))}
+            onDrop={(e) => {
+              const id = draggedRef.current;
+              setOver(null);
+              if (!id) return;
+              e.preventDefault();
+              const groups = groupByChapter(plan, story);
+              const from = groups.findIndex((g) => g.chapter?.id === id);
+              const to = groups.findIndex((g) => g.ids[0] === group.ids[0]);
+              if (from < 0 || to < 0) return;
+              movePlanChapter(id, to < from ? groups[to].ids[0] : (groups[to + 1]?.ids[0] ?? null));
+            }}
+          >
             {group.chapter && (
-              <h3 className="ms-chapter-title">
+              <h3
+                className={`ms-chapter-title${dragged === group.chapter.id ? " is-dragged" : ""}`}
+                draggable
+                title={b.chapterDrag}
+                onDragStart={(e) => {
+                  draggedRef.current = group.chapter!.id;
+                  setDragged(group.chapter!.id);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", chapterName(group.chapter!));
+                }}
+                onDragEnd={() => {
+                  draggedRef.current = null;
+                  setDragged(null);
+                }}
+              >
                 <span>{chapterName(group.chapter)}</span>
                 <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
+                {(["up", "down"] as const).map((way) => {
+                  const to = chapterStep(plan, story, group.chapter!.id, way);
+                  const label = fmt(way === "up" ? b.chapterUp : b.chapterDown, { title: chapterName(group.chapter!) });
+                  return (
+                    <button key={way} type="button" className="icon-button ms-chapter-move" disabled={to === undefined} aria-label={label} title={label} onClick={() => to !== undefined && movePlanChapter(group.chapter!.id, to)}>
+                      <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                    </button>
+                  );
+                })}
               </h3>
             )}
             <ol className="sp-scene-list">
@@ -444,39 +515,21 @@ export function Manuscript() {
 
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
-          {pageKind && <p className="ms-chapter-heading">{b.kinds[pageKind]}</p>}
-          {opensChapter && chapter && (
-            <div className="ms-chapter-edit">
-              <span className="ms-chapter-heading">{fmt(t.chapters.numbered, { n: numbers.get(chapter.id) ?? 0 })}</span>
-              <input
-                className="ms-chapter-input"
-                value={chapter.title}
-                placeholder={t.chapters.titlePlaceholder}
-                aria-label={b.chapterTitle}
-                onChange={(e) => renamePlanChapter(chapter.id, e.target.value)}
-              />
-              <button type="button" className="icon-button" aria-label={b.removeChapter} title={b.removeChapter} onClick={() => deletePlanChapter(chapter.id)}>
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
-          )}
-          <input
-            className="ms-title"
-            value={card.title}
-            placeholder={m.untitled}
-            aria-label={m.sceneTitle}
-            onChange={(e) => updateCard(current, { title: e.target.value })}
-          />
-          <div className="ms-meta">
+          {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
+          <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
             </button>
             <button type="button" className="icon-button" disabled={at === order.length - 1} aria-label={m.next} title={m.next} onClick={() => go(order[at + 1])}>
               <span aria-hidden="true">→</span>
             </button>
-            <span>{pageKind ? b.kinds[pageKind] : fmt(m.position, { n: storyNumber(current), total: story.length })}</span>
-            <span aria-live="polite">{words(sceneWords)}</span>
-            {measured > 0 && <span>{fmt(t.stats.pagesFrom, { first: firstPageOf(before), last: firstPageOf(before) + measured - 1 })}</span>}
+            <input
+              className="ms-title"
+              value={card.title}
+              placeholder={pageKind ? b.kinds[pageKind] : m.untitled}
+              aria-label={m.sceneTitle}
+              onChange={(e) => updateCard(current, { title: e.target.value })}
+            />
             <label className="ms-kind">
               <span className="sr-only">{b.pageKind}</span>
               <select value={pageKind ?? ""} onChange={(e) => setPageKind(e.target.value)} title={b.pageKind}>
@@ -488,24 +541,58 @@ export function Manuscript() {
                 ))}
               </select>
             </label>
-            <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
-              {t.focus.enter}
-            </button>
             {!pageKind && !opensChapter && (
               <button type="button" className="ghost-button ms-start-chapter" onClick={() => startChapterAt(current)}>
                 {b.startChapter}
               </button>
             )}
+            <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
+              {t.focus.enter}
+            </button>
+            {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={fmt(t.trash.removeAria, { title })}
+              title={fmt(t.trash.removeAria, { title })}
+              onClick={() => {
+                const next = order[at + 1] ?? order[at - 1] ?? null;
+                useCosmos.getState().deleteCard(current);
+                if (next) go(next);
+              }}
+            >
+              <TrashIcon />
+            </button>
+            <span className="sr-only" aria-live="polite">
+              {words(sceneWords)}
+            </span>
           </div>
           <div
             className={`ms-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}${opensChapter ? " opens-chapter" : ""}${pageKind && QUIET_PAGES.has(pageKind) ? " is-quiet" : ""}${!pageKind && !opensChapter && at > 0 ? " follows-scene" : ""}`}
             data-page={pageKind ?? undefined}
             style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}
           >
+            {/* Ouverture de chapitre, dans la marge du haut comme dans un livre : rien ne bouge dans le texte. */}
+            {opensChapter && chapter && (
+              <div className="ms-chapter-edit">
+                <span className="ms-chapter-heading">{fmt(t.chapters.numbered, { n: numbers.get(chapter.id) ?? 0 })}</span>
+                <input
+                  className="ms-chapter-input"
+                  value={chapter.title}
+                  placeholder={t.chapters.titlePlaceholder}
+                  aria-label={b.chapterTitle}
+                  onChange={(e) => renamePlanChapter(chapter.id, e.target.value)}
+                />
+                <button type="button" className="icon-button ms-chapter-remove" aria-label={b.removeChapter} title={b.removeChapter} onClick={() => deletePlanChapter(chapter.id)}>
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            )}
             <SceneEditor
               key={current}
               id={current}
               title={title}
+              placeholder={pageKind ? b.placeholders[pageKind] : opensChapter ? b.chapterOpening : m.placeholder}
               firstPage={firstPageOf(before)}
               onPages={(n) => setMeasured((prev) => (prev === n ? prev : n))}
               handlers={handlers}
@@ -535,7 +622,7 @@ export function Manuscript() {
       </div>
 
       <aside className="sp-side">
-        <StatsBox stats={stats} chapters={numbers.size} sceneWords={sceneWords} />
+        <StatsBox stats={stats} chapters={numbers.size} sceneWords={sceneWords} place={measured > 0 ? { first: firstPageOf(before), last: firstPageOf(before) + measured - 1 } : null} />
         <section className="sp-box">
           <h2 className="sp-box-title">{m.inScene}</h2>
           {detected.length === 0 ? (
@@ -567,7 +654,18 @@ export function Manuscript() {
 }
 
 /** Statistiques et objectifs (idée reprise de NEO : objectif du jour, objectif du livre, jours d'affilée). */
-function StatsBox({ stats, chapters, sceneWords }: { stats: ReturnType<typeof manuscriptStats>; chapters: number; sceneWords: number }) {
+function StatsBox({
+  stats,
+  chapters,
+  sceneWords,
+  place,
+}: {
+  stats: ReturnType<typeof manuscriptStats>;
+  chapters: number;
+  sceneWords: number;
+  /** Pages occupées par la scène dans le livre (mesurées à l'écran). */
+  place: { first: number; last: number } | null;
+}) {
   const t = useT();
   const s = t.stats;
   const lang = useSettings((x) => x.lang);
@@ -630,6 +728,12 @@ function StatsBox({ stats, chapters, sceneWords }: { stats: ReturnType<typeof ma
           <dt>{s.thisScene}</dt>
           <dd>{fmt(s.sceneValue, { n: num(sceneWords), pages: num(pagesFor(sceneWords)) })}</dd>
         </div>
+        {place && (
+          <div>
+            <dt>{s.scenePlace}</dt>
+            <dd>{place.first === place.last ? fmt(s.onePage, { n: place.first }) : fmt(s.pagesFrom, { first: place.first, last: place.last })}</dd>
+          </div>
+        )}
       </dl>
       <div className="ms-goals">
         <p className="ms-today">

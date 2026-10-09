@@ -265,3 +265,70 @@ describe("mise en page du PDF", () => {
     expect(text(pages[1])).toEqual(["0:         Personnages", "4:Inès", "6:Gardienne.", "8:  • Aime le silence du phare", "9:    la nuit."]);
   });
 });
+
+describe("bible composée et images (recette d'octobre)", () => {
+  const strings = { sections: { personnage: "Personnages", lieu: "Lieux", idee: "Idées" } as never, untitled: "Sans titre", linkedTo: "Relié à" };
+  const cards: CardData[] = [
+    { ...card("p", "personnage", "Inès"), image: "p.jpg", images: ["p.jpg", "p2.jpg", "../x.jpg"] },
+    card("l", "lieu", "Le phare", "<p>Blanc.</p>"),
+    card("i", "idee", "Une idée"),
+  ];
+
+  it("suit les rubriques de la Bible (ordre, rubriques masquées) et cite les images de chaque fiche", () => {
+    const doc = bibleDoc(info, cards, [], strings, {}, ["lieu", "personnage"]);
+    expect(doc.chapters.map((c) => c.title)).toEqual(["Lieux", "Personnages"]);
+    // Image principale puis photos, sans doublon ni nom suspect.
+    expect(doc.chapters[1].blocks.filter((b) => b.kind === "image")).toEqual([
+      { kind: "image", name: "p.jpg" },
+      { kind: "image", name: "p2.jpg" },
+    ]);
+  });
+
+  it("Markdown cite medias/, Word intègre l'image, le PDF lui réserve sa place", () => {
+    const doc: ExportDoc = {
+      ...bibleDoc(info, cards, [], strings, {}, ["personnage"]),
+      images: { "p.jpg": { data: new Uint8Array([0xff, 0xd8, 0xff]), width: 400, height: 200 } },
+    };
+    expect(toMarkdown(doc)).toContain("![](medias/p.jpg)");
+    const xmlText = documentXml(doc);
+    expect(wellFormed(xmlText)).toBe(true);
+    expect(xmlText).toContain('r:embed="rImg1"');
+    // 3 pouces de large au plus : 216 points, soit 2 743 200 EMU, et la moitié en hauteur.
+    expect(xmlText).toContain('cx="2743200" cy="1371600"');
+    const files = unzip(toDocx(doc)).map((f) => f.path);
+    expect(files).toContain("word/media/image1.jpeg");
+    // Une image absente de `images` (p2.jpg) est ignorée sans erreur.
+    expect(xmlText.match(/<w:drawing>/g)).toHaveLength(1);
+    const pages = layoutProse(doc, proseGeometry(612, 792));
+    const placed = pages.flatMap((p) => p.images ?? []);
+    expect(placed).toEqual([expect.objectContaining({ name: "p.jpg", width: 216, height: 108 })]);
+  });
+});
+
+describe("chapitres déplacés (recette d'octobre)", () => {
+  it("un chapitre entier passe avant un autre, ou à la fin ; ses scènes prennent la case de leur voisine", async () => {
+    const { moveChapter, chapterStep, planOrder } = await import("../plan");
+    const plan = {
+      template: "libre" as const,
+      beats: { libre: ["a", "b", "c", "d", "e"] },
+      chapters: [
+        { id: "c1", title: "", scenes: ["a", "b"] },
+        { id: "c2", title: "", scenes: ["c"] },
+        { id: "c3", title: "", scenes: ["d", "e"] },
+      ],
+    };
+    const ids = ["a", "b", "c", "d", "e"];
+    expect(planOrder(moveChapter(plan, ids, "c3", "a"), ids)).toEqual(["d", "e", "a", "b", "c"]);
+    expect(planOrder(moveChapter(plan, ids, "c1", null), ids)).toEqual(["c", "d", "e", "a", "b"]);
+    expect(moveChapter(plan, ids, "c1", "a")).toBe(plan);
+    expect(moveChapter(plan, ids, "c2", "d")).toBe(plan); // déjà juste avant
+    expect(chapterStep(plan, ids, "c1", "up")).toBeUndefined();
+    expect(chapterStep(plan, ids, "c1", "down")).toBe("d");
+    expect(chapterStep(plan, ids, "c2", "down")).toBeNull();
+    // Avec un gabarit : le chapitre passe dans la case de sa nouvelle voisine.
+    const acts = { ...plan, template: "troisActes" as const, beats: { a_setup: ["a", "b"], a_confrontation: ["c"], a_resolution: ["d", "e"] } };
+    const moved = moveChapter(acts, ids, "c1", "d");
+    expect(planOrder(moved, ids)).toEqual(["c", "a", "b", "d", "e"]);
+    expect(moved.beats.a_confrontation).toEqual(["c", "a", "b"]);
+  });
+});

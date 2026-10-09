@@ -6,16 +6,10 @@ import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { sourceUrl } from "../character";
 import { openExternal } from "../platform";
-import { readPage } from "../web";
+import { hostOf } from "../research";
 import type { CardData } from "../types";
 
-export const hostOf = (url: string) => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-};
+export { hostOf };
 
 export function SourceTools({ card }: { card: CardData }) {
   const t = useT().research;
@@ -27,22 +21,9 @@ export function SourceTools({ card }: { card: CardData }) {
   const complete = async () => {
     setBusy(true);
     setSaid(t.fetching);
-    try {
-      const info = await readPage(url);
-      const host = hostOf(url);
-      const fiche = { ...(card.fiche ?? {}) };
-      if (!fiche.auteur && info.author) fiche.auteur = info.author;
-      if (!fiche.publication && (info.site || info.published)) fiche.publication = [info.site, info.published].filter(Boolean).join(", ");
-      // Le titre ne remplace que le nom du site posé au collage (ou un titre vide).
-      const title = info.title && (!card.title.trim() || card.title.trim() === host) ? info.title : card.title;
-      useCosmos.getState().updateCard(card.id, { title, fiche });
-      setSaid(t.fetched);
-    } catch (err) {
-      console.error(err);
-      setSaid(t.fetchFailed);
-    } finally {
-      setBusy(false);
-    }
+    const ok = await useCosmos.getState().completeSource(card.id);
+    setSaid(ok ? t.fetched : t.fetchFailed);
+    setBusy(false);
   };
 
   return (

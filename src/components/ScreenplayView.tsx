@@ -59,6 +59,9 @@ export function ScreenplayView() {
   const setView = useCosmos((s) => s.setView);
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
+  const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
+  const underlineHeadings = useCosmos((s) => s.underlineHeadings);
+  const setUnderlineHeadings = useCosmos((s) => s.setUnderlineHeadings);
   const focusMode = useCosmos((s) => s.focusMode);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
 
@@ -518,6 +521,27 @@ export function ScreenplayView() {
             <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
             {sp.hintEscape}
           </span>
+          {/* Mise en forme du scénario (réglages du projet, comme dans les Réglages). */}
+          <button
+            type="button"
+            className="sp-option"
+            aria-pressed={sceneNumbers}
+            title={sp.numbersToggleHint}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setSceneNumbers(!sceneNumbers)}
+          >
+            {sp.numbersToggle}
+          </button>
+          <button
+            type="button"
+            className="sp-option is-underline"
+            aria-pressed={underlineHeadings}
+            title={sp.underlineToggleHint}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setUnderlineHeadings(!underlineHeadings)}
+          >
+            {sp.underlineToggle}
+          </button>
           <button
             type="button"
             className="sp-focus"
@@ -539,7 +563,7 @@ export function ScreenplayView() {
 
         <div className="sp-scroll">
           {!focusMode && <TitlePage paper={paper} onChange={setTitleField} />}
-          <div className="sp-page" data-paper={paper} data-numbers={sceneNumbers ? "" : undefined} style={labels} lang={lang} ref={pageRef}>
+          <div className="sp-page" data-paper={paper} data-numbers={sceneNumbers ? "" : undefined} data-underline={underlineHeadings ? "" : undefined} style={labels} lang={lang} ref={pageRef}>
             <EditorContent editor={editor} />
             {menu && (
               <SuggestionMenu

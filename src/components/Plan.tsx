@@ -5,6 +5,8 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { TrashIcon } from "./TrashIcon";
+import { SynopsisField } from "./SynopsisField";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
@@ -145,7 +147,7 @@ export function Plan() {
         draggable
         onDragStart={(e) => {
           // Pas en tirant dans un champ : on y sélectionne du texte.
-          if ((e.target as HTMLElement).closest("input, select")) return e.preventDefault();
+          if ((e.target as HTMLElement).closest("input, select, textarea")) return e.preventDefault();
           e.dataTransfer.effectAllowed = "move";
           e.dataTransfer.setData("text/plain", title);
           setDragged(id);
@@ -182,7 +184,9 @@ export function Plan() {
             aria-label={p.sceneTitle}
             onChange={(e) => updateCard(id, { title: e.target.value })}
           />
-          {text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
+          {/* Ce qui se passe dans la scène, en une phrase (champ `synopsis` de sa fiche). Faute de synopsis, ses notes. */}
+          <SynopsisField value={card.fiche?.synopsis ?? ""} scene={title} onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)} />
+          {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
         </div>
         {beat !== null && (
           <label className="plan-to">
@@ -223,6 +227,9 @@ export function Plan() {
         <button type="button" className="icon-button" aria-label={fmt(p.show, { title })} title={fmt(p.show, { title })} onClick={() => revealCard(id)}>
           <span aria-hidden="true">↗</span>
         </button>
+        <button type="button" className="icon-button sq-trash" aria-label={fmt(t.trash.removeAria, { title })} title={fmt(t.trash.removeAria, { title })} onClick={() => useCosmos.getState().deleteCard(id)}>
+          <TrashIcon />
+        </button>
       </li>
     );
   };
@@ -242,6 +249,7 @@ export function Plan() {
               ))}
             </select>
           </label>
+          <p className="plan-about">{p.templateAbout[plan.template]}</p>
           <div className="sq-modes" role="group" aria-label={p.modeAria}>
             {MODES.map((m) => (
               <button

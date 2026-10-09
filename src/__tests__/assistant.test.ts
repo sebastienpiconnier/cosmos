@@ -109,16 +109,24 @@ describe("assistant dans le projet", () => {
   });
   const data = () => state().nodes.find((n) => n.id === ines)!.data;
 
-  it("répondre complète la fiche, et s'annule", () => {
-    state().answerQuestion(ines, q.want, "Le silence.");
-    expect(isAnswered(data().html, q.want)).toBe(true);
-    expect(state().status).toBe("modifie");
-    state().undo();
+  it("répondre remplit le champ lié de la fiche (ou range la réponse), et s'annule", () => {
+    state().answerQuestion(ines, "want", q.want, "Le silence.");
+    expect(data().fiche?.objectif).toBe("Le silence.");
     expect(data().html).toBe("");
+    expect(state().status).toBe("modifie");
+    // Champ déjà rempli : la réponse est rangée à part, le champ n'est pas écrasé.
+    state().answerQuestion(ines, "want", q.want, "Autre chose.");
+    expect(data().fiche?.objectif).toBe("Le silence.");
+    expect(data().reponses).toEqual({ want: "Autre chose." });
+    // Question sans champ : rangée.
+    state().answerQuestion(ines, "night", q.night, "La mer.");
+    expect(data().reponses?.night).toBe("La mer.");
+    state().undo();
+    expect(data().reponses?.night).toBeUndefined();
     // Réponse vide ou carte inconnue : rien.
     const past = state().past.length;
-    state().answerQuestion(ines, q.want, "  ");
-    state().answerQuestion("inconnu", q.want, "x");
+    state().answerQuestion(ines, "want", q.want, "  ");
+    state().answerQuestion("inconnu", "want", q.want, "x");
     expect(state().past.length).toBe(past);
   });
 
@@ -135,7 +143,7 @@ describe("assistant dans le projet", () => {
   it("répondre à une question en attente la retire de la liste", () => {
     state().parkQuestion(ines, q.fear);
     state().parkQuestion(ines, q.secret);
-    state().answerQuestion(ines, q.fear, "Le noir.");
+    state().answerQuestion(ines, "fear", q.fear, "Le noir.");
     expect(data().questions).toEqual([q.secret]);
     state().dropQuestion(ines, q.secret);
     expect(data().questions).toBeUndefined();

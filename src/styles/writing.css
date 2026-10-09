@@ -50,12 +50,21 @@
 .ms-page .ms-editor h2, .ms-page .ms-editor h3 { margin: 0; padding: 0.8em 0 0.8em; text-align: center; font-size: 1em; line-height: 1.6; letter-spacing: 0.08em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
 .ms-page.opens-chapter .ms-editor > p:first-child:not(.is-editor-empty)::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
+/* Le premier paragraphe contient sa lettrine : un paragraphe court ne laisse pas la suite coincée à côté d'elle. */
+.ms-page.opens-chapter .ms-editor > p:first-child:not(.is-editor-empty) { display: flow-root; }
 .ms-page .sp-pagebreak-gap { left: -4em; right: -4em; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
 .ms-chapter-heading { margin: 8px 0 0; font: 600 13px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
 .ms-chapter { margin-top: 10px; }
 .ms-chapter-title { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 2px; font: 600 12px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
 .ms-chapter-title span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+/* Un chapitre se glisse par son titre (ou se déplace par ses flèches) dans la colonne des scènes. */
+.ms-chapter-title { align-items: center; cursor: grab; border-radius: 8px; }
+.ms-chapter-title.is-dragged { opacity: 0.5; }
+.ms-chapter-move { width: 28px; height: 28px; flex-shrink: 0; font-size: 13px; color: var(--ink-2); }
+.ms-chapter-move:disabled { opacity: 0.3; cursor: default; }
+.ms-chapter.is-over, .ms-scenes > div.is-over { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 8px; }
+@media (pointer: coarse) { .ms-chapter-move { width: 44px; height: 44px; } }
 /* Statistiques et objectifs */
 .ms-stats dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 0 0 10px; font-size: 13px; }
 .ms-stats dl > div { display: contents; }
@@ -68,12 +77,13 @@
 .ms-goal { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-2); }
 .ms-goal input { min-height: 36px; width: 100%; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
 .ms-goal input::placeholder { color: var(--placeholder); }
-.ms-title { width: 100%; min-height: 48px; padding: 0 8px; margin-left: -8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 700 26px/1.2 var(--font-display); }
+/* Titre de la scène : dans la barre, à la taille du reste ; la page, elle, reste celle d'un livre. */
+.ms-title { flex: 1 1 180px; min-width: 120px; min-height: 36px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 600 15px/1.2 var(--font-ui); text-overflow: ellipsis; }
 .ms-title:hover { border-color: var(--line); }
 .ms-title:focus-visible { border-color: var(--line-2); }
 .ms-title::placeholder { color: var(--placeholder); }
-.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; color: var(--ink-2); }
-.ms-meta .icon-button { width: 44px; height: 44px; }
+.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; font-size: 13px; color: var(--ink-2); }
+.ms-meta .icon-button { width: 36px; height: 36px; }
 .ms-meta .icon-button:disabled { opacity: 0.35; cursor: default; }
 .ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
 .ms-editor p { margin: 0 0 0.9em; }
@@ -243,8 +253,12 @@
 @media (pointer: coarse) { .ms-focus-bar { opacity: 1; } .ms-focus-bar button, .ms-focus-bar select { min-height: 44px; } }
 
 /* ---------- Pages du livre et chapitrage dans le manuscrit ---------- */
-.ms-chapter-edit { display: flex; align-items: center; gap: 8px; }
-.ms-chapter-input { flex: 1; min-width: 0; min-height: 36px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 500 16px var(--font-display); }
+/* Ouverture d'un chapitre : numéro et titre centrés dans la marge du haut de la page (en em, à l'échelle de la page). */
+.ms-chapter-edit { position: absolute; top: 0.9em; left: 4em; right: 4em; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.1em; }
+.ms-page .ms-chapter-heading { margin: 0; font-size: 0.62em; }
+.ms-chapter-input { width: 100%; min-height: 1.8em; padding: 0 0.4em; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--page-ink); font: 500 1.2em/1.4 var(--font-display); text-align: center; }
+.ms-chapter-remove { position: absolute; top: 0; right: -3.4em; width: 36px; height: 36px; border-color: transparent; background: transparent; color: var(--ink-2); }
+.manuscript.is-focus .ms-chapter-remove { display: none; }
 .ms-chapter-input:hover { border-color: var(--line); }
 .ms-chapter-input:focus-visible { border-color: var(--line-2); }
 .ms-chapter-input::placeholder { color: var(--placeholder); }
@@ -259,6 +273,8 @@
 .ms-page.follows-scene::before { content: "*  *  *"; position: absolute; top: 2.4em; left: 0; right: 0; text-align: center; letter-spacing: 0.2em; color: var(--ink-2); pointer-events: none; }
 /* Pages hors récit : composées à part. */
 .ms-page.is-quiet .ms-editor p { text-indent: 0; text-align: center; }
+/* Le texte indicatif se place comme le texte de la page (centré, ou à droite pour une épigraphe). */
+.ms-page.is-quiet .ms-editor p.is-editor-empty:first-child::before { float: none; display: block; width: 100%; text-align: inherit; }
 .ms-page[data-page="titre"] .ms-editor { padding-top: 14em; }
 .ms-page[data-page="titre"] .ms-editor h2 { font-size: 2em; letter-spacing: 0.02em; line-height: 1.3; padding-bottom: 1.5em; }
 .ms-page[data-page="dedicace"] .ms-editor, .ms-page[data-page="epigraphe"] .ms-editor { padding-top: 16em; font-style: italic; }
@@ -291,3 +307,29 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ms-notice { position: sticky; bottom: 16px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; width: min(560px, 100%); margin: 12px auto 0; padding: 8px 8px 8px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
 .ms-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
 .ms-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }
+
+/* ---------- Corbeille ---------- */
+.trash-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.trash-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.trash-name { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.trash-name .muted { font-size: 13px; }
+.trash-list .ghost-button { min-height: 44px; }
+.ghost-button.is-danger { color: var(--danger); }
+.trash-purge { margin-top: 12px; color: var(--danger); }
+.settings-trash { width: 100%; justify-content: center; margin-top: 8px; }
+/* Message après une suppression, en bas de l'écran, au-dessus de toutes les vues. */
+.trash-notice { position: fixed; z-index: 30; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; max-width: calc(100vw - 32px); padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
+.trash-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
+.trash-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }
+.trash-notice .icon-button { background: transparent; color: var(--strong-fg); border-color: transparent; }
+.sq-trash { flex-shrink: 0; color: var(--ink-2); }
+/* Ce qu'est le gabarit choisi, et ce qu'on met dans chaque case du séquencier. */
+.plan-about { flex-basis: 100%; margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.sq-section-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sq-section-hint { font: 13px/1.4 var(--font-ui); color: var(--ink-2); text-transform: none; letter-spacing: 0; font-weight: 400; }
+@media (pointer: coarse) {
+  .ms-meta .icon-button { width: 44px; height: 44px; }
+  .ms-meta .ghost-button, .ms-meta select, .ms-title { min-height: 44px; }
+  .sq-trash { min-width: 44px; min-height: 44px; }
+  .sp-option, .sp-focus { min-height: 44px; }
+}

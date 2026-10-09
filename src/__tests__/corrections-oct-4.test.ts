@@ -38,7 +38,7 @@ describe("Markdown", () => {
 
   it("export : ☐ et ☑ devant les cases", () => {
     const blocks = htmlToBlocks(TASKS);
-    expect(blocks.map((b) => b.runs.map((r) => r.text).join(""))).toEqual(["☐ Vérifier l’âge", "☑ Fait"]);
+    expect(blocks.map((b) => ("runs" in b ? b.runs : []).map((r) => r.text).join(""))).toEqual(["☐ Vérifier l’âge", "☑ Fait"]);
   });
 });
 

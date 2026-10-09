@@ -21,6 +21,7 @@ import { Gallery } from "./Gallery";
 import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
 import { CharacterMotor } from "./CharacterMotor";
+import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
 import { MoodBoard } from "./MoodBoard";
@@ -140,6 +141,24 @@ export function Bible() {
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${card.id}"]`)?.scrollIntoView({ block: "start" }));
   }, [target, nodes, clearTarget]);
 
+  // Une rubrique du sommaire : on défile jusqu'à elle (toutes sont sur la même page).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const goTo = (type: CardType) => {
+    setCurrent(type);
+    requestAnimationFrame(() => mainRef.current?.querySelector(`[data-group="${type}"]`)?.scrollIntoView({ block: "start" }));
+  };
+  // En défilant, le sommaire suit la rubrique à l'écran.
+  const onScroll = () => {
+    if (onPage || !rootRef.current || !mainRef.current) return;
+    const top = rootRef.current.getBoundingClientRect().top + 80;
+    let here: CardType | null = null;
+    for (const el of Array.from(mainRef.current.querySelectorAll<HTMLElement>("[data-group]"))) {
+      if (el.getBoundingClientRect().top <= top) here = el.dataset.group as CardType;
+    }
+    const next = here ?? sections[0]?.type;
+    if (next && next !== current) setCurrent(next);
+  };
+
   const create = (type: CardType) => {
     setCurrent(type);
     setFresh(addTitledCard(type, ""));
@@ -181,6 +200,92 @@ export function Bible() {
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${id}"]`)?.scrollIntoView({ block: "start" }));
   };
 
+  /** Une fiche de la Bible : la carte elle-même, modifiable sur place. */
+  const entry = (card: CardData, type: CardType) => {
+          const links = edges.filter((e) => e.source === card.id || e.target === card.id);
+          return (
+            <article key={card.id} data-entry={card.id} className={`bible-entry${type === "personnage" ? " is-character" : ""}`} style={{ ["--type" as string]: typeColor(type) }}>
+              {type !== "personnage" && (
+                <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
+              )}
+              <header>
+                {type === "personnage" &&
+                  (card.image ? (
+                    <button type="button" className="bible-portrait-button" aria-label={t.card.changeImage} title={t.card.changeImage} onClick={() => pickCardImage(card.id)}>
+                      <Portrait name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
+                    </button>
+                  ) : (
+                    <button type="button" className="bible-portrait-button is-empty" aria-label={t.character.addPortrait} title={t.character.addPortrait} onClick={() => pickCardImage(card.id)}>
+                      <span aria-hidden="true">{(card.title.trim()[0] ?? "?").toUpperCase()}</span>
+                    </button>
+                  ))}
+                <div className="bible-heading">
+                <h3>
+                  {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
+                  <input
+                    type="text"
+                    data-card={card.id}
+                    className={`bible-title${kind === "scenario" && type === "scene" ? " is-slugline" : ""}`}
+                    value={card.title}
+                    placeholder={types[type].titlePlaceholder}
+                    aria-label={t.bible.titleAria}
+                    autoComplete="off"
+                    onChange={(e) => updateCard(card.id, { title: e.target.value })}
+                    onBlur={() => card.id === fresh && setFresh(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                    }}
+                  />
+                </h3>
+                {(type === "personnage" || type === "lieu") && <Poster card={card} />}
+                </div>
+                <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
+                  {t.bible.seeOnCanvas}
+                </button>
+              </header>
+              {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
+              {type !== "personnage" && <Gallery card={card} />}
+              {type === "personnage" && <CharacterMotor card={card} />}
+              {/* Le synopsis d'une scène de scénario vit dans le fichier Fountain (séquencier) : pas de fiche ici. */}
+              {type !== "personnage" && !(type === "scene" && kind === "scenario") && <CardSheet card={card} />}
+              {type === "source" && <SourceTools card={card} />}
+              {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
+              <BibleBody card={card} />
+              {type === "personnage" && (
+                <>
+                  <CardSheet card={card} startOpen={false} />
+                  <CharacterAnswers card={card} />
+                  <Gallery card={card} />
+                </>
+              )}
+              {type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
+              {links.length > 0 && (
+                <div className="bible-links">
+                  <span className="eyebrow">{t.bible.linkedTo}</span>
+                  {links.map((e) => {
+                    const other = e.source === card.id ? e.target : e.source;
+                    return (
+                      <span key={e.id} className="chip link-chip">
+                        {titleOf(other)}
+                        {e.label ? ` · ${String(e.label)}` : ""}
+                        <button
+                          type="button"
+                          className="chip-remove"
+                          aria-label={fmt(t.bible.unlink, { title: titleOf(other) })}
+                          title={fmt(t.bible.unlink, { title: titleOf(other) })}
+                          onClick={() => useCosmos.getState().removeLink(e.id)}
+                        >
+                          <span aria-hidden="true">×</span>
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          );
+  };
+
   if (!shown && !onPage) {
     return (
       <div className="empty-view">
@@ -192,7 +297,7 @@ export function Bible() {
   }
 
   return (
-    <div className="bible">
+    <div className="bible" ref={rootRef} onScroll={onScroll}>
       <nav className="bible-toc" aria-label={t.bible.tocAria}>
         <div className="eyebrow">{t.bible.tocTitle}</div>
         {arranging ? (
@@ -250,7 +355,7 @@ export function Bible() {
                 type="button"
                 className={!onPage && s === shown ? "is-current" : ""}
                 aria-current={!onPage && s === shown ? "true" : undefined}
-                onClick={() => setCurrent(s.type)}
+                onClick={() => goTo(s.type)}
               >
                 <span className="toc-label">
                   <span className="card-dot" style={{ background: typeColor(s.type) }} />
@@ -286,111 +391,47 @@ export function Bible() {
           <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
         </section>
       ) : (
-      <section className="bible-main" aria-label={types[shown.type].section} ref={mainRef}>
-        <div className="bible-main-head">
-          <h1>{types[shown.type].section}</h1>
-          {shown.type === "personnage" && shown.cards.length > 0 && (
-            <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
-              <button type="button" aria-pressed={!relations} onClick={() => setRelations(false)}>
-                {t.relations.tabCards}
-              </button>
-              <button type="button" aria-pressed={relations} onClick={() => setRelations(true)}>
-                {t.relations.tabMap}
-              </button>
-            </div>
-          )}
-        </div>
-        {shown.type === "personnage" && relations && shown.cards.length > 0 ? (
-          <div className="bible-entry">
-            <RelationsMap onOpen={openCard} />
-          </div>
-        ) : (
-        <>
-        {shown.cards.length === 0 && (
-          <div className="bible-empty-section">
-            <p className="muted">{t.bible.sectionEmpty}</p>
-            <button type="button" className="ghost-button" onClick={() => create(shown.type)}>
-              <span className="card-dot" style={{ background: typeColor(shown.type) }} />
-              {fmt(t.bible.addType, { type: types[shown.type].label })}
-            </button>
-          </div>
-        )}
-        {shown.cards.map((card) => {
-          const links = edges.filter((e) => e.source === card.id || e.target === card.id);
-          return (
-            <article key={card.id} data-entry={card.id} className={`bible-entry${shown.type === "personnage" ? " is-character" : ""}`} style={{ ["--type" as string]: typeColor(shown.type) }}>
-              {shown.type !== "personnage" && (
-                <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
-              )}
-              <header>
-                {shown.type === "personnage" &&
-                  (card.image ? (
-                    <button type="button" className="bible-portrait-button" aria-label={t.card.changeImage} title={t.card.changeImage} onClick={() => pickCardImage(card.id)}>
-                      <Portrait name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
-                    </button>
-                  ) : (
-                    <button type="button" className="bible-portrait-button is-empty" aria-label={t.character.addPortrait} title={t.character.addPortrait} onClick={() => pickCardImage(card.id)}>
-                      <span aria-hidden="true">{(card.title.trim()[0] ?? "?").toUpperCase()}</span>
-                    </button>
-                  ))}
-                <div className="bible-heading">
-                <h2>
-                  {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
-                  <input
-                    type="text"
-                    data-card={card.id}
-                    className={`bible-title${kind === "scenario" && shown.type === "scene" ? " is-slugline" : ""}`}
-                    value={card.title}
-                    placeholder={types[shown.type].titlePlaceholder}
-                    aria-label={t.bible.titleAria}
-                    autoComplete="off"
-                    onChange={(e) => updateCard(card.id, { title: e.target.value })}
-                    onBlur={() => card.id === fresh && setFresh(null)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
-                    }}
-                  />
+        // Toutes les rubriques affichées, l'une sous l'autre : la Bible se lit comme le document exporté
+        // (mêmes rubriques, même ordre, mêmes images). Le sommaire mène à chacune.
+        <section className="bible-main" aria-label={t.bible.tocTitle} ref={mainRef}>
+          <h1 className="sr-only">{t.bible.tocTitle}</h1>
+          {sections.map((group) => (
+            <div key={group.type} className="bible-group" data-group={group.type}>
+              <div className="bible-main-head">
+                <h2 className="bible-group-title">
+                  <span className="card-dot" style={{ background: typeColor(group.type) }} />
+                  {types[group.type].section}
+                  <span className="toc-count">{group.cards.length}</span>
                 </h2>
-                {(shown.type === "personnage" || shown.type === "lieu") && <Poster card={card} />}
+                {group.type === "personnage" && group.cards.length > 0 && (
+                  <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
+                    <button type="button" aria-pressed={!relations} onClick={() => setRelations(false)}>
+                      {t.relations.tabCards}
+                    </button>
+                    <button type="button" aria-pressed={relations} onClick={() => setRelations(true)}>
+                      {t.relations.tabMap}
+                    </button>
+                  </div>
+                )}
+              </div>
+              {group.type === "personnage" && relations && group.cards.length > 0 ? (
+                <div className="bible-entry">
+                  <RelationsMap onOpen={openCard} />
                 </div>
-                <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
-                  {t.bible.seeOnCanvas}
-                </button>
-              </header>
-              {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
-              {(shown.type === "lieu" || shown.type === "source") && <Gallery card={card} />}
-              {shown.type === "personnage" && <CharacterMotor card={card} />}
-              {shown.type !== "personnage" && <CardSheet card={card} />}
-              {shown.type === "source" && <SourceTools card={card} />}
-              {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
-              <BibleBody card={card} />
-              {shown.type === "personnage" && (
-                <>
-                  <CardSheet card={card} startOpen={false} />
-                  <Gallery card={card} />
-                </>
-              )}
-              {shown.type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
-              {links.length > 0 && (
-                <div className="bible-links">
-                  <span className="eyebrow">{t.bible.linkedTo}</span>
-                  {links.map((e) => {
-                    const other = e.source === card.id ? e.target : e.source;
-                    return (
-                      <span key={e.id} className="chip">
-                        {titleOf(other)}
-                        {e.label ? ` · ${String(e.label)}` : ""}
-                      </span>
-                    );
-                  })}
+              ) : group.cards.length === 0 ? (
+                <div className="bible-empty-section">
+                  <p className="muted">{t.bible.sectionEmpty}</p>
+                  <button type="button" className="ghost-button" onClick={() => create(group.type)}>
+                    <span className="card-dot" style={{ background: typeColor(group.type) }} />
+                    {fmt(t.bible.addType, { type: types[group.type].label })}
+                  </button>
                 </div>
+              ) : (
+                group.cards.map((card) => entry(card, group.type))
               )}
-            </article>
-          );
-        })}
-        </>
-        )}
-      </section>
+            </div>
+          ))}
+        </section>
       )}
     </div>
   );

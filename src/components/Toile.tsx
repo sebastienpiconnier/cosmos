@@ -159,6 +159,16 @@ export function Toile() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Une source vient d'être rangée dans la zone Sources (souvent hors de la vue) : on l'annonce, avec « Voir ».
+  const lastClip = useCosmos((s) => s.lastClip);
+  const [clipNotice, setClipNotice] = useState(false);
+  useEffect(() => {
+    if (!lastClip) return;
+    setClipNotice(true);
+    const timer = window.setTimeout(() => setClipNotice(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, [lastClip]);
+
   // Coller hors d'un champ : un lien, un texte ou une image devient une source de la zone Recherche.
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
@@ -297,10 +307,8 @@ export function Toile() {
           e.stopPropagation();
           openLabelEditor(edge, e.clientX, e.clientY);
         }}
-        // Au doigt, le double-tap sur un fil fin est laborieux : un simple appui suffit.
-        onEdgeClick={(e, edge) => {
-          if (touch) openLabelEditor(edge, e.clientX, e.clientY);
-        }}
+        // Un clic (ou un appui) sur un fil ouvre son étiquette et le bouton « Délier ».
+        onEdgeClick={(e, edge) => openLabelEditor(edge, e.clientX, e.clientY)}
         colorMode={theme}
         connectionMode={ConnectionMode.Loose}
         zoomOnDoubleClick={false}
@@ -332,20 +340,37 @@ export function Toile() {
       </ReactFlow>
 
       {labelEditor && (
-        <input
-          className="label-editor"
-          style={{ left: labelEditor.x, top: labelEditor.y }}
-          autoFocus
-          placeholder={t.toile.labelPlaceholder}
-          aria-label={t.toile.labelAria}
-          value={labelEditor.value}
-          onChange={(e) => setLabelEditor({ ...labelEditor, value: e.target.value })}
-          onBlur={commitLabel}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commitLabel();
-            if (e.key === "Escape") setLabelEditor(null);
-          }}
-        />
+        <div className="label-editor" style={{ left: labelEditor.x, top: labelEditor.y }}>
+          <input
+            autoFocus
+            placeholder={t.toile.labelPlaceholder}
+            aria-label={t.toile.labelAria}
+            value={labelEditor.value}
+            onChange={(e) => setLabelEditor({ ...labelEditor, value: e.target.value })}
+            onBlur={commitLabel}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitLabel();
+              if (e.key === "Escape") setLabelEditor(null);
+            }}
+          />
+          {/* Délier : le fil part (annulable). Le focus reste dans le champ jusqu'au clic. */}
+          <button
+            type="button"
+            className="label-unlink"
+            aria-label={t.toile.unlink}
+            title={t.toile.unlink}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => {
+              useCosmos.getState().removeLink(labelEditor.edgeId);
+              setLabelEditor(null);
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M9 7H7a5 5 0 0 0 0 10h2M15 7h2a5 5 0 0 1 3.5 8.5M8 12h3M4 4l16 16" />
+            </svg>
+            <span>{t.toile.unlinkShort}</span>
+          </button>
+        </div>
       )}
 
       <button type="button" className="add-card" title={t.toile.addCardHint} aria-keyshortcuts="N" onClick={createInCenter}>
@@ -361,13 +386,6 @@ export function Toile() {
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
           </svg>
           <span className="tool-label" aria-hidden="true">{t.toile.frameShort}</span>
-        </button>
-        <button type="button" className="icon-button has-label" aria-label={t.research.button} title={t.research.hint} onClick={() => useCosmos.getState().showResearch()}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 4.5h9a2 2 0 0 1 2 2V20l-6.5-3.5L3 20V6.5a2 2 0 0 1 2-2z" />
-            <path d="M19 8v12" />
-          </svg>
-          <span className="tool-label" aria-hidden="true">{t.research.button}</span>
         </button>
         <button type="button" className="icon-button has-label" aria-label={t.organize.button} title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -392,6 +410,21 @@ export function Toile() {
         </button>
       </div>
 
+      {clipNotice && (
+        <div className="toile-notice" role="status">
+          <span>{t.research.added}</span>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setClipNotice(false);
+              useCosmos.getState().showResearch();
+            }}
+          >
+            {t.research.see}
+          </button>
+        </div>
+      )}
       <div className="toile-hint">
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
       </div>
