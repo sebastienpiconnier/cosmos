@@ -785,12 +785,6 @@ export const en: Messages = {
     unlabeled: "linked to",
   },
 
-  // Mood board of the Bible: every image in the project.
-  mood: {
-    toc: "Moodboard",
-    empty: "No images yet. Add photos to characters, places or sources: they gather here.",
-    open: "{title} ({type}), open the sheet",
-  },
 
   // Project cover, at the top of the Bible.
   pitch: {
@@ -932,7 +926,7 @@ export const en: Messages = {
       mention: "Mention another card",
       width: "Widen or narrow the card",
       delete: "Delete the selection",
-      paste: "Paste a link, a text or an image: a card in the Research frame",
+      paste: "Paste a link, a text or an image: a Link, Excerpt or Image card",
       bold: "Bold",
       italic: "Italic",
       strike: "Strikethrough",
@@ -1024,12 +1018,11 @@ export const en: Messages = {
   },
 
   research: {
-    added: "Filed in the Research frame.",
-    see: "Show",
     frameTitle: "Research",
     oldTitles: ["Sources"],
     kinds: { lien: "Link", image: "Image", extrait: "Excerpt" },
     captionPlaceholder: "Caption…",
+    excerptPlaceholder: "Where is this passage from? (optional)",
     open: "Open {host}",
     fetch: "Fill in from the page",
     fetching: "Reading the page…",
@@ -1132,7 +1125,7 @@ export const en: Messages = {
     done: "Your turn to write",
     steps: {
       cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or long-press the canvas: a card is born. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
-      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a Link, Image or Excerpt card is born in the Research frame, with the site’s title and picture. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter." },
+      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single Link, Image or Excerpt card is born where you are, with the site’s title and picture. When it all overflows, “Organize” sorts the cards into frames by type (including a Research frame), by outline beat and by chapter." },
       bible: { title: "The Bible builds itself", body: "Every typed card gets its sheet, nothing is copied. Start with the project cover (tagline, logline, genre), then dig into your characters: what they want, what they lack, their wound. The assistant asks questions, it never answers for you." },
       plan: { title: "Give the story a shape", body: "Pick a template (three acts, Save the Cat, hero’s journey) and place your scenes in its beats. The timeline shows who and what appears in each scene." },
       write: { title: "Write, scene by scene", body: "The manuscript follows the outline, laid out like a book. Enter twice breaks the scene, three times starts a chapter: an “Undo” button shows up at every break." },

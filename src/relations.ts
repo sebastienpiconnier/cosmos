@@ -89,14 +89,3 @@ export function edgePoint(x: number, y: number, tx: number, ty: number, r: numbe
   const d = Math.hypot(dx, dy) || 1;
   return { x: x + (dx / d) * r, y: y + (dy / d) * r };
 }
-
-/** Images de tout le projet, pour le tableau d'ambiance : principale puis galerie, par type puis par titre. */
-export function moodImages(cards: Pick<CardData, "id" | "type" | "title" | "image" | "images">[], order: readonly string[], lang = "fr"): { cardId: string; name: string; type: CardData["type"]; title: string }[] {
-  const rank = (t: string) => {
-    const i = order.indexOf(t);
-    return i < 0 ? order.length : i;
-  };
-  return [...cards]
-    .sort((a, b) => rank(a.type) - rank(b.type) || a.title.localeCompare(b.title, lang))
-    .flatMap((c) => [...new Set([c.image, ...(c.images ?? [])].filter((n): n is string => !!n))].map((name) => ({ cardId: c.id, name, type: c.type, title: c.title })));
-}

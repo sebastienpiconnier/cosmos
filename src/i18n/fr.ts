@@ -852,12 +852,6 @@ export const fr = {
     unlabeled: "relié à",
   },
 
-  // Tableau d'ambiance de la Bible : toutes les images du projet.
-  mood: {
-    toc: "Moodboard",
-    empty: "Aucune image pour l’instant. Ajoute des photos aux personnages, aux lieux ou aux sources : elles se rassemblent ici.",
-    open: "{title} ({type}), ouvrir la fiche",
-  },
 
   // Pages du livre dans le manuscrit (idée reprise de NEO).
   book: {
@@ -945,7 +939,7 @@ export const fr = {
       mention: "Citer une autre carte",
       width: "Élargir ou rétrécir la carte",
       delete: "Supprimer la sélection",
-      paste: "Coller un lien, un texte ou une image : une carte dans le cadre Recherche",
+      paste: "Coller un lien, un texte ou une image : une carte Lien, Extrait ou Image",
       bold: "Gras",
       italic: "Italique",
       strike: "Barré",
@@ -1042,14 +1036,13 @@ export const fr = {
 
   // Zone « Recherche » du canevas et cartes Source.
   research: {
-    added: "Rangée dans le cadre Recherche.",
-    see: "Voir",
     frameTitle: "Recherche",
     // Titres que la zone a portés par défaut dans les versions d'avant (remplacés à l'ouverture).
     oldTitles: ["Sources"],
     // Ce qu'est une carte de la zone, selon ce qu'on y a collé (le type reste « source » dans le fichier).
     kinds: { lien: "Lien", image: "Image", extrait: "Extrait" },
     captionPlaceholder: "Légende…",
+    excerptPlaceholder: "D’où vient ce passage ? (facultatif)",
     open: "Ouvrir {host}",
     fetch: "Compléter depuis la page",
     fetching: "Lecture de la page…",
@@ -1156,7 +1149,7 @@ export const fr = {
     done: "À toi d’écrire",
     steps: {
       cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou appui long sur le canevas : une carte naît. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
-      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : une carte Lien, Image ou Extrait naît dans le cadre Recherche, avec le titre et l’image du site. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre." },
+      sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : une seule carte Lien, Image ou Extrait naît là où tu es, avec le titre et l’image du site. Quand tout déborde, « Organiser » range les cartes en cadres par type (dont un cadre Recherche), par case du plan et par chapitre." },
       bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
       plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
       write: { title: "Écris, scène par scène", body: "Le manuscrit suit l’ordre du plan, mis en pages comme un livre. Entrée deux fois coupe la scène, trois fois ouvre un chapitre : un bouton « Annuler » apparaît à chaque coupure." },

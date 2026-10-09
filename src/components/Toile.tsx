@@ -88,26 +88,26 @@ export function Toile() {
     addCard({ x: pos.x - 20, y: pos.y - 20 }); // la carte prend le focus elle-même
   };
 
-  // Image déposée : sur une carte, elle devient son image ; sur le canevas, une nouvelle carte la porte.
-  // Lien ou texte déposé depuis un navigateur : une source dans la zone Recherche.
+  // Image déposée : sur une carte, elle devient son image ; sur le canevas, une carte Image à cet endroit.
+  // Lien ou texte déposé depuis un navigateur : une carte Lien ou Extrait, là où on l'a lâché (une seule).
   const onDrop = async (e: React.DragEvent) => {
+    const at = screenToFlowPosition({ x: e.clientX, y: e.clientY });
     const file = [...e.dataTransfer.files].find((f) => imageExtension(f.name));
     if (!file) {
       const link = e.dataTransfer.getData("text/uri-list").split("\n").find((l) => l && !l.startsWith("#"));
       const text = link?.trim() || e.dataTransfer.getData("text/plain");
       if (text && clipFromText(text)) {
         e.preventDefault();
-        useCosmos.getState().addResearchClip(text);
+        useCosmos.getState().addResearchClip(text, at);
       }
       return;
     }
     e.preventDefault();
     const cardId = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
-    const pos = screenToFlowPosition({ x: e.clientX - 20, y: e.clientY - 20 });
     const image = { name: file.name, data: new Uint8Array(await file.arrayBuffer()) };
-    const { setCardImage, addImageCard } = useCosmos.getState();
+    const { setCardImage, addResearchImage } = useCosmos.getState();
     if (cardId) await setCardImage(cardId, image);
-    else await addImageCard(pos, image);
+    else await addResearchImage(image, at);
   };
 
   const isPane = (target: EventTarget | null) =>
@@ -159,17 +159,19 @@ export function Toile() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Une source vient d'être rangée dans la zone Sources (souvent hors de la vue) : on l'annonce, avec « Voir ».
-  const lastClip = useCosmos((s) => s.lastClip);
-  const [clipNotice, setClipNotice] = useState(false);
-  useEffect(() => {
-    if (!lastClip) return;
-    setClipNotice(true);
-    const timer = window.setTimeout(() => setClipNotice(false), 6000);
-    return () => window.clearTimeout(timer);
-  }, [lastClip]);
+  // Dernière position du pointeur sur le canevas : un collage y pose sa carte (sinon, au centre de la vue).
+  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const pasteAt = () => {
+    const rect = wrapper.current?.getBoundingClientRect();
+    const p = pointer.current;
+    const inside = p && rect && p.x >= rect.left && p.x <= rect.right && p.y >= rect.top && p.y <= rect.bottom;
+    if (inside) return screenToFlowPosition(p);
+    return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 75 }) : undefined;
+  };
+  const pasteAtRef = useRef(pasteAt);
+  pasteAtRef.current = pasteAt;
 
-  // Coller hors d'un champ : un lien, un texte ou une image devient une source de la zone Recherche.
+  // Coller hors d'un champ : un lien, un texte ou une image devient une carte Lien, Extrait ou Image, là où l'on est.
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
       const target = e.target instanceof Element ? e.target : null;
@@ -178,17 +180,17 @@ export function Toile() {
       if (!data) return;
       const store = useCosmos.getState();
       const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
-      // Tout ce qui est collé sur le canevas va dans la zone Recherche, comme source.
+      const at = pasteAtRef.current();
       if (image) {
         e.preventDefault();
         const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
-        await store.addResearchImage({ name, data: new Uint8Array(await image.arrayBuffer()) });
+        await store.addResearchImage({ name, data: new Uint8Array(await image.arrayBuffer()) }, at);
         return;
       }
       const text = data.getData("text/plain");
       if (!clipFromText(text)) return;
       e.preventDefault();
-      store.addResearchClip(text);
+      store.addResearchClip(text, at);
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
@@ -273,6 +275,9 @@ export function Toile() {
       className="toile"
       ref={wrapper}
       onDoubleClick={onDoubleClick}
+      onPointerMove={(e) => {
+        pointer.current = { x: e.clientX, y: e.clientY };
+      }}
       onDragOver={(e) => {
         const types = e.dataTransfer.types;
         if (!types.includes("Files") && !types.includes("text/uri-list") && !types.includes("text/plain")) return;
@@ -410,21 +415,6 @@ export function Toile() {
         </button>
       </div>
 
-      {clipNotice && (
-        <div className="toile-notice" role="status">
-          <span>{t.research.added}</span>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => {
-              setClipNotice(false);
-              useCosmos.getState().showResearch();
-            }}
-          >
-            {t.research.see}
-          </button>
-        </div>
-      )}
       <div className="toile-hint">
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
       </div>

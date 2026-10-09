@@ -21,10 +21,9 @@ import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene,
 import { organize } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
-import { hostOf, newResearchBox, researchSpot, today } from "./research";
+import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
 import { sourceUrl } from "./character";
-import type { Box } from "./placement";
 import { clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
 import { markdownToHtml } from "./storage/markdown";
@@ -84,20 +83,19 @@ interface CosmosState {
    * Range une source (lien, extrait, image collés ou déposés) dans la zone Recherche du canevas, créée au
    * besoin et agrandie si elle est pleine. Une seule étape d'historique. Rend l'identifiant de la carte.
    */
-  addResearchCard: (card: { title: string; html: string; fiche?: Record<string, string>; image?: string; type?: CardType }) => string;
+  /** Carte Lien, Image ou Extrait (type `source`), posée à `at` (point du canevas) ou au centre de la vue. */
+  addResearchCard: (card: { title: string; html: string; fiche?: Record<string, string>; image?: string; type?: CardType }, at?: { x: number; y: number }) => string;
   /** Une image collée ou déposée devient une source illustrée de la zone Recherche. */
-  addResearchImage: (file: { name: string; data: Uint8Array }) => Promise<string | null>;
+  addResearchImage: (file: { name: string; data: Uint8Array }, at?: { x: number; y: number }) => Promise<string | null>;
   /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
-  addResearchClip: (text: string) => string | null;
+  addResearchClip: (text: string, at?: { x: number; y: number }) => string | null;
   /**
    * Complète une source depuis sa page : titre (s'il n'est que le nom du site), auteur, publication, et
    * image du site si la carte n'en a pas. Ne remplace jamais ce que l'auteur a écrit. Hors historique.
    */
   completeSource: (id: string) => Promise<boolean>;
   /** Dernière source ajoutée par collage ou dépôt : le canevas l'annonce (« Voir »). */
-  lastClip: { id: string; at: number } | null;
   /** Montre la zone Recherche (créée au besoin). */
-  showResearch: () => void;
   /** Cadre à montrer sur le canevas (zone Recherche), puis remis à null. */
   focusFrame: string | null;
   clearFocusFrame: () => void;
@@ -367,15 +365,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     storage.remember({ title: state.title, kind: state.kind });
     return true;
   };
-  /** La zone Recherche : celle qui existe, ou une neuve à droite du canevas (pas d'étape d'historique ici). */
-  const ensureResearch = (): { frame: FrameNode; frames: FrameNode[] } => {
-    const frames = get().frames;
-    const existing = frames.find((f) => f.data.kind === "research");
-    if (existing) return { frame: existing, frames };
-    const box = newResearchBox([...boxes(get().nodes), ...frames.map(frameBox)]);
-    const frame = toFrameNode({ id: newId(), title: getT().research.frameTitle, kind: "research", ...box });
-    return { frame, frames: [...frames, frame] };
-  };
+  // Dernier collage : le même collé deux fois de suite (deux événements pour un seul geste) ne fait qu'une carte.
+  let lastPaste = { text: "", at: 0 };
   const refreshProjects = async () => set({ projects: await storage.list().catch(() => []) });
 
   return {
@@ -456,21 +447,21 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dialog: null,
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
     setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}) }),
-    addResearchCard: ({ title, html, fiche, image, type = "source" }) => {
+    addResearchCard: ({ title, html, fiche, image, type = "source" }, at) => {
       record();
-      const { frame, frames } = ensureResearch();
-      const cards = boxes(get().nodes);
-      const { spot, frame: grown } = researchSpot(frameBox(frame), cards, { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height });
+      // Comme dans Milanote : la carte naît là où l'on colle ou dépose, sans cadre imposé. « Organiser » la
+      // rangera plus tard dans un cadre Recherche, comme les autres types.
+      const size = { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height };
+      const taken = boxes(get().nodes);
+      const spot = at ? freeSpot({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
       const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}) };
       set({
         nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), { ...toNode(card, spot.x, spot.y), selected: true }],
-        frames: frames.map((f) => (f.id === frame.id ? { ...f, height: grown.height } : f)),
-        focusId: card.id,
       });
       touch();
       return card.id;
     },
-    addResearchImage: async (file) => {
+    addResearchImage: async (file, at) => {
       const ext = imageExtension(file.name);
       if (!ext) return null;
       const name = `${newId()}.${ext}`;
@@ -480,28 +471,30 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         return null;
       }
-      return get().addResearchCard({ title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } });
+      return get().addResearchCard({ title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } }, at);
     },
-    addResearchClip: (text) => {
+    addResearchClip: (text, at) => {
       const clip = clipFromText(text);
       if (!clip) return null;
+      // Un seul geste qui arrive deux fois (collage et dépôt, ou deux écouteurs) : une seule carte.
+      const now = Date.now();
+      if (lastPaste.text === text.trim() && now - lastPaste.at < 1500) return null;
+      lastPaste = { text: text.trim(), at: now };
       // Le même lien collé deux fois : on montre la source existante au lieu d'en créer une autre.
       const same = clip.url ? get().nodes.find((n) => n.data.type === "source" && n.data.fiche?.url === clip.url) : undefined;
       if (same) {
-        set({ focusId: same.id, lastClip: { id: same.id, at: Date.now() } });
+        set({ focusId: same.id });
         return same.id;
       }
       const id = get().addResearchCard({
         title: clip.title,
         html: clip.markdown ? markdownToHtml(markHighlights(clip.markdown)) : "",
         fiche: { ...(clip.url ? { url: clip.url } : {}), consulte: today(useSettings.getState().lang) },
-      });
-      set({ lastClip: { id, at: Date.now() } });
+      }, at);
       // Un lien : le titre, l'auteur et l'image du site arrivent d'eux-mêmes, si la page se laisse lire.
       if (clip.url) void get().completeSource(id);
       return id;
     },
-    lastClip: null,
     completeSource: async (id) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
       const url = card ? sourceUrl(card) : null;
@@ -532,16 +525,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         return false;
       }
-    },
-    showResearch: () => {
-      const existing = get().frames.find((f) => f.data.kind === "research");
-      if (!existing) {
-        record();
-        const { frames } = ensureResearch();
-        set({ frames });
-        touch();
-      }
-      set({ view: "toile", focusFrame: get().frames.find((f) => f.data.kind === "research")?.id ?? null });
     },
     focusFrame: null,
     clearFocusFrame: () => set({ focusFrame: null }),
@@ -769,11 +752,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     organizeCanvas: () => {
-      const { nodes, edges, plan, kind, frames } = get();
-      // La zone Recherche et ses sources ne bougent pas : c'est l'établi de l'auteur, pas le récit.
-      const research = frames.filter((f) => f.data.kind === "research");
-      const arranged = nodes.filter((n) => n.data.type !== "source");
-      const sources = nodes.filter((n) => n.data.type === "source");
+      const { nodes, edges, plan, kind } = get();
+      // Toutes les cartes se rangent, Liens, Images et Extraits compris (dans un cadre « Recherche »).
+      const arranged = nodes;
       if (arranged.length === 0) return;
       const t = getT();
       const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
@@ -783,7 +764,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         plan,
         sceneIds: planScenes(arranged),
         labels: {
-          groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
+          groups: { ...(Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>), source: t.research.frameTitle },
           beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
           chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
           unplaced: t.plan.unplaced,
@@ -800,47 +781,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
         if (linked(source, target)) continue;
         nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
       }
-      const positions = new Map(result.positions);
-      // Les sources se rangent dans la zone Sources : celles qui traînent ailleurs y entrent, et la zone se
-      // place à droite de tout le reste (avec ses cartes) pour ne rien chevaucher.
-      let zone = research[0] ?? null;
-      const placed = arranged.map((n, i) => ({ ...sizes[i], ...(positions.get(n.id) ?? n.position) }));
-      const framed = [...placed, ...result.frames.map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height }))];
-      const strays = sources.filter((n) => {
-        if (!zone) return true;
-        const z = frameBox(zone);
-        const [b] = boxes([n]);
-        const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
-        return cx < z.x || cx > z.x + z.width || cy < z.y || cy > z.y + z.height;
-      });
-      if (!zone && strays.length > 0) zone = toFrameNode({ id: newId(), title: t.research.frameTitle, kind: "research", ...newResearchBox(framed) });
-      if (zone) {
-        const right = Math.max(...framed.map((b) => b.x + b.width));
-        const z = frameBox(zone);
-        const dx = z.x < right + 160 ? right + 160 - z.x : 0;
-        const dy = framed.length > 0 ? Math.min(...framed.map((b) => b.y)) - z.y : 0;
-        let box: Box = { ...z, x: z.x + dx, y: z.y + dy };
-        for (const n of sources) {
-          if (strays.includes(n)) continue;
-          positions.set(n.id, { x: n.position.x + dx, y: n.position.y + dy });
-        }
-        const inZone = sources.filter((n) => !strays.includes(n)).map((n) => ({ ...boxes([n])[0], ...positions.get(n.id)! }));
-        for (const n of strays) {
-          const [b] = boxes([n]);
-          const { spot, frame } = researchSpot(box, inZone, { width: b.width, height: b.height });
-          box = frame;
-          positions.set(n.id, spot);
-          inZone.push({ ...b, ...spot });
-        }
-        zone = { ...zone, position: { x: box.x, y: box.y }, width: box.width, height: box.height };
-      }
+      const positions = result.positions;
       set({
         nodes: nodes.map((n) => {
           const at = positions.get(n.id);
           return at ? { ...n, position: at, selected: false } : n;
         }),
-        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, plus la zone Sources.
-        frames: [...result.frames.map(toFrameNode), ...(zone ? [zone] : [])],
+        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement.
+        frames: result.frames.map(toFrameNode),
         edges: nextEdges,
         view: "toile",
         fitRequest: Date.now(),

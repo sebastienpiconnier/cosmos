@@ -56,46 +56,38 @@ describe("zone Recherche dans le projet", () => {
     await state().createProject({ title: "K", kind: "roman" });
   });
 
-  it("un lien collé : une source dans le cadre Recherche, créé une fois, enregistré, annulable", () => {
+  it("un lien collé : une seule carte, là où l'on colle, sans cadre imposé ; annulable", () => {
     state().addTitledCard("personnage", "Inès");
-    const a = state().addResearchClip("https://fr.wikipedia.org/wiki/Phare")!;
+    const a = state().addResearchClip("https://fr.wikipedia.org/wiki/Phare", { x: 1000, y: 600 })!;
+    // Le même geste reçu deux fois (collage et dépôt) ne fait pas de deuxième carte.
+    expect(state().addResearchClip("https://fr.wikipedia.org/wiki/Phare", { x: 1000, y: 600 })).toBeNull();
     const b = state().addResearchClip("Le phare de Kerlaouen fut éteint en 1952.")!;
-    const research = state().frames.filter((f) => f.data.kind === "research");
-    expect(research).toHaveLength(1);
-    expect(research[0].data.title).toBe("Recherche");
+    expect(state().frames).toHaveLength(0);
     const card = (id: string) => state().nodes.find((n) => n.id === id)!;
     expect(card(a).data).toMatchObject({ type: "source", title: "fr.wikipedia.org", fiche: { url: "https://fr.wikipedia.org/wiki/Phare" } });
+    expect(card(a).position).toEqual({ x: 980, y: 580 });
     expect(card(b).data.html).toContain("<blockquote>");
-    // Dans le cadre, l'une à côté de l'autre.
-    const f = research[0];
-    for (const id of [a, b]) {
-      const p = card(id).position;
-      expect(p.x).toBeGreaterThanOrEqual(f.position.x);
-      expect(p.y).toBeGreaterThanOrEqual(f.position.y);
-    }
-    expect(card(a).position.y).toBe(card(b).position.y);
-    // Le cadre garde sa nature dans cosmos.json.
+    expect(state().nodes.filter((n) => n.data.type === "source")).toHaveLength(2);
+    // Un ancien cadre Recherche garde sa nature dans cosmos.json.
     const files = serialize(deserialize(serialize({ meta: { version: 1, title: "K", layout: [], links: [], frames: [{ id: "r", title: "Recherche", x: 0, y: 0, width: 300, height: 200, kind: "research" }] }, cards: [], screenplay: null }))!);
     expect(JSON.parse(files["cosmos.json"]).frames[0].kind).toBe("research");
     state().undo();
     expect(state().nodes.some((n) => n.id === b)).toBe(false);
   });
 
-  it("« Organiser le canevas » range les sources dans la zone Sources, à droite du reste", () => {
+  it("« Organiser le canevas » range liens, images et extraits dans un cadre Recherche, comme les autres types", () => {
     state().addTitledCard("personnage", "Inès");
     const a = state().addResearchClip("https://x.fr/a")!;
-    // Une source posée ailleurs (créée à la main) rejoint la zone.
     const b = state().addTitledCard("source", "Archives");
     state().organizeCanvas();
-    const zone = state().frames.find((f) => f.data.kind === "research")!;
+    const zone = state().frames.find((f) => f.data.title === "Recherche")!;
+    expect(zone).toBeDefined();
     for (const id of [a, b]) {
       const p = state().nodes.find((n) => n.id === id)!.position;
       expect(p.x).toBeGreaterThanOrEqual(zone.position.x);
       expect(p.y).toBeGreaterThanOrEqual(zone.position.y);
       expect(p.x).toBeLessThan(zone.position.x + (zone.width ?? 0));
     }
-    const ines = state().nodes.find((n) => n.data.type === "personnage")!.position;
-    expect(ines.x).toBeLessThan(zone.position.x);
   });
 
   it("un lien collé deux fois ne fait qu'une source ; la ponctuation qui le suit est ignorée", () => {
@@ -116,5 +108,16 @@ describe("cartes de la zone Recherche (recette d'octobre, suite)", () => {
     expect(sourceKind({ type: "idee", image: "a.jpg" })).toBeNull();
     expect(renamedZone("Sources", ["Sources"], "Recherche")).toBe("Recherche");
     expect(renamedZone("Mes lectures", ["Sources"], "Recherche")).toBe("Mes lectures");
+  });
+});
+
+describe("un lien et son titre", () => {
+  it("« titre, puis adresse » fait une carte Lien, pas un extrait", () => {
+    expect(clipFromText("Phare d'Ar-Men, Wikipédia\nhttps://fr.wikipedia.org/wiki/Phare_d%27Ar-Men")).toEqual({
+      title: "Phare d'Ar-Men, Wikipédia",
+      url: "https://fr.wikipedia.org/wiki/Phare_d%27Ar-Men",
+      markdown: "",
+    });
+    expect(clipFromText("Un passage\nsur deux lignes\nhttps://x.fr")?.url).toBeUndefined();
   });
 });

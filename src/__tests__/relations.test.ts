@@ -1,8 +1,7 @@
 // Carte des relations et tableau d'ambiance de la Bible : relectures des fils et des images.
 
 import { describe, expect, it } from "vitest";
-import { edgePoint, moodImages, relationMap } from "../relations";
-import { BIBLE_ORDER } from "../types";
+import { edgePoint, relationMap } from "../relations";
 
 const p = (id: string, title: string) => ({ id, type: "personnage" as const, title });
 
@@ -37,20 +36,5 @@ describe("carte des relations", () => {
 
   it("un fil part du bord du portrait", () => {
     expect(edgePoint(0, 0, 10, 0, 4)).toEqual({ x: 4, y: 0 });
-  });
-});
-
-describe("tableau d'ambiance", () => {
-  it("toutes les images, principale puis galerie, par type puis par titre, sans doublon", () => {
-    const images = moodImages(
-      [
-        { id: "l", type: "lieu", title: "Phare", image: "l.jpg", images: ["l2.jpg"] },
-        { id: "b", type: "personnage", title: "Yann", image: "b.jpg", images: ["b.jpg"] },
-        { id: "a", type: "personnage", title: "Inès", images: ["a.jpg"] },
-        { id: "i", type: "idee", title: "Rien" },
-      ],
-      BIBLE_ORDER,
-    );
-    expect(images.map((x) => x.name)).toEqual(["a.jpg", "b.jpg", "l.jpg", "l2.jpg"]);
   });
 });

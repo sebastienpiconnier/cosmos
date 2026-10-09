@@ -29,6 +29,14 @@ export function clipFromText(raw: string): Clip | null {
     }
     return { title: host, url: text, markdown: "" };
   }
+  // Un lien accompagné de son seul titre (certains navigateurs donnent « titre, puis adresse ») : un lien.
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const links = lines.map(trimLink).filter((l) => !/\s/.test(l) && URL_RE.test(l));
+  const others = lines.filter((l) => !links.includes(trimLink(l)));
+  if (links.length === 1 && others.length === 1 && others[0].length <= 200) {
+    const titled = clipFromText(links[0]);
+    if (titled) return { ...titled, title: others[0] };
+  }
   // Un texte copié d'ailleurs : gardé tel quel, en citation (Markdown déjà présent compris).
   return { title: "", markdown: text.split("\n").map((l) => (l.trim() ? `> ${l}` : ">")).join("\n") };
 }

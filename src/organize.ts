@@ -4,7 +4,7 @@
 //
 //   Personnages · Intrigues · Lieux · Thèmes · Questions   (une rangée de cadres)
 //   Récit : [case du gabarit [chapitre [scènes]]]   (une case par ligne ; sans gabarit, les chapitres)
-//   Idées en vrac
+//   Idées en vrac · Recherche
 //
 // Les scènes sont reliées dans l'ordre du récit (un fil « puis » entre deux scènes qui se suivent).
 
@@ -159,7 +159,8 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
     },
     // Sans gabarit, les chapitres se suivent de gauche à droite ; avec, une case par ligne.
     { items: story, columns: free ? 3 : 1, gap: GROUP_GAP },
-    { items: typeFrame("idee", 4), columns: 1, gap: GROUP_GAP },
+    // Idées en vrac, puis la Recherche (liens, images, extraits collés sur le canevas).
+    { items: [...typeFrame("idee", 4), ...typeFrame("source", 3)], columns: 2, gap: GROUP_GAP },
   ].filter((r) => r.items.length > 0);
 
   const out: OrganizeResult = { positions: new Map(), frames: [], sequence: [] };

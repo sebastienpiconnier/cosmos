@@ -396,7 +396,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         rows={1}
         className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
         value={data.title}
-        placeholder={clipKind === "image" ? t.research.captionPlaceholder : types[data.type].titlePlaceholder}
+        placeholder={clipKind === "image" ? t.research.captionPlaceholder : clipKind === "extrait" ? t.research.excerptPlaceholder : types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
         onChange={(e) => updateCard(id, { title: e.target.value.replace(/\n/g, " ") })}
         onKeyDown={(e) => {

@@ -24,7 +24,6 @@ import { CharacterMotor } from "./CharacterMotor";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
-import { MoodBoard } from "./MoodBoard";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
@@ -117,12 +116,10 @@ export function Bible() {
     for (const n of nodes) out.set(n.data.type, (out.get(n.data.type) ?? 0) + 1);
     return out;
   }, [nodes]);
-  // « projet » : la couverture du projet, première page de la Bible (et page d'arrivée).
-  // « ambiance » : toutes les images du projet. Ni l'une ni l'autre n'a de données propres.
-  const [current, setCurrent] = useState<CardType | "projet" | "ambiance">("projet");
+  // « projet » : la couverture du projet, première page de la Bible (et page d'arrivée), sans données propres.
+  const [current, setCurrent] = useState<CardType | "projet">("projet");
   const onCover = current === "projet";
-  const onMood = current === "ambiance";
-  const onPage = onCover || onMood;
+  const onPage = onCover;
   // Personnages : fiches ou carte des relations (état d'affichage, non enregistré).
   const [relations, setRelations] = useState(false);
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
@@ -352,20 +349,6 @@ export function Bible() {
               </button>
             </li>
           ))}
-          {/* Le moodboard ferme le sommaire : toutes les images du projet, après les fiches. */}
-          <li>
-            <button type="button" className={`toc-cover${onMood ? " is-current" : ""}`} aria-current={onMood ? "true" : undefined} onClick={() => setCurrent("ambiance")}>
-              <span className="toc-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="8" height="10" rx="1.5" />
-                  <rect x="13" y="3" width="8" height="6" rx="1.5" />
-                  <rect x="13" y="11" width="8" height="10" rx="1.5" />
-                  <rect x="3" y="15" width="8" height="6" rx="1.5" />
-                </svg>
-                {t.mood.toc}
-              </span>
-            </button>
-          </li>
         </ul>
         )}
         <div className="toc-tools">
@@ -381,12 +364,7 @@ export function Bible() {
         {adders}
       </nav>
 
-      {onMood ? (
-        <section className="bible-main is-wide" aria-label={t.mood.toc} ref={mainRef}>
-          <h1>{t.mood.toc}</h1>
-          <MoodBoard onOpen={openCard} />
-        </section>
-      ) : onCover || !shown ? (
+      {onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
           <h1 className="sr-only">{t.pitch.toc}</h1>
           <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
