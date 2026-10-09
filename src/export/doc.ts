@@ -5,7 +5,8 @@
 import type { CardData, CardType, Link } from "../types";
 import { BIBLE_ORDER } from "../types";
 import { isBlank, type Manuscript } from "../manuscript";
-import { sheetFields } from "../character";
+import { ficheText, sheetFields } from "../character";
+import { PITCH_CHIPS, PITCH_TEXTS, type Pitch } from "../pitch";
 
 export interface Run {
   text: string;
@@ -170,10 +171,31 @@ export interface BibleStrings {
   linkedTo: string;
   /** Libellés des champs de la fiche d'un personnage (facultatif : sans eux, la fiche n'est pas exportée). */
   fields?: Record<string, string>;
+  /** Libellés des types d'arc (la fiche garde une clé : « positif »…). */
+  arcTypes?: Record<string, string>;
+  /** Couverture du projet : titre de la partie et libellés des champs (sans eux, elle n'est pas exportée). */
+  cover?: { title: string; fields: Record<string, string> };
+}
+
+/** Couverture du projet en tête de la bible : tagline, pastilles, puis les textes, chacun sous son libellé. */
+function coverChapter(pitch: Pitch, cover: NonNullable<BibleStrings["cover"]>): Chapter | null {
+  const blocks: Block[] = [];
+  if (pitch.tagline?.trim()) blocks.push({ kind: "paragraph", runs: [{ text: pitch.tagline.trim(), italic: true }] });
+  for (const key of PITCH_CHIPS) {
+    const value = pitch[key]?.trim();
+    if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${cover.fields[key] ?? key} : `, bold: true }, { text: value }] });
+  }
+  for (const key of PITCH_TEXTS) {
+    const value = pitch[key]?.trim();
+    if (!value || key === "tagline") continue;
+    blocks.push({ kind: "heading", runs: [{ text: cover.fields[key] ?? key }] });
+    for (const line of value.split(/\n+/).map((l) => l.trim()).filter(Boolean)) blocks.push({ kind: "paragraph", runs: [{ text: line }] });
+  }
+  return blocks.length > 0 ? { title: cover.title, blocks } : null;
 }
 
 /** Bible : une partie par type de carte, une fiche par carte (triées par titre), avec ses liens. */
-export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], strings: BibleStrings): ExportDoc {
+export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], strings: BibleStrings, pitch: Pitch = {}): ExportDoc {
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || strings.untitled;
   const chapters = BIBLE_ORDER.map((type) => {
     const entries = cards.filter((c) => c.type === type).sort((a, b) => a.title.localeCompare(b.title, info.lang));
@@ -184,7 +206,7 @@ export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "so
       if (strings.fields && card.fiche) {
         for (const key of sheetFields(card.type)) {
           const value = card.fiche[key]?.trim();
-          if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: value }] });
+          if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
         }
       }
       blocks.push(...htmlToBlocks(card.html).map((b): Block => (b.kind === "heading" ? { kind: "paragraph", runs: b.runs.map((r) => ({ ...r, bold: true })) } : b)));
@@ -195,5 +217,6 @@ export function bibleDoc(info: DocInfo, cards: CardData[], links: Pick<Link, "so
     }
     return { title: strings.sections[type], blocks };
   }).filter((c) => c.blocks.length > 0);
-  return { ...info, chapters };
+  const cover = strings.cover ? coverChapter(pitch, strings.cover) : null;
+  return { ...info, chapters: cover ? [cover, ...chapters] : chapters };
 }

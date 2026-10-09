@@ -18,15 +18,47 @@ export const CHARACTER_FIELDS = [
   "origine",
   "apparence",
   "personnalite",
+  "voix",
   "objectif",
   "besoin",
+  "blessure",
+  "motivation",
+  "force",
   "faille",
   "peur",
   "secret",
   "relations",
+  "arcType",
   "arc",
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
+
+/**
+ * Moteur d'un personnage, en tête de sa fiche dans la Bible : trois cases lues d'un coup d'œil.
+ * Un antagoniste (rôle qui le dit) montre ce qui le pousse, sa force et sa faille.
+ */
+export const MOTOR_FIELDS = ["objectif", "besoin", "blessure"] as const satisfies readonly CharacterField[];
+export const ANTAGONIST_FIELDS = ["motivation", "force", "faille"] as const satisfies readonly CharacterField[];
+
+/** Le rôle saisi désigne un antagoniste (en français ou en anglais, casse et accents ignorés). */
+export const isAntagonist = (card: Pick<CardData, "fiche">) => /antagon|villain|m[ée]chant|nemesis|n[ée]m[ée]sis/i.test(card.fiche?.role ?? "");
+
+/** Cases du moteur pour ce personnage. */
+export const motorFields = (card: Pick<CardData, "fiche">): readonly CharacterField[] => (isAntagonist(card) ? ANTAGONIST_FIELDS : MOTOR_FIELDS);
+
+/** Types d'arc : valeurs écrites dans le fichier (`arcType`), jamais traduites. Libellés : `t.character.arcTypes`. */
+export const ARC_TYPES = ["positif", "negatif", "plat"] as const;
+export type ArcType = (typeof ARC_TYPES)[number];
+export const isArcType = (v: unknown): v is ArcType => typeof v === "string" && (ARC_TYPES as readonly string[]).includes(v);
+
+/** Champs montrés ailleurs que dans la liste de la fiche (bande du moteur, choix de l'arc). */
+export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
+  return card.type === "personnage" ? new Set<string>([...motorFields(card), "arcType"]) : new Set<string>();
+}
+
+/** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */
+export const ficheText = (key: string, value: string, arcLabels?: Record<string, string>) =>
+  key === "arcType" ? (arcLabels?.[value] ?? value) : value;
 
 /** Fiche d'un lieu (idée reprise de la Bible du fork de NEO). */
 export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] as const;
@@ -70,7 +102,9 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
   const out: Record<string, string> = {};
   for (const key of sheetFields(type)) {
     const value = (raw as Record<string, unknown>)[key];
-    if (typeof value === "string" && value.trim()) out[key] = value.slice(0, MAX_VALUE);
+    if (typeof value !== "string" || !value.trim()) continue;
+    if (key === "arcType" && !isArcType(value)) continue;
+    out[key] = value.slice(0, MAX_VALUE);
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }

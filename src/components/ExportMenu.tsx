@@ -106,14 +106,22 @@ export function ExportMenu() {
   };
 
   const bibleFile = (format: DocFormat) => async () => {
-    const { nodes, edges, paper } = useCosmos.getState();
+    const { nodes, edges, paper, pitch } = useCosmos.getState();
     const sections = Object.fromEntries(CARD_TYPES.map((type) => [type, types[type].section])) as Record<(typeof CARD_TYPES)[number], string>;
     const base = info();
     const doc = bibleDoc(
       { ...base, title: fmt(x.bibleName, { title: base.title }) },
       nodes.map((n) => n.data),
       edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
-      { sections, untitled: all.bible.untitled, linkedTo: all.bible.linkedTo, fields: { ...all.character.fields, ...all.fiche.fields } },
+      {
+        sections,
+        untitled: all.bible.untitled,
+        linkedTo: all.bible.linkedTo,
+        fields: { ...all.character.fields, ...all.fiche.fields },
+        arcTypes: all.character.arcTypes,
+        cover: { title: all.pitch.toc, fields: all.pitch.fields },
+      },
+      pitch,
     );
     return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
   };

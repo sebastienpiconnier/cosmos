@@ -7,7 +7,7 @@
 
 import { CARD_TYPES, type CardData, type CardType, type Link } from "../types";
 import { plainText } from "../search";
-import { CHARACTER_FIELDS } from "../character";
+import { CHARACTER_FIELDS, ficheText } from "../character";
 import { splitAnswers } from "../assistant";
 
 const MAX_CARDS = 80;
@@ -119,13 +119,13 @@ export function parseQuestion(reply: string): string {
  * court portrait. L'IA ne doit rien ajouter : chaque phrase vient de ce qui est écrit. Le résultat est
  * proposé à l'auteur, qui l'ajoute à la fiche ou l'ignore.
  */
-export function synthesisPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, fieldLabels: Record<string, string>): Prompt {
+export function synthesisPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, fieldLabels: Record<string, string>, arcLabels?: Record<string, string>): Prompt {
   const related = links.flatMap((l) => {
     const other = l.source === character.id ? l.target : l.target === character.id ? l.source : null;
     const card = other ? cards.find((c) => c.id === other) : undefined;
     return card && card.title.trim() ? [{ title: card.title.trim(), type: card.type, link: l.label }] : [];
   });
-  const sheet = Object.fromEntries(CHARACTER_FIELDS.flatMap((key) => (character.fiche?.[key]?.trim() ? [[fieldLabels[key] ?? key, character.fiche[key].trim()]] : [])));
+  const sheet = Object.fromEntries(CHARACTER_FIELDS.flatMap((key) => (character.fiche?.[key]?.trim() ? [[fieldLabels[key] ?? key, ficheText(key, character.fiche[key].trim(), arcLabels)]] : [])));
   // Les réponses aux questions de l'assistant, à part : noyées dans les notes, un petit modèle les ignorait.
   const { notes, answers } = splitAnswers(character.html);
   return {

@@ -8,7 +8,7 @@
 import { useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
-import { SHORT_FIELDS, ficheCount, sheetFields, type SheetField } from "../character";
+import { SHORT_FIELDS, bandFields, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 
 export function CardSheet({ card }: { card: CardData }) {
@@ -17,9 +17,11 @@ export function CardSheet({ card }: { card: CardData }) {
   const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields };
   const placeholders: Record<string, string> = { ...all.character.placeholders, ...all.fiche.placeholders };
   const title = all.fiche.titles[card.type as keyof typeof all.fiche.titles] ?? t.sheet;
-  const fields = sheetFields(card.type);
+  // Les champs montrés ailleurs (moteur et arc d'un personnage) ne sont pas répétés ici.
+  const band = bandFields(card);
+  const fields = sheetFields(card.type).filter((key) => !band.has(key));
   const setFiche = useCosmos((s) => s.setFiche);
-  const filled = ficheCount(card);
+  const filled = fields.filter((key) => card.fiche?.[key]?.trim()).length;
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
   const [open, setOpen] = useState(filled > 0);
   // Champs vides affichés. Une fiche vide les montre tous.

@@ -47,6 +47,7 @@ import {
 import { organize } from "./organize";
 import { storyScenes } from "./book";
 import { toggleTask } from "./todos";
+import { isEmptyPitch, readPitch, setPitchField, type Pitch, type PitchField } from "./pitch";
 import { newResearchBox, researchSpot, today } from "./research";
 import { clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
@@ -166,6 +167,9 @@ interface CosmosState {
   setManuscriptText: (id: string, html: string) => void;
   goals: Goals;
   setGoals: (goals: Goals) => void;
+  /** Couverture du projet (tête de la Bible) : tagline, logline, pastilles… Voir pitch.ts. */
+  pitch: Pitch;
+  setPitch: (key: PitchField, value: string) => void;
   progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
@@ -326,7 +330,7 @@ function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch) };
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -425,7 +429,7 @@ function openProject(p: Project) {
 function toProject(
   s: Pick<
     CosmosState,
-    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript" | "goals" | "progress"
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript" | "goals" | "progress" | "pitch"
   >,
 ): Project {
   // Le plan écrit ne cite que des cartes qui existent encore.
@@ -463,6 +467,7 @@ function toProject(
       ...(isEmptyPlan(plan) ? {} : { plan }),
       ...(s.goals.daily || s.goals.total ? { goals: s.goals } : {}),
       ...(Object.keys(s.progress).length > 0 ? { progress: s.progress } : {}),
+      ...(isEmptyPitch(s.pitch) ? {} : { pitch: s.pitch }),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
@@ -735,6 +740,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     progress: {},
+    pitch: {},
+    setPitch: (key, value) => {
+      const next = setPitchField(get().pitch, key, value);
+      if (next === get().pitch) return;
+      set({ pitch: next });
+      touch();
+    },
     restoreScene: (id) => {
       if (get().nodes.some((n) => n.id === id) || !(id in get().manuscript)) return;
       record();

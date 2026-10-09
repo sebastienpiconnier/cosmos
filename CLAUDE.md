@@ -122,6 +122,7 @@ src/
   research.ts           Zone Recherche : cadre à droite du contenu, case libre dans le cadre, date du jour, infos d'une page HTML (fonctions pures)
   web.ts                readPage(url) : lit une page (HTTP de Tauri ou fetch), 20 s et 2 Mo au plus
   shortcuts.ts          Liste des raccourcis clavier, pour la fenêtre d'aide (décrit, n'écoute rien)
+  pitch.ts              Couverture du projet (tête de la Bible) : champs, lecture de cosmos.json, suggestions des pastilles (fonctions pures)
   bibleSections.ts      Rubriques de la Bible : ordre et rubriques masquées (réglage de l'appareil)
   character.ts          Fiches (SHEET_FIELDS par type) et fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
   organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
@@ -159,6 +160,8 @@ src/
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
+    ProjectCover.tsx    Couverture du projet, première page de la Bible : jaquette (titre, tagline, pastilles), logline, résumé, comparables, volume, thèmes, note d'intention
+    CharacterMotor.tsx  Moteur d'un personnage dans la Bible (Veut, A besoin de, Blessure ; antagoniste : Motivation, Force, Faille) et type d'arc dessiné
     CardSheet.tsx       Fiche d'une carte selon son type : personnage (rôle, genre, âge…), lieu (époque, ambiance…), intrigue (question dramatique, enjeu…)
     SourceTools.tsx     Carte Source dans la Bible : ouvrir la page, compléter auteur et date depuis la page
     Gallery.tsx         Photos d'un personnage ou d'un lieu dans la Bible : ajout, agrandissement, image principale, description par l'IA (lieu)
@@ -223,7 +226,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs)
+  cosmos.json          titre, type (roman | scenario), format de page et numéros de scène (paper, sceneNumbers, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs), couverture du projet (pitch, facultatif)
   cartes/<id>.md       une carte par fichier
   manuscrit/<id>.md    texte d'une scène du roman (Markdown sans en-tête), au nom de sa carte Scène
   medias/<nom>.jpg     images des cartes (copiées dans le projet)
@@ -420,5 +423,8 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Raccourcis globaux** (App.tsx) : Cmd/Ctrl+1 à 4 pour les vues, Cmd/Ctrl+/ pour la liste. Tout nouveau raccourci s'ajoute aussi dans `shortcuts.ts` et ses libellés dans `t.shortcuts.items`, sinon la fenêtre d'aide ment (un test le vérifie).
 - **Coller sur le canevas** : hors d'un champ, un lien, un texte (citation) ou une image collés ou déposés deviennent une carte Source dans la zone Recherche (`addResearchClip`, `addResearchImage`), une étape d'historique. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
 - **Zone Recherche** : un cadre ordinaire marqué `kind: "research"` dans `frames` (lu sans erreur par une version précédente). Il est créé à droite de tout le contenu au premier clip, grandit vers le bas quand il est plein, et « Organiser le canevas » le garde tel quel et n'y range pas les sources.
+- **Couverture du projet** : `pitch` dans `cosmos.json`, écrit seulement quand un champ est rempli. Clés fixes (`tagline`, `logline`, `resume`, `comps`, `intention`, `genre`, `cible`, `format`, `pov`, `temps`, `ton`), jamais traduites ; les valeurs sont le texte de l'auteur (une pastille choisie garde le libellé de la langue du moment). Le volume n'est pas saisi (objectif de mots, ou pages du scénario) et les thèmes sont les cartes Thème : rien n'est recopié. Hors historique d'annulation, comme le titre du projet (les champs ont leur propre annulation). La Bible s'ouvre sur la couverture.
+- **Moteur d'un personnage** : ce sont des champs de la fiche (`objectif`, `besoin`, `blessure` ; `motivation`, `force`, `faille` pour un rôle qui dit « antagoniste », `isAntagonist`). `bandFields` les retire de la liste de `CardSheet` pour ne pas les montrer deux fois. `arcType` vaut `positif`, `negatif` ou `plat` (clé écrite dans le fichier, `readFiche` rejette toute autre valeur) ; export et IA l'écrivent en toutes lettres (`ficheText`).
+- **Réponse reportée dans la fiche** : après une réponse à une question de l'assistant qui correspond à un champ vide (`QUESTION_FIELD`, assistant.ts), un bouton propose de l'y reporter aussi. C'est la réponse de l'auteur, telle quelle, et seulement sur son clic.
 - **Ouvrir une page** : toujours `openExternal` (platform.ts), qui passe par `tauri-plugin-opener` (permission `opener:default`) ; `window.open` ne fait rien dans l'app de bureau.
 

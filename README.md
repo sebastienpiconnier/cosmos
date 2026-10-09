@@ -56,7 +56,9 @@ Cosmos est en cours de développement (version 0.1).
 
 ### La Bible
 
-Un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Toutes les rubriques sont affichées, même vides ; tu choisis lesquelles garder et dans quel ordre. Tout s'y modifie sur place, titre et texte. Personnages et lieux ont une galerie de photos (ajout par bouton ou par dépôt, agrandissement, choix de l'image principale), lieux et intrigues ont aussi leur fiche (ambiance, époque ; question dramatique, enjeu, déclencheur, obstacles, résolution), et un personnage a son portrait dans un cercle et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, ce qu'il veut, ce dont il a besoin, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
+La Bible s'ouvre sur **la couverture du projet**, comme une quatrième de couverture : titre, tagline, logline, résumé, comparables et note d'intention, avec des pastilles à toucher pour le genre, le public, le format, le point de vue, le temps du récit et le ton (une liste de choix courants, ou ta propre formulation). Le volume vient de ton objectif de mots, les thèmes de tes cartes Thème. Rien n'est obligatoire.
+
+Puis un sommaire et des fiches générés automatiquement à partir des cartes, classés par type, avec les liens de chaque fiche. Il n'y a rien à remplir : la Bible se met à jour quand le canevas change. On peut aussi y créer une fiche et la nommer : sa carte apparaît sur le canevas. Toutes les rubriques sont affichées, même vides ; tu choisis lesquelles garder et dans quel ordre. Tout s'y modifie sur place, titre et texte. Personnages et lieux ont une galerie de photos (ajout par bouton ou par dépôt, agrandissement, choix de l'image principale), lieux et intrigues ont aussi leur fiche (ambiance, époque ; question dramatique, enjeu, déclencheur, obstacles, résolution), et un personnage a son portrait dans un cercle, son **moteur** en trois cases lues d'un coup d'œil (Veut, A besoin de, Blessure ; pour un antagoniste : Motivation, Force, Faille), son type d'arc dessiné (positif, tragique, plat) et sa **fiche d'identité** : rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, voix, faille, peur, secret, relations, évolution. Tout est facultatif : seuls les champs remplis restent affichés. Sous le nom, l'affiche résume genre, âge, métier et rôle, et dit combien de fois le texte le cite et depuis quelle scène.
 
 ### Le plan
 
@@ -136,7 +138,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 - **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
 - **Scénario :** PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
-- **Bible :** PDF, Word ou Markdown, avec les fiches rangées par type et leurs liens.
+- **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les fiches rangées par type et leurs liens.
 - **Sans rien installer :** tout est fabriqué par l'app elle-même.
 
 ### Confort

@@ -5,6 +5,7 @@ import type { Screenplay } from "./screenplay/model";
 import type { Paper } from "./screenplay/layout";
 import type { Plan } from "./plan";
 import type { Goals, Progress } from "./stats";
+import type { Pitch } from "./pitch";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "source";
 
@@ -94,6 +95,8 @@ export interface ProjectMeta {
   goals?: Goals;
   /** Mots du manuscrit au début et à la fin de chaque jour d'écriture. Absent : rien d'écrit encore. */
   progress?: Progress;
+  /** Couverture du projet (tagline, logline, résumé, pastilles…), voir pitch.ts. Absent : rien de rempli. */
+  pitch?: Pitch;
   viewport?: { x: number; y: number; zoom: number };
 }
 

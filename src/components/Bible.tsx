@@ -20,6 +20,8 @@ import { CardSheet } from "./CardSheet";
 import { Gallery } from "./Gallery";
 import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
+import { CharacterMotor } from "./CharacterMotor";
+import { ProjectCover } from "./ProjectCover";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
@@ -112,8 +114,9 @@ export function Bible() {
     for (const n of nodes) out.set(n.data.type, (out.get(n.data.type) ?? 0) + 1);
     return out;
   }, [nodes]);
-  const [current, setCurrent] = useState<CardType | null>(null);
-  // Par défaut, la première rubrique qui a des fiches.
+  // « projet » : la couverture du projet, première page de la Bible (et page d'arrivée).
+  const [current, setCurrent] = useState<CardType | "projet">("projet");
+  const onCover = current === "projet";
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
@@ -163,7 +166,14 @@ export function Bible() {
     </div>
   );
 
-  if (!shown) {
+  const openCard = (id: string) => {
+    const card = nodes.find((n) => n.id === id)?.data;
+    if (!card) return;
+    setCurrent(card.type);
+    requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${id}"]`)?.scrollIntoView({ block: "start" }));
+  };
+
+  if (!shown && !onCover) {
     return (
       <div className="empty-view">
         <h1>{t.bible.emptyTitle}</h1>
@@ -202,12 +212,23 @@ export function Bible() {
           </ul>
         ) : (
         <ul>
+          <li>
+            <button type="button" className={`toc-cover${onCover ? " is-current" : ""}`} aria-current={onCover ? "true" : undefined} onClick={() => setCurrent("projet")}>
+              <span className="toc-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+                  <path d="M5 17a3 3 0 0 1 3-3h11" />
+                </svg>
+                {t.pitch.toc}
+              </span>
+            </button>
+          </li>
           {sections.map((s) => (
             <li key={s.type}>
               <button
                 type="button"
-                className={s === shown ? "is-current" : ""}
-                aria-current={s === shown ? "true" : undefined}
+                className={!onCover && s === shown ? "is-current" : ""}
+                aria-current={!onCover && s === shown ? "true" : undefined}
                 onClick={() => setCurrent(s.type)}
               >
                 <span className="toc-label">
@@ -233,6 +254,12 @@ export function Bible() {
         {adders}
       </nav>
 
+      {onCover || !shown ? (
+        <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
+          <h1 className="sr-only">{t.pitch.toc}</h1>
+          <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
+        </section>
+      ) : (
       <section className="bible-main" aria-label={types[shown.type].section} ref={mainRef}>
         <h1>{types[shown.type].section}</h1>
         {shown.cards.length === 0 && (
@@ -287,6 +314,7 @@ export function Bible() {
                 </button>
               </header>
               {(shown.type === "personnage" || shown.type === "lieu" || shown.type === "source") && <Gallery card={card} />}
+              {shown.type === "personnage" && <CharacterMotor card={card} />}
               <CardSheet card={card} />
               {shown.type === "source" && <SourceTools card={card} />}
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
@@ -310,6 +338,7 @@ export function Bible() {
           );
         })}
       </section>
+      )}
     </div>
   );
 }

@@ -22,7 +22,7 @@ Principe directeur : **la Bible de travail se remplit toute seule à partir du c
 
 ## Propositions
 
-### 1. La couverture du projet (priorité 1)
+### 1. La couverture du projet (priorité 1, fait)
 
 En tête de la Bible, une grande fiche qui ressemble à une **quatrième de couverture** : titre, tagline en grand, logline dessous, puis le résumé éditorial. À droite, des **pastilles** cliquables : Genre, Cible, Format (tome unique, trilogie…), Point de vue, Temps du récit, Ton. Chaque pastille vide est un simple « + Genre » discret ; toucher ouvre une petite liste de choix courants avec saisie libre.
 
@@ -32,7 +32,7 @@ En tête de la Bible, une grande fiche qui ressemble à une **quatrième de couv
 - La **note d'intention** est un texte libre repliable sous la couverture.
 - Stockage : un bloc `pitch` facultatif dans `cosmos.json` (lisible par les anciennes versions, qui l'ignorent).
 
-### 2. Personnages : la fiche devient une affiche (priorité 1)
+### 2. Personnages : la fiche devient une affiche (priorité 1, fait ; reste la lecture des trois cases en une phrase)
 
 La fiche a déjà portrait, genre, âge, métier. On ajoute une **bande « moteur »** de trois cases visibles d'un coup d'œil : **Veut** (want), **A besoin** (need), **Blessure**. Remplies, elles se lisent comme une phrase : « Veut retrouver son frère, a besoin d'accepter le silence, blessée par la nuit du naufrage. »
 

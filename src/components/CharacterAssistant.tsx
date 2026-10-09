@@ -11,7 +11,8 @@ import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import type { CardData } from "../types";
-import { ASSISTANT_LEVELS, levelQuestions, nextOpen, type AssistantLevel } from "../assistant";
+import { ASSISTANT_LEVELS, fieldToFill, levelQuestions, nextOpen, type AssistantLevel } from "../assistant";
+import type { CharacterField } from "../character";
 import { AiError, complete, isReady } from "../ai/providers";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
 
@@ -56,6 +57,9 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   const [error, setError] = useState("");
   const [synthesis, setSynthesis] = useState<string[] | null>(null);
   const asked = useRef<string[]>([]);
+  // Réponse qu'on peut reporter aussi dans un champ vide de la fiche (« Veut », « Blessure »…).
+  const [offer, setOffer] = useState<{ field: CharacterField; value: string } | null>(null);
+  const setFiche = useCosmos((s) => s.setFiche);
   const panelId = useId();
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
@@ -113,7 +117,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     setSynthesis(null);
     try {
       const { data, self } = selfNow();
-      const prompt = synthesisPrompt(self, data, linksNow(), lang, ct.fields);
+      const prompt = synthesisPrompt(self, data, linksNow(), lang, ct.fields, ct.arcTypes);
       const paragraphs = parseSynthesis(await complete(config, prompt.system, prompt.user, 1200));
       if (paragraphs.length === 0) throw new AiError("empty");
       setSynthesis(paragraphs);
@@ -144,6 +148,8 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     if (!question || !answer.trim()) return;
     answerQuestion(card.id, question, answer);
     setSaid(t.added);
+    const field = isLevel ? fieldToFill(fromBank?.key, card) : null;
+    setOffer(field ? { field, value: answer.trim() } : null);
     if (tab === "custom") {
       setCustom("");
       setAnswer("");
@@ -284,6 +290,24 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
           ) : (
             <p className="assistant-done">{t.levelDone}</p>
           )}
+        </div>
+      )}
+      {offer && !card.fiche?.[offer.field]?.trim() && (
+        <div className="assistant-offer">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setFiche(card.id, offer.field, offer.value);
+              setOffer(null);
+              setSaid(ct.offered);
+            }}
+          >
+            {fmt(ct.offerField, { field: ct.motor.labels[offer.field as keyof typeof ct.motor.labels] ?? ct.fields[offer.field] })}
+          </button>
+          <button type="button" className="link-button" onClick={() => setOffer(null)}>
+            {all.ai.ignore}
+          </button>
         </div>
       )}
       {error && (

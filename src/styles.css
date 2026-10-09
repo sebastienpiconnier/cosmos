@@ -39,6 +39,11 @@
   --revisit: #ffe58a; /* « à reprendre » */
   --page-ink-dim: #9a9eae; /* texte hors focus (mode focus) */
   --type-question: #6b7085;
+  --cover-bg: #23265a; /* jaquette de la couverture du projet (Bible) */
+  --cover-ink: #ffffff;
+  --cover-muted: #c9cbf3;
+  --cover-chip: rgb(255 255 255 / 0.12);
+  --cover-line: rgb(255 255 255 / 0.28);
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
@@ -83,6 +88,11 @@
   --revisit: #6b5a12;
   --page-ink-dim: #6c7083;
   --type-question: #8e93a8;
+  --cover-bg: #2c2f5c;
+  --cover-ink: #f1f2fb;
+  --cover-muted: #c4c6ee;
+  --cover-chip: rgb(255 255 255 / 0.1);
+  --cover-line: rgb(255 255 255 / 0.24);
 }
 
 * { box-sizing: border-box; }
@@ -972,3 +982,76 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .about-tagline { margin: -6px 0 12px; color: var(--accent-ink); font: 500 15px var(--font-ui); }
 .about ul { padding-left: 20px; }
 .about-link { font-family: var(--font-ui); font-size: 14px; user-select: all; overflow-wrap: anywhere; }
+
+/* Couverture du projet, en tête de la Bible : jaquette à gauche, quatrième de couverture à droite. */
+.bible-toc button.toc-cover { font-weight: 500; }
+.bible-toc button.toc-cover svg { flex-shrink: 0; }
+.bible-toc .toc-label svg { margin-right: 2px; }
+.cover { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: var(--surface); border-radius: 16px; overflow: visible; box-shadow: var(--shadow-card); }
+.cover-jacket { display: flex; flex-direction: column; gap: 12px; padding: 32px 28px; border-radius: 16px 0 0 16px; background: var(--cover-bg); color: var(--cover-ink); min-height: 420px; }
+.cover-kind { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cover-muted); }
+.cover-title, .cover-tagline { width: 100%; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; padding: 4px 6px; margin-left: -6px; resize: none; field-sizing: content; }
+.cover-title { font: 700 30px/1.15 var(--font-display); }
+.cover-tagline { font: italic 18px/1.4 var(--font-text); min-height: 2.8em; }
+.cover-title::placeholder, .cover-tagline::placeholder { color: var(--cover-muted); }
+.cover-title:hover, .cover-tagline:hover { border-color: var(--cover-line); }
+.cover-title:focus-visible, .cover-tagline:focus-visible { outline: 2px solid var(--cover-ink); outline-offset: 1px; }
+.cover-author { font-size: 14px; color: var(--cover-muted); }
+.cover-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 12px; }
+.cover-filled { font-size: 12px; color: var(--cover-muted); }
+.pitch-chip-wrap { position: relative; }
+.pitch-chip { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px dashed var(--cover-line); border-radius: 999px; background: transparent; color: var(--cover-muted); font-size: 14px; cursor: pointer; text-align: left; }
+.pitch-chip.is-set { border-style: solid; border-color: transparent; background: var(--cover-chip); color: var(--cover-ink); }
+.pitch-chip:hover { border-color: var(--cover-ink); }
+.pitch-chip:focus-visible { outline: 2px solid var(--cover-ink); outline-offset: 2px; }
+.pitch-chip-key { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cover-muted); }
+.pitch-chip-panel { position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); width: min(340px, 80vw); padding: 12px; border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; gap: 10px; }
+.pitch-chip-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.pitch-chip-options .ghost-button { min-height: 40px; font-size: 14px; }
+.pitch-chip-other { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pitch-chip-other input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.pitch-chip-other input::placeholder { color: var(--placeholder); }
+.cover-back { display: flex; flex-direction: column; gap: 18px; padding: 28px 28px 24px; min-width: 0; }
+.pitch-field { display: flex; flex-direction: column; gap: 4px; }
+.pitch-field label, .pitch-key, .pitch-intention summary { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.pitch-field textarea { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: 16px/1.5 var(--font-text); resize: vertical; field-sizing: content; }
+.pitch-field textarea::placeholder { color: var(--placeholder); }
+.pitch-field.is-logline textarea { font-size: 18px; font-weight: 500; border-color: var(--line-2); }
+.pitch-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.pitch-volume, .pitch-themes { display: flex; flex-direction: column; gap: 6px; }
+.pitch-volume > span:nth-child(2) { font-size: 15px; }
+.pitch-bar { display: block; height: 8px; border-radius: 999px; background: var(--ground); overflow: hidden; max-width: 320px; }
+.pitch-bar > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.pitch-theme-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.pitch-theme { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; background: var(--ground); color: var(--ink); }
+.pitch-theme:hover { background: var(--hover); }
+.pitch-theme-list .link-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+.pitch-intention summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; list-style: none; }
+.pitch-intention summary::-webkit-details-marker { display: none; }
+.pitch-intention summary::before { content: "▸"; font-size: 14px; color: var(--accent); transition: transform 0.15s; }
+.pitch-intention[open] summary::before { transform: rotate(90deg); }
+.pitch-intention[open] summary { margin-bottom: 6px; }
+.pitch-field.is-bare > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 900px) {
+  .cover { grid-template-columns: 1fr; }
+  .cover-jacket { border-radius: 16px 16px 0 0; min-height: 0; }
+}
+
+/* Moteur d'un personnage : trois cases lues d'un coup d'œil, puis le type d'arc dessiné. */
+.motor { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.motor-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.motor-cell { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 8px; border-radius: 12px; background: var(--ground); border-top: 3px solid var(--line-2); }
+.motor-cell.is-filled { border-top-color: var(--type, var(--accent)); }
+.motor-band.is-antagonist .motor-cell.is-filled { border-top-color: var(--type-intrigue); }
+.motor-cell label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.motor-cell textarea { width: 100%; min-height: 28px; padding: 2px 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink); font: 16px/1.4 var(--font-text); resize: none; field-sizing: content; }
+.motor-cell textarea::placeholder { color: var(--placeholder); }
+.motor-cell textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.arc-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.arc-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); margin-right: 4px; }
+.arc-option { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 8px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 14px; cursor: pointer; }
+.arc-option:hover { background: var(--ground); }
+.arc-option[aria-pressed="true"] { border-color: transparent; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.arc-curve { flex-shrink: 0; }
+.assistant-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.assistant-offer .ghost-button { min-height: 44px; }

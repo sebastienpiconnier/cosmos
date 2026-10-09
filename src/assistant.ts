@@ -4,6 +4,7 @@
 // (champ `questions`), sans rien poser sur le canevas : la carte affiche seulement leur nombre.
 
 import type { CardData, Link } from "./types";
+import type { CharacterField } from "./character";
 
 export const ASSISTANT_LEVELS = ["essentiel", "approfondi", "intime"] as const;
 export type AssistantLevel = (typeof ASSISTANT_LEVELS)[number];
@@ -16,6 +17,29 @@ export const ASSISTANT_QUESTIONS = {
 } as const satisfies Record<AssistantLevel, readonly string[]>;
 
 export type AssistantQuestion = (typeof ASSISTANT_QUESTIONS)[AssistantLevel][number];
+
+/**
+ * Champ de la fiche auquel répond une question. Après une réponse, si ce champ est vide, l'assistant
+ * propose de l'y reporter aussi (la réponse de l'auteur, telle quelle, sur son clic).
+ */
+export const QUESTION_FIELD: Partial<Record<AssistantQuestion, CharacterField>> = {
+  want: "objectif",
+  need: "besoin",
+  past: "blessure",
+  voice: "voix",
+  strength: "force",
+  flaw: "faille",
+  fear: "peur",
+  secret: "secret",
+  role: "role",
+  look: "apparence",
+};
+
+/** Champ où reporter une réponse, s'il existe et qu'il est encore vide. */
+export function fieldToFill(key: string | null | undefined, character: Pick<CardData, "fiche">): CharacterField | null {
+  const field = key ? QUESTION_FIELD[key as AssistantQuestion] : undefined;
+  return field && !character.fiche?.[field]?.trim() ? field : null;
+}
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

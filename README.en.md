@@ -56,7 +56,9 @@ Cosmos is under active development (version 0.1).
 
 ### The Bible
 
-A table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Every section is shown, even empty; you choose which to keep and in what order. Everything can be edited in place, title and text. Characters and places have a photo gallery (add by button or drop, enlarge, pick the main picture), places and plots have their own sheet too (atmosphere, period; dramatic question, stakes, inciting incident, obstacles, resolution), and a character has a round portrait and a **character sheet**: role, gender, age, occupation, nicknames, background, appearance, personality, what they want, what they need, flaw, fear, secret, relationships, arc. All optional: only filled fields stay on screen. Under the name, the poster sums up gender, age, occupation and role, and says how often the text names them and from which scene.
+The Bible opens on **the project cover**, like the back of a book: title, tagline, logline, summary, comparable titles and statement of intent, with chips to tap for genre, audience, format, point of view, tense and tone (a list of common choices, or your own words). The length comes from your word goal, the themes from your Theme cards. Nothing is required.
+
+Then a table of contents and reference sheets generated automatically from your cards, grouped by type, with each sheet’s links. There is nothing to fill in: the Bible updates as the canvas changes. You can also create and name an entry there: its card shows up on the canvas. Every section is shown, even empty; you choose which to keep and in what order. Everything can be edited in place, title and text. Characters and places have a photo gallery (add by button or drop, enlarge, pick the main picture), places and plots have their own sheet too (atmosphere, period; dramatic question, stakes, inciting incident, obstacles, resolution), and a character has a round portrait, what **drives** them in three boxes read at a glance (Wants, Needs, Wound; for an antagonist: Motivation, Strength, Flaw), their arc type drawn as a curve (positive, tragic, flat) and a **character sheet**: role, gender, age, occupation, nicknames, background, appearance, personality, voice, flaw, fear, secret, relationships, arc. All optional: only filled fields stay on screen. Under the name, the poster sums up gender, age, occupation and role, and says how often the text names them and from which scene.
 
 ### The outline
 
@@ -136,7 +138,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 
 - **Manuscript:** scenes of the same chapter form one chapter, separated by “* * *”. PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
 - **Screenplay:** PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
-- **Bible:** PDF, Word or Markdown, with entries grouped by type and their links.
+- **Bible:** PDF, Word or Markdown, the project cover first, then entries grouped by type and their links.
 - **Nothing to install:** everything is produced by the app itself.
 
 ### Comfort
