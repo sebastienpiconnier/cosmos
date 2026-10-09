@@ -1,0 +1,45 @@
+// @vitest-environment happy-dom
+// Un projet écrit par une version plus récente de Cosmos : ce que celle-ci ne connaît pas est gardé et réécrit.
+
+import { describe, expect, it } from "vitest";
+import { cardToFile, fileToCard } from "../storage/markdown";
+import { unknownMeta } from "../store";
+
+describe("compatibilité avec les versions futures", () => {
+  it("une carte garde ses lignes inconnues, ses champs de fiche inconnus et son type inconnu", () => {
+    const text = [
+      "---",
+      "id: k3x9a7bq2m",
+      "type: groupe",
+      'title: "Les gardiens"',
+      'fiche: {"age":"34 ans","devise":"Tenir la lumière","nombre":3}',
+      'membres: ["a","b"]',
+      "couleur: bleu",
+      "---",
+      "Une confrérie.",
+      "",
+    ].join("\n");
+    const card = fileToCard(text)!;
+    // Affichée comme une Idée, sans perdre ce qu'elle était.
+    expect(card.type).toBe("idee");
+    expect(card.keep).toEqual({ type: "groupe", front: { membres: '["a","b"]', couleur: "bleu" }, fiche: { age: "34 ans", devise: "Tenir la lumière" } });
+    const again = cardToFile(card);
+    expect(again).toContain("type: groupe");
+    expect(again).toContain('membres: ["a","b"]');
+    expect(again).toContain("couleur: bleu");
+    expect(again).toContain('"devise":"Tenir la lumière"');
+    // Relu, rien n'a bougé.
+    expect(fileToCard(again)).toEqual(card);
+  });
+
+  it("une carte de cette version n'a rien à garder, et un type choisi remplace le type inconnu", () => {
+    const card = { id: "p", type: "personnage" as const, title: "Inès", html: "", fiche: { age: "34 ans" } };
+    expect(fileToCard(cardToFile(card))!.keep).toBeUndefined();
+    const moved = { ...card, type: "personnage" as const, keep: { type: "groupe" } };
+    expect(cardToFile(moved)).toContain("type: personnage");
+  });
+
+  it("les clés inconnues de cosmos.json sont repérées pour être réécrites", () => {
+    expect(unknownMeta({ version: 1, title: "K", layout: [], links: [], timeline2: { a: 1 }, glossary: [] })).toEqual({ timeline2: { a: 1 }, glossary: [] });
+  });
+});

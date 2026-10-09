@@ -113,16 +113,21 @@ export function sanitizeHtml(html: string): string {
 }
 
 export function cardToFile(card: CardData): string {
+  // Champs de fiche inconnus d'abord : un champ connu du même nom (impossible en principe) l'emporte.
+  const fiche = card.keep?.fiche ? { ...card.keep.fiche, ...(card.fiche ?? {}) } : card.fiche;
   const front = [
     "---",
     `id: ${card.id}`,
-    `type: ${card.type}`,
+    // Type inconnu (version plus récente) : la carte s'affiche en Idée, mais garde son type tant qu'on n'en change pas.
+    `type: ${card.type === "idee" && card.keep?.type ? card.keep.type : card.type}`,
     `title: ${JSON.stringify(card.title)}`,
     ...(card.image ? [`image: ${card.image}`] : []),
     ...(card.type === "scene" && isPageKind(card.page) ? [`page: ${card.page}`] : []),
-    ...(card.fiche && Object.keys(card.fiche).length > 0 ? [`fiche: ${JSON.stringify(card.fiche)}`] : []),
+    ...(fiche && Object.keys(fiche).length > 0 ? [`fiche: ${JSON.stringify(fiche)}`] : []),
     ...(card.images && card.images.length > 0 ? [`images: ${JSON.stringify(card.images)}`] : []),
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
+    // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
+    ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
     "---",
   ].join("\n");
   return `${front}\n${htmlToMarkdown(card.html)}\n`;
@@ -156,11 +161,38 @@ export function fileToCard(text: string): CardData | null {
     const names = [...new Set(gallery.filter((n): n is string => isMediaName(n)))];
     if (names.length > 0) card.images = names;
   }
-  const fiche = readFiche(parseJson(fields.fiche), type);
+  const rawFiche = parseJson(fields.fiche);
+  const fiche = readFiche(rawFiche, type);
   if (fiche) card.fiche = fiche;
   const questions = readQuestions(parseJson(fields.questions));
   if (questions) card.questions = questions;
+  const keep = keepUnknown(fields, rawFiche, fiche);
+  if (fields.type && fields.type !== type && KEY_RE.test(fields.type)) keep.type = fields.type;
+  if (Object.keys(keep).length > 0) card.keep = keep;
   return card;
+}
+
+/** Lignes du frontmatter que cette version écrit elle-même. */
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "page", "fiche", "images", "questions"]);
+const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+
+/**
+ * Ce que cette version ne comprend pas, à garder pour le réécrire tel quel : lignes inconnues du
+ * frontmatter (clé simple, valeur d'une ligne) et champs de fiche inconnus (textes). Rien n'est affiché.
+ */
+function keepUnknown(fields: Record<string, string>, rawFiche: unknown, fiche: Record<string, string> | undefined): NonNullable<CardData["keep"]> {
+  const keep: NonNullable<CardData["keep"]> = {};
+  const front = Object.fromEntries(Object.entries(fields).filter(([key, value]) => !KNOWN_FRONT.has(key) && KEY_RE.test(key) && value.length <= 20000));
+  if (Object.keys(front).length > 0) keep.front = front;
+  if (rawFiche && typeof rawFiche === "object" && !Array.isArray(rawFiche)) {
+    const extra = Object.fromEntries(
+      Object.entries(rawFiche as Record<string, unknown>).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string" && KEY_RE.test(entry[0]) && !(fiche && entry[0] in fiche) && entry[1].length <= 20000,
+      ),
+    );
+    if (Object.keys(extra).length > 0) keep.fiche = extra;
+  }
+  return keep;
 }
 
 /** Valeur JSON d'une ligne du frontmatter, ou undefined si elle est absente ou illisible. */

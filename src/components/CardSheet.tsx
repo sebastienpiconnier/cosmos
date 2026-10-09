@@ -11,7 +11,7 @@ import { fmt, useT } from "../i18n";
 import { SHORT_FIELDS, bandFields, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 
-export function CardSheet({ card }: { card: CardData }) {
+export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
   const all = useT();
   const t = all.character;
   const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields };
@@ -23,7 +23,7 @@ export function CardSheet({ card }: { card: CardData }) {
   const setFiche = useCosmos((s) => s.setFiche);
   const filled = fields.filter((key) => card.fiche?.[key]?.trim()).length;
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
-  const [open, setOpen] = useState(filled > 0);
+  const [open, setOpen] = useState(startOpen ?? filled > 0);
   // Champs vides affichés. Une fiche vide les montre tous.
   const [more, setMore] = useState(false);
   // Un champ qu'on vient de vider reste à l'écran le temps de la saisie.

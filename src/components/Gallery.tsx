@@ -90,7 +90,7 @@ export function Gallery({ card }: { card: CardData }) {
 
   return (
     <section
-      className={`gallery${over ? " is-over" : ""}`}
+      className={`gallery${over ? " is-over" : ""}${photos.length === 0 ? " is-empty" : ""}`}
       aria-label={fmt(g.aria, { name })}
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes("Files")) return;
@@ -109,12 +109,11 @@ export function Gallery({ card }: { card: CardData }) {
         {photos.map((photo, i) => (
           <Thumb key={photo} name={photo} alt={fmt(g.photoAlt, { n: i + 1, name })} onOpen={() => setOpen(photo)} />
         ))}
-        <button type="button" className="gallery-add" onClick={() => void addGalleryImages(card.id)}>
+        <button type="button" className="gallery-add" title={photos.length === 0 ? g.hint : undefined} onClick={() => void addGalleryImages(card.id)}>
           <span aria-hidden="true">+</span>
           {g.add}
         </button>
       </div>
-      {photos.length === 0 && <p className="gallery-hint">{g.hint}</p>}
       {canDescribe && photos.length > 0 && !notes && <p className="gallery-hint">{PROVIDERS[config!.provider].local ? g.describeHintLocal : g.describeHintCloud}</p>}
 
       {notes && (

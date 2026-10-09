@@ -44,6 +44,11 @@ export interface CardData {
   page?: string;
   /** Questions gardées pour plus tard (« Je ne sais pas encore »). Elles vivent dans la carte, pas sur le canevas. */
   questions?: string[];
+  /**
+   * Ce qu'une version plus récente de Cosmos a écrit et que celle-ci ne connaît pas : lignes du
+   * frontmatter, champs de la fiche, type de carte. Gardé tel quel et réécrit, jamais affiché.
+   */
+  keep?: { front?: Record<string, string>; fiche?: Record<string, string>; type?: string };
   [key: string]: unknown; // requis par React Flow pour data
 }
 

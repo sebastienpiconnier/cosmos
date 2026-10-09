@@ -1,4 +1,4 @@
-// Chronologie par intrigue : pour chaque intrigue (carte Thème), personnage et lieu, les scènes où il
+// Chronologie par intrigue : pour chaque intrigue (carte Intrigue), thème, personnage et lieu, les scènes où il
 // apparaît, dans l'ordre du Plan. Fonction pure, sans donnée propre : une case est remplie quand la carte
 // est reliée à la scène par un fil, ou citée dans la scène (mention @, notes de la carte, texte du manuscrit).
 

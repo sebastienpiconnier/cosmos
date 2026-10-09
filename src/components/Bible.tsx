@@ -357,12 +357,19 @@ export function Bible() {
                   {t.bible.seeOnCanvas}
                 </button>
               </header>
-              {(shown.type === "personnage" || shown.type === "lieu" || shown.type === "source") && <Gallery card={card} />}
+              {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
+              {(shown.type === "lieu" || shown.type === "source") && <Gallery card={card} />}
               {shown.type === "personnage" && <CharacterMotor card={card} />}
-              <CardSheet card={card} />
+              {shown.type !== "personnage" && <CardSheet card={card} />}
               {shown.type === "source" && <SourceTools card={card} />}
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
               <BibleBody card={card} />
+              {shown.type === "personnage" && (
+                <>
+                  <CardSheet card={card} startOpen={false} />
+                  <Gallery card={card} />
+                </>
+              )}
               {shown.type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
               {links.length > 0 && (
                 <div className="bible-links">

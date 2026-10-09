@@ -1092,3 +1092,9 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .assistant-themes button[aria-pressed="true"] { border-color: transparent; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
 .assistant-themes button.is-done:not([aria-pressed="true"]) { color: var(--muted); border-style: dashed; }
 @media (pointer: coarse) { .assistant-themes button { min-height: 44px; } }
+
+/* Galerie vide : un simple bouton discret (le dépôt d'images marche toujours dessus). */
+.gallery.is-empty { padding: 0; margin-top: 10px; }
+.gallery.is-empty .gallery-add { flex-direction: row; width: auto; height: 44px; padding: 0 14px; gap: 6px; font-size: 14px; }
+.gallery.is-empty .gallery-add span { font-size: 18px; }
+.gallery.is-empty.is-over { padding: 8px; }

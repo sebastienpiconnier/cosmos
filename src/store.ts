@@ -169,6 +169,8 @@ interface CosmosState {
   setGoals: (goals: Goals) => void;
   /** Couverture du projet (tête de la Bible) : tagline, logline, pastilles… Voir pitch.ts. */
   pitch: Pitch;
+  /** Clés de cosmos.json écrites par une version plus récente et inconnues ici : réécrites telles quelles. */
+  metaKeep: Record<string, unknown>;
   setPitch: (key: PitchField, value: string) => void;
   progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
@@ -330,7 +332,15 @@ function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta) };
+}
+
+/** Clés de cosmos.json que cette version lit ou écrit elle-même. */
+const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
+
+/** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
+export function unknownMeta(meta: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(meta).filter(([key]) => !KNOWN_META.has(key)));
 }
 
 /** Rectangles des cartes sur le canevas (hauteur mesurée par React Flow quand elle est connue). */
@@ -429,13 +439,15 @@ function openProject(p: Project) {
 function toProject(
   s: Pick<
     CosmosState,
-    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript" | "goals" | "progress" | "pitch"
+    "title" | "kind" | "paper" | "paperChosen" | "sceneNumbers" | "nodes" | "frames" | "edges" | "screenplay" | "plan" | "manuscript" | "goals" | "progress" | "pitch" | "metaKeep"
   >,
 ): Project {
   // Le plan écrit ne cite que des cartes qui existent encore.
   const plan = prunePlan(s.plan, new Set(s.nodes.map((n) => n.id)));
   return {
     meta: {
+      // Ce qu'une version plus récente a écrit et que celle-ci ignore, d'abord : les clés connues l'emportent.
+      ...s.metaKeep,
       version: 1,
       title: s.title,
       kind: s.kind,
@@ -741,6 +753,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     progress: {},
     pitch: {},
+    metaKeep: {},
     setPitch: (key, value) => {
       const next = setPitchField(get().pitch, key, value);
       if (next === get().pitch) return;
@@ -1215,7 +1228,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const keys = Object.keys(patch);
       const typed = keys.length === 1 && (keys[0] === "title" || keys[0] === "html");
       record(typed ? `card:${id}:${keys[0]}` : "");
-      let nodes = get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n));
+      let nodes = get().nodes.map((n) => {
+        if (n.id !== id) return n;
+        const data = { ...n.data, ...patch };
+        // Type choisi par l'auteur : on oublie le type inconnu gardé d'une version plus récente.
+        if (patch.type && data.keep?.type) {
+          const { type: _type, ...rest } = data.keep;
+          data.keep = Object.keys(rest).length > 0 ? rest : undefined;
+        }
+        return { ...n, data };
+      });
       // Les mentions de cette carte, dans les autres, suivent son nouveau titre.
       const { title } = patch;
       if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
