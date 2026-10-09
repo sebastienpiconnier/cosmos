@@ -1,5 +1,7 @@
 # Fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux
 # quand on pousse une étiquette de version :  git tag v0.2.0 && git push --tags
+# ou à la main (onglet Actions, « Run workflow ») : l'étiquette vient alors de la version de l'app
+# (package.json, tauri.conf.json), par exemple v0.1.0, et tauri-action la crée.
 # Résultat : un brouillon de « Release » GitHub avec .dmg, .msi/.exe, .AppImage/.deb.
 name: Release
 
@@ -57,8 +59,9 @@ jobs:
           # APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
           # APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Cosmos ${{ github.ref_name }}"
+          # Lancé par une étiquette : celle-ci. Lancé à la main : v + la version de l'app (jamais « main »).
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: "Cosmos ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
           releaseBody: |
             Première version d'essai de Cosmos, pour macOS (Apple Silicon et Intel), Windows et Linux.
 
