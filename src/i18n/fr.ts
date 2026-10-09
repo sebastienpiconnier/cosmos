@@ -700,6 +700,27 @@ export const fr = {
     openTheme: "Voir le thème « {title} »",
   },
 
+  // Carte des relations (rubrique Personnages de la Bible).
+  relations: {
+    tabsAria: "Présentation des personnages",
+    tabCards: "Fiches",
+    tabMap: "Relations",
+    noCharacters: "Aucun personnage pour l’instant.",
+    noLinks: "Aucun fil entre deux personnages pour l’instant.",
+    hint: "Tire un fil entre deux personnages sur le canevas et nomme-le (« sœur de », « trahit ») : il apparaît ici. Touche un portrait pour ouvrir sa fiche.",
+    faceOne: "{name}, {n} relation, ouvrir sa fiche",
+    faceMany: "{name}, {n} relations, ouvrir sa fiche",
+    listAria: "Relations entre les personnages",
+    unlabeled: "relié à",
+  },
+
+  // Tableau d'ambiance de la Bible : toutes les images du projet.
+  mood: {
+    toc: "Ambiance",
+    empty: "Aucune image pour l’instant. Ajoute des photos aux personnages, aux lieux ou aux sources : elles se rassemblent ici.",
+    open: "{title} ({type}), ouvrir la fiche",
+  },
+
   // Pages du livre dans le manuscrit (idée reprise de NEO).
   book: {
     pageKind: "Type de page",

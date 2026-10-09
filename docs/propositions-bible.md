@@ -41,7 +41,7 @@ La fiche a déjà portrait, genre, âge, métier. On ajoute une **bande « moteu
 - **Antagoniste** : quand le rôle choisi est Antagoniste, la bande devient **Motivation, Force, Faille**.
 - Ces cases se remplissent aussi par l'assistant : une réponse à « Que veut ce personnage, plus que tout ? » propose de remplir « Veut » (sur clic).
 
-### 3. La carte des relations (priorité 2)
+### 3. La carte des relations (priorité 2, fait)
 
 Dans la rubrique Personnages, un bouton « Relations » affiche les personnages en **portraits ronds** reliés par leurs fils étiquetés (« sœur de », « trahit »). Ce sont les fils du canevas, rien de plus : tirer un fil ici le tire là-bas. Vue en lecture rapide, idéale pour un dossier éditeur.
 
@@ -53,7 +53,7 @@ Trois rubriques facultatives, cachées tant qu'elles sont vides (le menu « Choi
 - **Règles** (magie, technologie, lois du monde) : une fiche à trois cases, **Fonctionne / Limite / Coût**. Ce trio suffit à éviter l'incohérence ; la vérification de cohérence par l'IA s'en servira.
 - **Glossaire** : un mot inventé devient une carte Terme. Dans le texte, le mot est souligné en pointillé et sa définition apparaît au survol ou au toucher. Le glossaire de la Bible est alphabétique (`localeCompare` avec la langue).
 
-### 5. Le tableau d'ambiance (priorité 2)
+### 5. Le tableau d'ambiance (priorité 2, fait)
 
 Un onglet « Ambiance » dans la Bible : **toutes les images du projet** (portraits, lieux, sources) en mosaïque, groupées par type. Toucher une image ouvre sa fiche. Aucune donnée nouvelle : tout vient de `image` et `images`.
 

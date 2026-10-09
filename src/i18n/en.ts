@@ -634,6 +634,27 @@ export const en: Messages = {
     synthesisAdded: "Summary added to the sheet.",
   },
 
+  // Relationship map (Characters section of the Bible).
+  relations: {
+    tabsAria: "How to show the characters",
+    tabCards: "Sheets",
+    tabMap: "Relationships",
+    noCharacters: "No characters yet.",
+    noLinks: "No thread between two characters yet.",
+    hint: "Draw a thread between two characters on the canvas and name it (“sister of”, “betrays”): it shows up here. Tap a portrait to open their sheet.",
+    faceOne: "{name}, {n} relationship, open their sheet",
+    faceMany: "{name}, {n} relationships, open their sheet",
+    listAria: "Relationships between characters",
+    unlabeled: "linked to",
+  },
+
+  // Mood board of the Bible: every image in the project.
+  mood: {
+    toc: "Mood board",
+    empty: "No images yet. Add photos to characters, places or sources: they gather here.",
+    open: "{title} ({type}), open the sheet",
+  },
+
   // Project cover, at the top of the Bible.
   pitch: {
     toc: "The project",

@@ -1055,3 +1055,32 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .arc-curve { flex-shrink: 0; }
 .assistant-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .assistant-offer .ghost-button { min-height: 44px; }
+
+/* Carte des relations (Bible, Personnages) : portraits sur les fils du canevas. */
+.bible-main-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.rel { display: flex; flex-direction: column; gap: 14px; }
+.rel-map { position: relative; width: 100%; margin: 0 auto; }
+.rel-map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rel-line { stroke: var(--edge); stroke-width: 2; opacity: 0.55; }
+.rel-label { font: 600 13px var(--font-ui); fill: var(--accent-ink); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.rel-name { font: 500 14px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.rel-face { position: absolute; display: grid; place-items: center; padding: 0; border: 3px solid var(--type-personnage); border-radius: 50%; background: var(--ground); color: var(--type-personnage); font: 600 22px var(--font-display); cursor: pointer; overflow: hidden; box-shadow: var(--shadow-card); }
+.rel-face.is-empty { border-style: dashed; }
+.rel-face img { width: 100%; height: 100%; object-fit: cover; }
+.rel-face:hover { transform: scale(1.06); }
+.rel-face:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.rel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.rel-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.rel-list-label { font-size: 13px; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 10px; border-radius: 999px; }
+
+/* Tableau d'ambiance : toutes les images du projet en mosaïque. */
+.bible-main.is-wide { max-width: 1100px; }
+.mood { columns: 4 200px; column-gap: 12px; }
+.mood-tile { position: relative; display: block; width: 100%; margin: 0 0 12px; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: var(--surface); cursor: pointer; break-inside: avoid; box-shadow: var(--shadow-card); text-align: left; }
+.mood-tile img { display: block; width: 100%; height: auto; }
+.mood-missing { display: block; aspect-ratio: 4 / 3; background: var(--ground); }
+.mood-caption { display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-size: 13px; color: var(--ink); background: var(--surface); }
+.mood-tile:hover img { opacity: 0.9; }
+.mood-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .rel-face:hover { transform: none; } }
+.mood-title { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; font: 500 18px var(--font-display); }

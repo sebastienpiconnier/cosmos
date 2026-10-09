@@ -123,6 +123,7 @@ src/
   web.ts                readPage(url) : lit une page (HTTP de Tauri ou fetch), 20 s et 2 Mo au plus
   shortcuts.ts          Liste des raccourcis clavier, pour la fenêtre d'aide (décrit, n'écoute rien)
   pitch.ts              Couverture du projet (tête de la Bible) : champs, lecture de cosmos.json, suggestions des pastilles (fonctions pures)
+  relations.ts          Carte des relations (disposition des portraits, fils entre personnages) et images du tableau d'ambiance (fonctions pures)
   bibleSections.ts      Rubriques de la Bible : ordre et rubriques masquées (réglage de l'appareil)
   character.ts          Fiches (SHEET_FIELDS par type) et fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
   organize.ts           « Organiser le canevas » : cadres par type, par case du gabarit et par chapitre, scènes reliées (fonction pure)
@@ -162,6 +163,8 @@ src/
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
     ProjectCover.tsx    Couverture du projet, première page de la Bible : jaquette (titre, tagline, pastilles), logline, résumé, comparables, volume, thèmes, note d'intention
     CharacterMotor.tsx  Moteur d'un personnage dans la Bible (Veut, A besoin de, Blessure ; antagoniste : Motivation, Force, Faille) et type d'arc dessiné
+    RelationsMap.tsx    Carte des relations (Bible, Personnages › Relations) : portraits sur les fils du canevas, liste des relations
+    MoodBoard.tsx       Tableau d'ambiance (Bible › Ambiance) : toutes les images du projet, par type
     CardSheet.tsx       Fiche d'une carte selon son type : personnage (rôle, genre, âge…), lieu (époque, ambiance…), intrigue (question dramatique, enjeu…)
     SourceTools.tsx     Carte Source dans la Bible : ouvrir la page, compléter auteur et date depuis la page
     Gallery.tsx         Photos d'un personnage ou d'un lieu dans la Bible : ajout, agrandissement, image principale, description par l'IA (lieu)
@@ -425,6 +428,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Zone Recherche** : un cadre ordinaire marqué `kind: "research"` dans `frames` (lu sans erreur par une version précédente). Il est créé à droite de tout le contenu au premier clip, grandit vers le bas quand il est plein, et « Organiser le canevas » le garde tel quel et n'y range pas les sources.
 - **Couverture du projet** : `pitch` dans `cosmos.json`, écrit seulement quand un champ est rempli. Clés fixes (`tagline`, `logline`, `resume`, `comps`, `intention`, `genre`, `cible`, `format`, `pov`, `temps`, `ton`), jamais traduites ; les valeurs sont le texte de l'auteur (une pastille choisie garde le libellé de la langue du moment). Le volume n'est pas saisi (objectif de mots, ou pages du scénario) et les thèmes sont les cartes Thème : rien n'est recopié. Hors historique d'annulation, comme le titre du projet (les champs ont leur propre annulation). La Bible s'ouvre sur la couverture.
 - **Moteur d'un personnage** : ce sont des champs de la fiche (`objectif`, `besoin`, `blessure` ; `motivation`, `force`, `faille` pour un rôle qui dit « antagoniste », `isAntagonist`). `bandFields` les retire de la liste de `CardSheet` pour ne pas les montrer deux fois. `arcType` vaut `positif`, `negatif` ou `plat` (clé écrite dans le fichier, `readFiche` rejette toute autre valeur) ; export et IA l'écrivent en toutes lettres (`ficheText`).
+- **Relations et Ambiance, sans données propres** : la carte des relations lit les fils entre deux cartes Personnage (et leurs étiquettes), le tableau d'ambiance les champs `image` et `images` des cartes. Rien n'est enregistré à part ; « Fiches » ou « Relations » est un état d'affichage. Les noms sont écrits sous les portraits : un fil qui part vers le bas commence après le nom, sinon son étiquette le recouvre.
 - **Réponse reportée dans la fiche** : après une réponse à une question de l'assistant qui correspond à un champ vide (`QUESTION_FIELD`, assistant.ts), un bouton propose de l'y reporter aussi. C'est la réponse de l'auteur, telle quelle, et seulement sur son clic.
 - **Ouvrir une page** : toujours `openExternal` (platform.ts), qui passe par `tauri-plugin-opener` (permission `opener:default`) ; `window.open` ne fait rien dans l'app de bureau.
 

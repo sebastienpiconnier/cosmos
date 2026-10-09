@@ -22,6 +22,8 @@ import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
 import { CharacterMotor } from "./CharacterMotor";
 import { ProjectCover } from "./ProjectCover";
+import { RelationsMap } from "./RelationsMap";
+import { MoodBoard } from "./MoodBoard";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
@@ -115,8 +117,13 @@ export function Bible() {
     return out;
   }, [nodes]);
   // « projet » : la couverture du projet, première page de la Bible (et page d'arrivée).
-  const [current, setCurrent] = useState<CardType | "projet">("projet");
+  // « ambiance » : toutes les images du projet. Ni l'une ni l'autre n'a de données propres.
+  const [current, setCurrent] = useState<CardType | "projet" | "ambiance">("projet");
   const onCover = current === "projet";
+  const onMood = current === "ambiance";
+  const onPage = onCover || onMood;
+  // Personnages : fiches ou carte des relations (état d'affichage, non enregistré).
+  const [relations, setRelations] = useState(false);
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
@@ -170,10 +177,11 @@ export function Bible() {
     const card = nodes.find((n) => n.id === id)?.data;
     if (!card) return;
     setCurrent(card.type);
+    setRelations(false);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${id}"]`)?.scrollIntoView({ block: "start" }));
   };
 
-  if (!shown && !onCover) {
+  if (!shown && !onPage) {
     return (
       <div className="empty-view">
         <h1>{t.bible.emptyTitle}</h1>
@@ -223,12 +231,25 @@ export function Bible() {
               </span>
             </button>
           </li>
+          <li>
+            <button type="button" className={`toc-cover${onMood ? " is-current" : ""}`} aria-current={onMood ? "true" : undefined} onClick={() => setCurrent("ambiance")}>
+              <span className="toc-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="8" height="10" rx="1.5" />
+                  <rect x="13" y="3" width="8" height="6" rx="1.5" />
+                  <rect x="13" y="11" width="8" height="10" rx="1.5" />
+                  <rect x="3" y="15" width="8" height="6" rx="1.5" />
+                </svg>
+                {t.mood.toc}
+              </span>
+            </button>
+          </li>
           {sections.map((s) => (
             <li key={s.type}>
               <button
                 type="button"
-                className={!onCover && s === shown ? "is-current" : ""}
-                aria-current={!onCover && s === shown ? "true" : undefined}
+                className={!onPage && s === shown ? "is-current" : ""}
+                aria-current={!onPage && s === shown ? "true" : undefined}
                 onClick={() => setCurrent(s.type)}
               >
                 <span className="toc-label">
@@ -254,14 +275,37 @@ export function Bible() {
         {adders}
       </nav>
 
-      {onCover || !shown ? (
+      {onMood ? (
+        <section className="bible-main is-wide" aria-label={t.mood.toc} ref={mainRef}>
+          <h1>{t.mood.toc}</h1>
+          <MoodBoard onOpen={openCard} />
+        </section>
+      ) : onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
           <h1 className="sr-only">{t.pitch.toc}</h1>
           <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
         </section>
       ) : (
       <section className="bible-main" aria-label={types[shown.type].section} ref={mainRef}>
-        <h1>{types[shown.type].section}</h1>
+        <div className="bible-main-head">
+          <h1>{types[shown.type].section}</h1>
+          {shown.type === "personnage" && shown.cards.length > 0 && (
+            <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
+              <button type="button" aria-pressed={!relations} onClick={() => setRelations(false)}>
+                {t.relations.tabCards}
+              </button>
+              <button type="button" aria-pressed={relations} onClick={() => setRelations(true)}>
+                {t.relations.tabMap}
+              </button>
+            </div>
+          )}
+        </div>
+        {shown.type === "personnage" && relations && shown.cards.length > 0 ? (
+          <div className="bible-entry">
+            <RelationsMap onOpen={openCard} />
+          </div>
+        ) : (
+        <>
         {shown.cards.length === 0 && (
           <div className="bible-empty-section">
             <p className="muted">{t.bible.sectionEmpty}</p>
@@ -337,6 +381,8 @@ export function Bible() {
             </article>
           );
         })}
+        </>
+        )}
       </section>
       )}
     </div>
