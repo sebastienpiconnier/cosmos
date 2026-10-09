@@ -311,7 +311,7 @@ export function Toile() {
 
   return (
     <div
-      className="toile"
+      className={`toile${selectedCards + selectedFrames > 1 ? " has-multi" : ""}`}
       ref={wrapper}
       onDoubleClick={onDoubleClick}
       onPointerMove={(e) => {
@@ -461,6 +461,25 @@ export function Toile() {
             <path d="M14 3.5V8h4.5M12 11.5v6M9.5 15l2.5 2.5 2.5-2.5" />
           </svg>
           <span className="tool-label" aria-hidden="true">{t.documents.importShort}</span>
+        </button>
+        <button
+          type="button"
+          className="icon-button has-label"
+          aria-label={t.pexels.button}
+          title={t.pexels.button}
+          onClick={() => {
+            const rect = wrapper.current?.getBoundingClientRect();
+            const at = rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
+            useCosmos.getState().openPexels({ kind: "canvas", at });
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="13" height="11" rx="2" />
+            <path d="M5.5 14l3-3 2.5 2.5 1.5-1.5 2.5 2.5" />
+            <circle cx="17" cy="16.5" r="3" />
+            <path d="M19.2 18.7L21 20.5" />
+          </svg>
+          <span className="tool-label" aria-hidden="true">{t.pexels.short}</span>
         </button>
         <button
           type="button"

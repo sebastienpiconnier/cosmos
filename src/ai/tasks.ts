@@ -5,7 +5,7 @@
 // écrit, sans rien inventer) et les alertes de cohérence (des contradictions possibles, sous forme de questions).
 // Le texte complet de chaque consigne est recopié dans docs/prompts-ia.md : le tenir à jour.
 
-import { CARD_TYPES, type CardData, type CardType, type Link } from "../types";
+import type { CardData, CardType, Link } from "../types";
 import { plainText } from "../search";
 import { CHARACTER_FIELDS, ficheText } from "../character";
 import { splitAnswers, type Answered } from "../assistant";
@@ -77,13 +77,16 @@ export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "sce
   };
 }
 
+/** Types que « Ranger » peut proposer : ceux que la consigne nomme (jamais Image, Lien ou Document, qui portent un fichier ou une adresse). */
+const TIDY_TYPES: ReadonlySet<CardType> = new Set(["personnage", "lieu", "scene", "intrigue", "theme", "question"]);
+
 export function parseTidy(reply: string, cards: CardData[]): TidySuggestion[] {
   const known = new Map(tidyCandidates(cards).map((c) => [c.id, c]));
   const seen = new Set<string>();
   return asList(extractJson(reply)).flatMap((item) => {
     const id = str(item.id);
     const type = str(item.type) as CardType;
-    if (!known.has(id) || seen.has(id) || type === "idee" || !CARD_TYPES.includes(type)) return [];
+    if (!known.has(id) || seen.has(id) || !TIDY_TYPES.has(type)) return [];
     seen.add(id);
     return [{ id, type, reason: clip(str(item.reason), 200) }];
   });

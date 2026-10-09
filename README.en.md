@@ -38,7 +38,7 @@ Cosmos is under active development (version 0.1).
 ### The canvas
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
-- **Nine card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Image, Link. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Ten card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Image, Link, Document. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Pasting, as in Milanote:** paste or drop a link or an image onto the canvas: a single **Link** or **Image** card is born where you are (a pasted text becomes an Idea). Paste an address into a card that is still empty: that card becomes the Link card, without making a second one. “Organize the canvas” sorts them into Images and Links frames, and the Bible has a section for each. For a link, Cosmos reads the page: title, author, publication date and the site’s image come in on their own. Pasting the same link twice makes only one card. A link keeps the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
@@ -47,9 +47,13 @@ Cosmos is under active development (version 0.1).
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Click the thread (or tap it) to rename it or **unlink** the cards; in the Bible, a link’s cross does the same.
 - **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
 - **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
+- **PDF:** drop, paste or import a PDF (the canvas “PDF” button): a **Document** card appears, with a preview of its first page, its page count, author and year when the file gives them. “Read the document” opens it in the app, page by page. The PDF is copied into `medias/`.
+- **Pexels photos:** the canvas “Photos” button (or a sheet’s gallery) searches free photos on Pexels; the one you pick becomes an Image card, with the photographer’s name and the photo’s link in its sheet. You need a free Pexels key, pasted once (it stays on the device).
+- **Link to the sheet:** every typed card has a button that opens its sheet in the Bible.
+- **Multiple selection:** `Shift` + drag draws around cards, `Ctrl`/`Cmd` + click adds one, `Ctrl`/`Cmd`+`A` selects everything, `Esc` deselects; with a finger, the “Select” button. Selected cards move together, and a bar offers to frame them or move them to the trash.
 - **Card width:** drag the bottom-right handle of a selected card, or `Alt`+`→` and `Alt`+`←`.
 - **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards and inner frames along.
-- **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas) and the scenes by template beat and chapter, linked in story order. `Ctrl`/`Cmd`+`Z` puts everything back.
+- **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas, images, links, documents, book pages) and the scenes by template beat and chapter, linked in story order. Landscape first: beats follow each other left to right, in rows of at most 8 scenes. `Ctrl`/`Cmd`+`Z` puts everything back.
 - **Trash:** a deleted card (from the canvas, the outline, the step outline or the manuscript) goes to the trash with its threads, and in a screenplay with its scene’s text. A message offers to undo; the trash (in Settings) puts each card back where it was or deletes it for good. It lives in the project’s `corbeille/` folder.
 - **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
 - **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
@@ -143,6 +147,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 - **Manuscript:** scenes of the same chapter form one chapter, separated by “* * *”. PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
 - **Screenplay:** PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **Bible:** PDF, Word or Markdown, the project cover first, then the sections chosen in the Bible, in its order, with each entry’s images and links.
+- **Canvas:** a PNG image of the whole board, a standard PDF (A4, to send) or large-format PDF (A1, to print), and the card text in Word or Markdown, one part per frame.
 - **Nothing to install:** everything is produced by the app itself.
 
 ### Comfort

@@ -38,7 +38,7 @@ Cosmos est en cours de développement (version 0.1).
 ### Le canevas
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et tu écris directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
-- **Neuf types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Image, Lien. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
+- **Dix types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Image, Lien, Document. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Coller, comme dans Milanote :** colle ou dépose un lien ou une image sur le canevas : une seule carte **Lien** ou **Image** naît là où tu es (un texte collé devient une Idée). Colle une adresse dans une carte encore vide : c'est elle qui devient la carte Lien, sans en créer une deuxième. « Organiser le canevas » les range dans les cadres Images et Liens, et la Bible a une rubrique pour chacun. Pour un lien, Cosmos lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Un lien garde le jour où tu l'as consulté ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionne un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
@@ -47,9 +47,13 @@ Cosmos est en cours de développement (version 0.1).
 - **Fils étiquetés :** tire un fil d'une carte à une autre et nomme le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, la croix d'un lien fait de même.
 - **Mentions :** tape `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si tu renommes la carte, et tu peux créer la carte citée sans quitter ta phrase.
 - **Images :** dépose une image sur une carte ou sur le canevas, ou utilise le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
+- **PDF :** dépose, colle ou importe un PDF (bouton « PDF » du canevas) : une carte **Document** naît, avec l'aperçu de sa première page, son nombre de pages, son auteur et son année quand le fichier les donne. « Lire le document » l'ouvre dans l'app, page après page. Le PDF est copié dans `medias/`.
+- **Photos Pexels :** le bouton « Photos » du canevas (ou de la galerie d'une fiche) cherche des photos libres sur Pexels ; celle que tu choisis devient une carte Image, avec le nom du photographe et le lien de la photo dans sa fiche. Il faut une clé Pexels gratuite, collée une fois (elle reste sur l'appareil).
+- **Lien vers la fiche :** chaque carte typée a un bouton qui ouvre sa fiche dans la Bible.
+- **Sélection multiple :** Maj + glisser entoure des cartes, Ctrl/Cmd + clic en ajoute une, Ctrl/Cmd + A sélectionne tout, Échap désélectionne ; au doigt, le bouton « Sélection ». Les cartes choisies se déplacent ensemble, et une barre propose de les encadrer ou de les mettre à la corbeille.
 - **Largeur des cartes :** tire la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
 - **Cadres :** un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche C ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes et les cadres qu'il contient.
-- **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit. Ctrl/Cmd+Z remet tout comme avant.
+- **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit. En paysage : les cases se suivent de gauche à droite, rangées de 8 scènes au plus. Ctrl/Cmd+Z remet tout comme avant.
 - **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
 - **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la montre sur le canevas.
@@ -144,6 +148,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
 - **Scénario :** PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
 - **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les rubriques choisies dans la Bible, dans son ordre, avec les images de chaque fiche et leurs liens.
+- **Canevas :** image PNG du tableau entier, PDF standard (A4, à envoyer) ou grand format (A1, à imprimer), et le texte des cartes en Word ou Markdown, un cadre par partie.
 - **Sans rien installer :** tout est fabriqué par l'app elle-même.
 
 ### Confort

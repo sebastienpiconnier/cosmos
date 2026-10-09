@@ -156,6 +156,8 @@ describe("Ranger", () => {
     expect(parseTidy(reply, cards)).toEqual([{ id: "i1", type: "personnage", reason: "C'est quelqu'un." }, { id: "i2", type: "lieu", reason: "" }]);
     expect(parseTidy("Je ne sais pas.", cards)).toEqual([]);
     expect(parseTidy('{"suggestions":[{"id":"i2","type":"idee"}]}', cards)).toEqual([]);
+    // Un type qui porte un fichier ou une adresse n'est jamais proposé : la carte n'aurait ni l'un ni l'autre.
+    for (const type of ["image", "lien", "document"]) expect(parseTidy(JSON.stringify([{ id: "i2", type }]), cards)).toEqual([]);
   });
 });
 

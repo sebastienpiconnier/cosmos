@@ -79,9 +79,12 @@ interface SettingsState {
   /** Rubriques de la Bible : ordre et rubriques masquées. */
   bibleSections: BibleSections;
   setBibleSections: (sections: BibleSections) => void;
+  /** Clé de l'API Pexels (recherche de photos), propre à l'appareil comme les clés d'IA. Vide : pas de recherche. */
+  pexelsKey: string;
+  setPexelsKey: (key: string) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; pexelsKey?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -112,17 +115,19 @@ export const useSettings = create<SettingsState>((set) => ({
   setWriting: (writing) => set({ writing }),
   bibleSections: readSections(saved.bibleSections),
   setBibleSections: (bibleSections) => set({ bibleSections }),
+  pexelsKey: typeof saved.pexelsKey === "string" ? saved.pexelsKey.trim().slice(0, 200) : "",
+  setPexelsKey: (pexelsKey) => set({ pexelsKey: pexelsKey.trim().slice(0, 200) }),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing, pexelsKey }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing, pexelsKey }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

@@ -24,6 +24,7 @@ import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
+import type { PexelsPhoto } from "./pexels";
 import { sourceUrl } from "./character";
 import { clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
@@ -93,6 +94,11 @@ interface CosmosState {
   setCardDocument: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
   /** L'auteur choisit un PDF : pour la carte `id`, sinon une nouvelle carte posée en `at`. */
   pickDocument: (id?: string, at?: { x: number; y: number }) => Promise<void>;
+  /** Où va la photo choisie dans la recherche Pexels : une nouvelle carte Image, ou la galerie d'une fiche. */
+  pexelsTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | null;
+  openPexels: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string }) => void;
+  /** Télécharge la photo choisie et la pose (carte Image créditée, ou galerie). Rend faux si le téléchargement échoue. */
+  addPexelsPhoto: (photo: PexelsPhoto) => Promise<boolean>;
   /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
   documentCard: string | null;
   openDocument: (id: string) => void;
@@ -118,8 +124,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "pexels" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "pexels" | null) => void;
   /** Ouvre une scène dans le manuscrit. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
@@ -563,6 +569,37 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!file) return;
       if (id) await get().setCardDocument(id, file);
       else await get().addDocument(file, at);
+    },
+    pexelsTarget: null,
+    openPexels: (target) => set({ pexelsTarget: target, dialog: "pexels" }),
+    addPexelsPhoto: async (photo) => {
+      const target = get().pexelsTarget;
+      if (!target) return false;
+      const file = await fetchImage(photo.image).catch(() => null);
+      if (!file) return false;
+      if (target.kind === "gallery") return (await get().addGalleryImages(target.id, [file])) > 0;
+      const ext = imageExtension(file.name) ?? "jpg";
+      const name = `${newId()}.${ext}`;
+      try {
+        await storage.writeMedia(name, file.data);
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+      // Le crédit va dans la fiche de la carte (comme pour un lien) : Pexels demande de citer le photographe.
+      const t = getT().pexels;
+      const id = get().addResearchCard(
+        {
+          type: "image",
+          title: photo.alt || (photo.photographer ? fmt(t.photoBy, { name: photo.photographer }) : ""),
+          html: "",
+          image: name,
+          fiche: { url: photo.page, ...(photo.photographer ? { auteur: photo.photographer } : {}), publication: "Pexels", consulte: today(useSettings.getState().lang) },
+        },
+        target.at,
+      );
+      set({ focusId: id });
+      return true;
     },
     documentCard: null,
     openDocument: (id) => {

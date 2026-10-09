@@ -138,7 +138,10 @@ src/
   timeline.ts           Chronologie par intrigue : présence des thèmes, personnages et lieux dans les scènes (fonction pure)
   plan.ts               Plan d'un roman : gabarits, cases, rangement des scènes, chapitres (fonctions pures)
   mentions.ts           Mentions « @ » d'une carte dans une autre : détection, cartes proposées, renommage, format (fonctions pures)
-  media.ts              Images des cartes : formats reconnus, nom de fichier sûr, bornes de largeur d'une carte
+  media.ts              Images et documents des cartes : formats reconnus, noms de fichiers sûrs (isMediaName, isDocumentName), bornes de largeur d'une carte
+  documents.ts          Cartes Document : titre crédible, année d'une date PDF, fiche (fonctions pures)
+  pdfDocument.ts        pdf.js (legacy, chargé à la demande) : aperçu de la 1re page, métadonnées, rendu des pages de la liseuse
+  pexels.ts             Recherche Pexels : requête (plugin HTTP de Tauri), réponse filtrée (adresses pexels.com seulement)
   settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
@@ -165,7 +168,9 @@ src/
     FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
-    Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
+    Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de Cosmos », corbeille, liseuse, Pexels
+    DocumentViewer.tsx  Liseuse d'une carte Document : pages du PDF dessinées à mesure qu'elles arrivent à l'écran
+    PexelsSearch.tsx    Recherche de photos Pexels : clé de l'appareil, grille de vignettes, photo choisie en carte Image ou dans une galerie
     Tour.tsx            Visite guidée : un panneau par étape, qui ouvre la vue dont il parle
     ProjectCover.tsx    Couverture du projet, première page de la Bible : jaquette (titre, tagline, pastilles), logline, résumé, comparables, volume, thèmes, note d'intention
     CharacterMotor.tsx  Moteur d'un personnage dans la Bible (Veut, A besoin de, Blessure ; antagoniste : Motivation, Force, Faille) et type d'arc dessiné
@@ -221,6 +226,8 @@ src/
     prose.ts            Mise en page du PDF au format manuscrit (pure, testée)
     pdf.ts              Dessin du PDF (pdf-lib, chargé à la demande)
     images.ts           Images d'un document à exporter : lues dans medias/, réduites, en JPEG (chargé à la demande)
+    canvas.ts           Export du canevas : texte par cadre dans l'ordre de lecture (Word, Markdown), taille de l'image (fonctions pures)
+    canvasImage.ts      Image du canevas (html-to-image) et PDF A4 ou A1 qui la porte (chargé à la demande)
     index.ts            exportDocument() : formats, noms de fichier, imports dynamiques
   storage/
     paths.ts            Format du dossier projet
@@ -243,7 +250,7 @@ MonRoman/
   cosmos.json          titre, type (roman | scenario), format de page, numéros de scène et en-têtes soulignés (paper, sceneNumbers, underlineHeadings, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs), couverture du projet (pitch, facultatif)
   cartes/<id>.md       une carte par fichier
   manuscrit/<id>.md    texte d'une scène du roman (Markdown sans en-tête), au nom de sa carte Scène
-  medias/<nom>.jpg     images des cartes (copiées dans le projet)
+  medias/<nom>.jpg     images des cartes (copiées dans le projet), et PDF des cartes Document (medias/<nom>.pdf)
   corbeille/<id>.md    cartes supprimées, même format plus une ligne `corbeille:` (jour, place, fils, scène du scénario)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
 ```
@@ -265,7 +272,7 @@ Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 
 Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
-Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `theme`, `question`, `image`, `lien`. Un Lien (et une Image) garde dans `fiche` les clés `url`, `auteur`, `publication`, `consulte`. Une ancienne carte `source` (avant octobre 2026) est relue en `lien` si elle a une adresse, en `image` si elle a une image, sinon en `idee` (ses champs gardés dans `keep`), et réécrite sous ce type. Une Intrigue est une ligne d'histoire (principale, secondaire) avec sa fiche ; elle a sa ligne dans la chronologie du Plan, avant les Thèmes. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
+Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `theme`, `question`, `image`, `lien`, `document`. Une carte Document garde son PDF dans `fichier:` (simple nom de `medias/`, vérifié par `isDocumentName`), l'aperçu de sa première page dans `image:`, et dans `fiche` les clés `auteur`, `publication`, `pages`. Un Lien (et une Image) garde dans `fiche` les clés `url`, `auteur`, `publication`, `consulte`. Une ancienne carte `source` (avant octobre 2026) est relue en `lien` si elle a une adresse, en `image` si elle a une image, sinon en `idee` (ses champs gardés dans `keep`), et réécrite sous ce type. Une Intrigue est une ligne d'histoire (principale, secondaire) avec sa fiche ; elle a sa ligne dans la chronologie du Plan, avant les Thèmes. Pour ajouter un type : `CardType`, `CARD_TYPES` et `BIBLE_ORDER` (types.ts), son libellé dans `t.types` (fr et en), son jeton `--type-<type>` dans les deux thèmes, la classe de la mini-carte (canvas.css), sa fiche dans `SHEET_FIELDS` s'il en a une, et son cadre dans `organize.ts`.
 
 Le format est un contrat : toute évolution doit rester lisible par les versions précédentes ou passer par `version` dans `cosmos.json` avec une migration. Depuis octobre 2026, ce qu'une version ne connaît pas est gardé et réécrit tel quel (voir « Versions futures » dans les pièges) ; les versions d'avant, elles, perdent à l'enregistrement les champs qu'elles ignorent.
 
@@ -462,3 +469,9 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Scènes de la vue Scénario** : la liste de gauche se réordonne (glisser, flèches de la scène en cours, Alt+↑/↓) avec `moveBlock`, comme le séquencier. `moveScene` (ScreenplayView) recharge l'éditeur lui-même (`synced`, `setContent`) avant d'y poser le curseur : passer par l'effet de rechargement remettrait le curseur au début.
 - **Projet d'exemple** : « Le Petit Chaperon rouge » de Perrault (texte de 1697, orthographe modernisée, dialogues entre « » sans tiret) avec trois gravures de Doré. `tryExample` écrit d'abord les gravures dans `medias/` (`demoMedia`, import dynamique : elles restent hors du paquet de démarrage), puis ouvre le projet. La traduction anglaise est propre à Cosmos : ne pas y recopier une traduction publiée. Changer l'exemple : `demo.ts` et `t.demo` dans les deux langues, et le test « essayer avec un exemple ».
 - **Noms cités dans le texte** (`detectCards`) : un trait d'union lie deux mots, « la Mère » n'est pas citée dans « la Mère-grand ».
+- **Sélection multiple** : celle de React Flow (Maj + glisser, `multiSelectionKeyCode` Meta ou Control, `SelectionMode.Partial`), plus Ctrl/Cmd + A (`selectAll`), Échap (`clearSelection`) et, au doigt, le mode « Sélection » de `Toile` (glisser entoure au lieu de déplacer la vue, l'appui long ne crée plus de carte). La sélection n'entre ni dans l'historique ni dans le statut « modifié ». `deleteCards` met plusieurs cartes à la corbeille en une étape. Avec plusieurs cartes choisies, la barre de sélection remplace l'aide du bas et les poignées de largeur disparaissent (`.toile.has-multi`).
+- **Organiser en paysage** : les cases du gabarit (ou les chapitres, sans gabarit) se suivent de gauche à droite, nouvelle rangée avant 9 scènes (`SCENES_PER_ROW`) ; les scènes d'un groupe sont sur une ligne ; un cadre de type tient sur une rangée jusqu'à 4 cartes, puis `typeColumns` le rend plus large que haut. Les cartes Scène hors récit (pages du livre) ont leur cadre « Pages du livre » : sans lui elles restaient en place et chevauchaient un cadre.
+- **Export du canevas** : l'image est dessinée depuis `.react-flow__viewport` (html-to-image 1.11.11, version recommandée par React Flow), chargé avec pdf-lib par `import()` dynamique. Les images des cartes sont des `blob:` que html-to-image relit par fetch, refusé par la CSP de l'app de bureau : `inlineBlobImages` les passe en `data:` le temps de la capture. Les textes indicatifs sont cachés (classe `is-capturing`, attributs `placeholder` retirés) mais les cartes gardent leur taille : les fils sont calculés sur la taille mesurée. L'export passe sur le canevas s'il n'est pas affiché. Taille bornée (`IMAGE_QUALITY` : côté et surface, les navigateurs limitent un canvas).
+- **Cartes Document (PDF)** : `storeDocument` (store) copie le PDF dans `medias/`, lit ses métadonnées et dessine sa première page avec pdf.js ; un PDF illisible est gardé sans aperçu. pdf.js (`pdfjs-dist`, build legacy pour les WebKit plus anciens) n'est atteint que par `import()` dynamique ; il reçoit une copie des octets (il les transfère à son worker). La liseuse est dans l'app (pas d'ouverture par le système : aucune permission de fichier en plus, et cela marche sur mobile) ; elle lit les octets par `storage.readMedia`, jamais par une adresse `blob:`.
+- **Photos Pexels** : clé de l'auteur dans `settings.pexelsKey` (appareil, jamais le projet, comme les clés d'IA). Requête par le plugin HTTP de Tauri (pas de CORS), 20 s au plus ; `parsePexels` ne garde que des adresses https de `pexels.com` et `images.pexels.com`. Les vignettes s'affichent depuis `images.pexels.com` (dans `img-src` de la CSP) ; la photo choisie est téléchargée (`fetchImage`) puis copiée dans `medias/`, avec photographe, page et « Pexels » dans la fiche de la carte Image.
+- **Bouton « Fiche » des cartes** : toutes les cartes typées sauf les Idées ouvrent leur fiche dans la Bible (`openInBible`). Le corps d'une carte Lien, Image ou Document vide reparaît quand on écrit le titre ou le texte, pas quand on touche un de ses boutons (il bougeait sous le doigt et le clic se perdait).

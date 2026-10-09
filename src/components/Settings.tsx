@@ -18,7 +18,7 @@ const OTHER_MODEL = "\u0000other";
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
-  const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi } = useSettings();
+  const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi, pexelsKey } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
@@ -55,7 +55,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), pexels: useId(), pexelsHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -204,6 +204,20 @@ export function Settings({ project = true }: { project?: boolean }) {
           <input id={ids.author} type="text" value={author} autoComplete="name" aria-describedby={ids.authorHint} onChange={(e) => setAuthor(e.target.value)} />
           <p className="settings-hint" id={ids.authorHint}>
             {t.settings.authorHint}
+          </p>
+          {/* Photos Pexels : la clé de l'auteur, sur cet appareil seulement (comme celles de l'IA). */}
+          <label htmlFor={ids.pexels}>{t.pexels.settingsLabel}</label>
+          <input
+            id={ids.pexels}
+            type="password"
+            value={pexelsKey}
+            autoComplete="off"
+            spellCheck={false}
+            aria-describedby={ids.pexelsHint}
+            onChange={(e) => useSettings.getState().setPexelsKey(e.target.value)}
+          />
+          <p className="settings-hint" id={ids.pexelsHint}>
+            {t.pexels.settingsHint}
           </p>
 
           {/* IA facultative : un service au choix, en ligne ou sur la machine */}
