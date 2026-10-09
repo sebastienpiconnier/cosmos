@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
-import { isAppleKeyboard } from "../platform";
+import { isAppleKeyboard, openExternal } from "../platform";
 import { version } from "../../package.json";
 
 const REPO = "https://github.com/sebastienpiconnier/cosmos";
@@ -70,7 +70,10 @@ export function Dialogs() {
           <p>{t.about.credits}</p>
           <p>{t.about.license}</p>
           <p>
-            {t.about.source} <span className="about-link">{REPO}</span>
+            {t.about.source}{" "}
+            <a className="about-link" href={REPO} onClick={(e) => (e.preventDefault(), void openExternal(REPO))}>
+              {REPO}
+            </a>
           </p>
         </div>
       )}

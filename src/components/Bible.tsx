@@ -18,6 +18,7 @@ import { useMediaUrl } from "./useMediaUrl";
 import { CharacterAssistant } from "./CharacterAssistant";
 import { CardSheet } from "./CardSheet";
 import { Gallery } from "./Gallery";
+import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
@@ -285,8 +286,9 @@ export function Bible() {
                   {t.bible.seeOnCanvas}
                 </button>
               </header>
-              {(shown.type === "personnage" || shown.type === "lieu") && <Gallery card={card} />}
+              {(shown.type === "personnage" || shown.type === "lieu" || shown.type === "source") && <Gallery card={card} />}
               <CardSheet card={card} />
+              {shown.type === "source" && <SourceTools card={card} />}
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
               <BibleBody card={card} />
               {shown.type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}

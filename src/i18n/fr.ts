@@ -101,6 +101,7 @@ export const fr = {
     lieu: { label: "Lieu", section: "Lieux", titlePlaceholder: "Nom du lieu" },
     scene: { label: "Scène", section: "Scènes", titlePlaceholder: "Titre de la scène" },
     intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
+    source: { label: "Source", section: "Sources", titlePlaceholder: "Titre de la source" },
     theme: { label: "Thème", section: "Thèmes", titlePlaceholder: "Thème" },
     question: { label: "Question ouverte", section: "Questions ouvertes", titlePlaceholder: "La question" },
   },
@@ -659,7 +660,7 @@ export const fr = {
       mention: "Citer une autre carte",
       width: "Élargir ou rétrécir la carte",
       delete: "Supprimer la sélection",
-      paste: "Coller un texte ou un lien : nouvelle carte",
+      paste: "Coller un lien, un texte ou une image : une source dans la zone Recherche",
       bold: "Gras",
       italic: "Italique",
       strike: "Barré",
@@ -753,9 +754,21 @@ export const fr = {
     notesKeep: "Ajouter à la fiche",
   },
 
+  // Zone « Recherche » du canevas et cartes Source.
+  research: {
+    frameTitle: "Recherche",
+    button: "Recherche",
+    hint: "Aller à la zone Recherche (les liens, extraits et images collés ou déposés sur le canevas y arrivent)",
+    open: "Ouvrir {host}",
+    fetch: "Compléter depuis la page",
+    fetching: "Lecture de la page…",
+    fetched: "Titre et références repris de la page.",
+    fetchFailed: "La page n’a pas pu être lue. Vérifie l’adresse, ou remplis la référence à la main.",
+  },
+
   // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
   fiche: {
-    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue" },
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", source: "Référence" },
     fields: {
       epoque: "Époque",
       ambiance: "Ambiance",
@@ -768,6 +781,10 @@ export const fr = {
       obstacles: "Obstacles",
       tournant: "Point de bascule",
       resolution: "Résolution",
+      url: "Adresse",
+      auteur: "Auteur",
+      publication: "Publication",
+      consulte: "Consultée le",
     },
     placeholders: {
       epoque: "Aujourd’hui, 1912, l’an 3000…",
@@ -781,6 +798,10 @@ export const fr = {
       obstacles: "Ce qui se met en travers",
       tournant: "Le moment où tout bascule",
       resolution: "Comment elle se termine",
+      url: "https://…",
+      auteur: "Qui l’a écrit",
+      publication: "Site, livre, revue, date",
+      consulte: "8 octobre 2026",
     },
   },
 

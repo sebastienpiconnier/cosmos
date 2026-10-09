@@ -100,6 +100,7 @@ export const en: Messages = {
     lieu: { label: "Place", section: "Places", titlePlaceholder: "Place name" },
     scene: { label: "Scene", section: "Scenes", titlePlaceholder: "Scene title" },
     intrigue: { label: "Plot", section: "Plots", titlePlaceholder: "Name of the plot" },
+    source: { label: "Source", section: "Sources", titlePlaceholder: "Title of the source" },
     theme: { label: "Theme", section: "Themes", titlePlaceholder: "Theme" },
     question: { label: "Open question", section: "Open questions", titlePlaceholder: "The question" },
   },
@@ -649,7 +650,7 @@ export const en: Messages = {
       mention: "Mention another card",
       width: "Widen or narrow the card",
       delete: "Delete the selection",
-      paste: "Paste a text or a link: new card",
+      paste: "Paste a link, a text or an image: a source in the Research area",
       bold: "Bold",
       italic: "Italic",
       strike: "Strikethrough",
@@ -739,8 +740,19 @@ export const en: Messages = {
     notesKeep: "Add to the entry",
   },
 
+  research: {
+    frameTitle: "Research",
+    button: "Research",
+    hint: "Go to the Research area (links, excerpts and images pasted or dropped on the canvas land there)",
+    open: "Open {host}",
+    fetch: "Fill in from the page",
+    fetching: "Reading the page…",
+    fetched: "Title and reference taken from the page.",
+    fetchFailed: "The page couldn’t be read. Check the address, or fill in the reference by hand.",
+  },
+
   fiche: {
-    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet" },
+    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", source: "Reference" },
     fields: {
       epoque: "Period",
       ambiance: "Atmosphere",
@@ -753,6 +765,10 @@ export const en: Messages = {
       obstacles: "Obstacles",
       tournant: "Turning point",
       resolution: "Resolution",
+      url: "Address",
+      auteur: "Author",
+      publication: "Published in",
+      consulte: "Accessed on",
     },
     placeholders: {
       epoque: "Today, 1912, the year 3000…",
@@ -766,6 +782,10 @@ export const en: Messages = {
       obstacles: "What gets in the way",
       tournant: "The moment everything shifts",
       resolution: "How it ends",
+      url: "https://…",
+      auteur: "Who wrote it",
+      publication: "Site, book, journal, date",
+      consulte: "October 8, 2026",
     },
   },
 

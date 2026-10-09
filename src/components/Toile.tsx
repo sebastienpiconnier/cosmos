@@ -23,8 +23,6 @@ import { useSettings } from "../settings";
 import { isTouch } from "../platform";
 import { imageExtension } from "../media";
 import { clipFromText } from "../clip";
-import { markdownToHtml } from "../storage/markdown";
-import { markHighlights } from "../markdownText";
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
@@ -56,6 +54,17 @@ export function Toile() {
   const t = useT();
   const theme = useSettings((s) => s.theme);
 
+  // Zone Recherche demandée (bouton ou nouvelle source) : on la cadre.
+  const focusFrame = useCosmos((s) => s.focusFrame);
+  useEffect(() => {
+    if (!focusFrame) return;
+    const timer = setTimeout(() => {
+      fitView({ nodes: [{ id: focusFrame }], duration: 400, maxZoom: 1, padding: 0.15 });
+      useCosmos.getState().clearFocusFrame();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [focusFrame, fitView]);
+
   // Après « Organiser le canevas » : on cadre tout le projet.
   const fitRequest = useCosmos((s) => s.fitRequest);
   useEffect(() => {
@@ -80,9 +89,18 @@ export function Toile() {
   };
 
   // Image déposée : sur une carte, elle devient son image ; sur le canevas, une nouvelle carte la porte.
+  // Lien ou texte déposé depuis un navigateur : une source dans la zone Recherche.
   const onDrop = async (e: React.DragEvent) => {
     const file = [...e.dataTransfer.files].find((f) => imageExtension(f.name));
-    if (!file) return;
+    if (!file) {
+      const link = e.dataTransfer.getData("text/uri-list").split("\n").find((l) => l && !l.startsWith("#"));
+      const text = link?.trim() || e.dataTransfer.getData("text/plain");
+      if (text && clipFromText(text)) {
+        e.preventDefault();
+        useCosmos.getState().addResearchClip(text);
+      }
+      return;
+    }
     e.preventDefault();
     const cardId = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
     const pos = screenToFlowPosition({ x: e.clientX - 20, y: e.clientY - 20 });
@@ -141,13 +159,7 @@ export function Toile() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Coller hors d'un champ : un lien, un texte ou une image devient une carte (traces de recherche).
-  const createInCenterPos = () => {
-    const rect = wrapper.current?.getBoundingClientRect();
-    return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 60 }) : { x: 0, y: 0 };
-  };
-  const centerRef = useRef(createInCenterPos);
-  centerRef.current = createInCenterPos;
+  // Coller hors d'un champ : un lien, un texte ou une image devient une source de la zone Recherche.
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
       const target = e.target instanceof Element ? e.target : null;
@@ -156,17 +168,17 @@ export function Toile() {
       if (!data) return;
       const store = useCosmos.getState();
       const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
+      // Tout ce qui est collé sur le canevas va dans la zone Recherche, comme source.
       if (image) {
         e.preventDefault();
         const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
-        await store.addImageCard(centerRef.current(), { name, data: new Uint8Array(await image.arrayBuffer()) });
+        await store.addResearchImage({ name, data: new Uint8Array(await image.arrayBuffer()) });
         return;
       }
-      const clip = clipFromText(data.getData("text/plain"));
-      if (!clip) return;
+      const text = data.getData("text/plain");
+      if (!clipFromText(text)) return;
       e.preventDefault();
-      const id = store.addCard(centerRef.current());
-      store.updateCard(id, { title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) });
+      store.addResearchClip(text);
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
@@ -252,7 +264,8 @@ export function Toile() {
       ref={wrapper}
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes("Files")) return;
+        const types = e.dataTransfer.types;
+        if (!types.includes("Files") && !types.includes("text/uri-list") && !types.includes("text/plain")) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
       }}
@@ -346,6 +359,12 @@ export function Toile() {
         <button type="button" className="icon-button" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 3.2" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+          </svg>
+        </button>
+        <button type="button" className="icon-button" aria-label={t.research.button} title={t.research.hint} onClick={() => useCosmos.getState().showResearch()}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 4.5h9a2 2 0 0 1 2 2V20l-6.5-3.5L3 20V6.5a2 2 0 0 1 2-2z" />
+            <path d="M19 8v12" />
           </svg>
         </button>
         <button type="button" className="icon-button" aria-label={t.organize.button} title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>

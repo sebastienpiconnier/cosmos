@@ -12,6 +12,8 @@ pub fn run() {
     // Appels aux services d'IA (Claude, OpenAI, Ollama, LM Studio…) depuis le système, sans CORS :
     // un serveur local répond sans avoir à autoriser l'origine de l'app.
     .plugin(tauri_plugin_http::init())
+    // Ouvrir l'adresse d'une source dans le navigateur du système.
+    .plugin(tauri_plugin_opener::init())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

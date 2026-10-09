@@ -47,6 +47,10 @@ import {
 import { organize } from "./organize";
 import { storyScenes } from "./book";
 import { toggleTask } from "./todos";
+import { newResearchBox, researchSpot, today } from "./research";
+import { clipFromText } from "./clip";
+import { markHighlights } from "./markdownText";
+import { markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import {
   appendScene,
@@ -60,7 +64,7 @@ import { DICTIONARIES, fmt, getT } from "./i18n";
 
 export type CardNode = Node<CardData, "card">;
 /** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
-export type FrameNode = Node<{ title: string }, "frame">;
+export type FrameNode = Node<{ title: string; kind?: "research" }, "frame">;
 
 const FRAME_SIZE = { width: 520, height: 360 };
 /** Marge autour des cartes qu'un cadre entoure (plus haute en tête, pour son titre). */
@@ -70,7 +74,7 @@ const toFrameNode = (frame: Frame): FrameNode => ({
   id: frame.id,
   type: "frame",
   position: { x: frame.x, y: frame.y },
-  data: { title: frame.title },
+  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}) },
   width: frame.width,
   height: frame.height,
   // Derrière les cartes ; l'intérieur laisse passer les clics (voir styles.css).
@@ -126,6 +130,20 @@ interface CosmosState {
   setFiche: (id: string, field: SheetField, value: string) => void;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
   openInBible: (id: string, assistant?: boolean) => void;
+  /**
+   * Range une source (lien, extrait, image collés ou déposés) dans la zone Recherche du canevas, créée au
+   * besoin et agrandie si elle est pleine. Une seule étape d'historique. Rend l'identifiant de la carte.
+   */
+  addResearchCard: (card: { title: string; html: string; fiche?: Record<string, string>; image?: string; type?: CardType }) => string;
+  /** Une image collée ou déposée devient une source illustrée de la zone Recherche. */
+  addResearchImage: (file: { name: string; data: Uint8Array }) => Promise<string | null>;
+  /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
+  addResearchClip: (text: string) => string | null;
+  /** Montre la zone Recherche (créée au besoin). */
+  showResearch: () => void;
+  /** Cadre à montrer sur le canevas (zone Recherche), puis remis à null. */
+  focusFrame: string | null;
+  clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
   dialog: "shortcuts" | "about" | null;
   setDialog: (dialog: "shortcuts" | "about" | null) => void;
@@ -307,7 +325,7 @@ function fromProject(p: Project) {
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
-    .map((f) => toFrameNode({ ...f, title: String(f.title ?? "") }));
+    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
   return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress) };
 }
 
@@ -430,7 +448,15 @@ function toProject(
         ? {
             frames: s.frames.map((f) => {
               const box = frameBox(f);
-              return { id: f.id, title: f.data.title, x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) };
+              return {
+                id: f.id,
+                title: f.data.title,
+                x: Math.round(box.x),
+                y: Math.round(box.y),
+                width: Math.round(box.width),
+                height: Math.round(box.height),
+                ...(f.data.kind === "research" ? { kind: "research" as const } : {}),
+              };
             }),
           }
         : {}),
@@ -533,6 +559,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
     storage.remember({ title: state.title, kind: state.kind });
     return true;
   };
+  /** La zone Recherche : celle qui existe, ou une neuve à droite du canevas (pas d'étape d'historique ici). */
+  const ensureResearch = (): { frame: FrameNode; frames: FrameNode[] } => {
+    const frames = get().frames;
+    const existing = frames.find((f) => f.data.kind === "research");
+    if (existing) return { frame: existing, frames };
+    const box = newResearchBox([...boxes(get().nodes), ...frames.map(frameBox)]);
+    const frame = toFrameNode({ id: newId(), title: getT().research.frameTitle, kind: "research", ...box });
+    return { frame, frames: [...frames, frame] };
+  };
   const refreshProjects = async () => set({ projects: await storage.list().catch(() => []) });
 
   return {
@@ -601,6 +636,53 @@ export const useCosmos = create<CosmosState>((set, get) => {
     clearBibleTarget: () => set({ bibleTarget: null }),
     dialog: null,
     setDialog: (dialog) => set({ dialog }),
+    addResearchCard: ({ title, html, fiche, image, type = "source" }) => {
+      record();
+      const { frame, frames } = ensureResearch();
+      const cards = boxes(get().nodes);
+      const { spot, frame: grown } = researchSpot(frameBox(frame), cards, { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height });
+      const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}) };
+      set({
+        nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), { ...toNode(card, spot.x, spot.y), selected: true }],
+        frames: frames.map((f) => (f.id === frame.id ? { ...f, height: grown.height } : f)),
+        focusId: card.id,
+      });
+      touch();
+      return card.id;
+    },
+    addResearchImage: async (file) => {
+      const ext = imageExtension(file.name);
+      if (!ext) return null;
+      const name = `${newId()}.${ext}`;
+      try {
+        await storage.writeMedia(name, file.data);
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+      return get().addResearchCard({ title: "", html: "", image: name, fiche: { consulte: today(useSettings.getState().lang) } });
+    },
+    addResearchClip: (text) => {
+      const clip = clipFromText(text);
+      if (!clip) return null;
+      return get().addResearchCard({
+        title: clip.title,
+        html: clip.markdown ? markdownToHtml(markHighlights(clip.markdown)) : "",
+        fiche: { ...(clip.url ? { url: clip.url } : {}), consulte: today(useSettings.getState().lang) },
+      });
+    },
+    showResearch: () => {
+      const existing = get().frames.find((f) => f.data.kind === "research");
+      if (!existing) {
+        record();
+        const { frames } = ensureResearch();
+        set({ frames });
+        touch();
+      }
+      set({ view: "toile", focusFrame: get().frames.find((f) => f.data.kind === "research")?.id ?? null });
+    },
+    focusFrame: null,
+    clearFocusFrame: () => set({ focusFrame: null }),
     openInManuscript: (id) => set({ view: "manuscrit", manuscriptTarget: id }),
     manuscriptTarget: null,
     clearManuscriptTarget: () => set({ manuscriptTarget: null }),
@@ -755,15 +837,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     organizeCanvas: () => {
-      const { nodes, edges, plan, kind } = get();
-      if (nodes.length === 0) return;
+      const { nodes, edges, plan, kind, frames } = get();
+      // La zone Recherche et ses sources ne bougent pas : c'est l'établi de l'auteur, pas le récit.
+      const research = frames.filter((f) => f.data.kind === "research");
+      const arranged = nodes.filter((n) => n.data.type !== "source");
+      if (arranged.length === 0) return;
       const t = getT();
       const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
-      const sizes = boxes(nodes);
+      const sizes = boxes(arranged);
       const result = organize({
-        cards: nodes.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
+        cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
         plan,
-        sceneIds: planScenes(nodes),
+        sceneIds: planScenes(arranged),
         labels: {
           groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
           beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
@@ -787,8 +872,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const at = result.positions.get(n.id);
           return at ? { ...n, position: at, selected: false } : n;
         }),
-        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement.
-        frames: result.frames.map(toFrameNode),
+        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, sauf la zone Recherche.
+        frames: [...result.frames.map(toFrameNode), ...research],
         edges: nextEdges,
         view: "toile",
         fitRequest: Date.now(),

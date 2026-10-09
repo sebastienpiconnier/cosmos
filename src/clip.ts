@@ -4,6 +4,8 @@
 export interface Clip {
   /** Titre proposé (le site, pour un lien). */
   title: string;
+  /** Adresse de la source, pour un lien. */
+  url?: string;
   /** Contenu en Markdown. */
   markdown: string;
 }
@@ -20,7 +22,7 @@ export function clipFromText(raw: string): Clip | null {
     } catch {
       return null;
     }
-    return { title: host, markdown: `<${text}>` };
+    return { title: host, url: text, markdown: "" };
   }
   // Un texte copié d'ailleurs : gardé tel quel, en citation (Markdown déjà présent compris).
   return { title: "", markdown: text.split("\n").map((l) => (l.trim() ? `> ${l}` : ">")).join("\n") };

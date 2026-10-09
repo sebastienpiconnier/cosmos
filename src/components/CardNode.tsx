@@ -9,6 +9,9 @@ import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnectio
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
+import { sourceUrl } from "../character";
+import { openExternal } from "../platform";
+import { hostOf } from "./SourceTools";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
@@ -249,6 +252,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     // La largeur compte : un titre sur deux lignes peut tenir sur une seule dans une carte élargie.
   }, [data.title, slugline, width]);
 
+  const source = sourceUrl(data);
+
   // Texte trop long : la carte se replie (hauteur mesurée, suit les modifications et la largeur).
   const bodyRef = useRef<HTMLDivElement>(null);
   const [tall, setTall] = useState(false);
@@ -409,6 +414,13 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       {tall && !writing && (
         <button type="button" className="card-more nodrag" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
           {expanded ? t.character.fewerDetails : t.card.moreDetails}
+        </button>
+      )}
+
+      {/* Source : son adresse, à ouvrir dans le navigateur. */}
+      {source && (
+        <button type="button" className="card-source nodrag" title={source} onClick={() => void openExternal(source)}>
+          <span aria-hidden="true">↗</span> {fmt(t.research.open, { host: hostOf(source) })}
         </button>
       )}
 

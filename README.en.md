@@ -39,7 +39,7 @@ Cosmos is under active development (version 0.1).
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Seven card types:** Idea, Character, Place, Scene, Plot, Theme, Question. Change the type by typing `/` at the start of a line or by tapping the type label.
-- **Paste to keep a trace:** paste a link, a text or an image onto the canvas, a card is born.
+- **Research area:** paste or drop a link, a text or an image onto the canvas, a Source card is born in the “Research” frame (created on the right at the first paste, found again with the bookmark button). A source keeps its address, author, publication date and the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.

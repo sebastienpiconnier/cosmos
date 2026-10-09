@@ -119,6 +119,8 @@ src/
   markdownText.ts       Reconnaître un texte collé en Markdown, ==à reprendre== → <mark> (fonctions pures)
   focusText.ts          Mode focus : bornes de la phrase du curseur, modes de mise en valeur (fonctions pures)
   clip.ts               Coller un lien ou un texte sur le canevas : la carte proposée (fonction pure)
+  research.ts           Zone Recherche : cadre à droite du contenu, case libre dans le cadre, date du jour, infos d'une page HTML (fonctions pures)
+  web.ts                readPage(url) : lit une page (HTTP de Tauri ou fetch), 20 s et 2 Mo au plus
   shortcuts.ts          Liste des raccourcis clavier, pour la fenêtre d'aide (décrit, n'écoute rien)
   bibleSections.ts      Rubriques de la Bible : ordre et rubriques masquées (réglage de l'appareil)
   character.ts          Fiches (SHEET_FIELDS par type) et fiche d'un personnage : caractéristiques standard, questions gardées pour plus tard, reprise des anciennes cartes « à creuser »
@@ -158,6 +160,7 @@ src/
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/) et « À propos de Cosmos »
     CardSheet.tsx       Fiche d'une carte selon son type : personnage (rôle, genre, âge…), lieu (époque, ambiance…), intrigue (question dramatique, enjeu…)
+    SourceTools.tsx     Carte Source dans la Bible : ouvrir la page, compléter auteur et date depuis la page
     Gallery.tsx         Photos d'un personnage ou d'un lieu dans la Bible : ajout, agrandissement, image principale, description par l'IA (lieu)
     CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
@@ -244,7 +247,7 @@ Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).
 
 Une mention d'une autre carte est un lien Markdown ordinaire vers `cosmos:<id>` : lisible dans tout éditeur, et une version précédente de l'app l'affiche comme du texte simple.
 
-Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `theme`, `question`. Une Intrigue est une ligne d'histoire (principale, secondaire) avec sa fiche ; elle a sa ligne dans la chronologie du Plan, avant les Thèmes. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
+Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `theme`, `question`, `source`. Une Source garde dans `fiche` les clés `url`, `auteur`, `publication`, `consulte`. Une Intrigue est une ligne d'histoire (principale, secondaire) avec sa fiche ; elle a sa ligne dans la chronologie du Plan, avant les Thèmes. Pour ajouter un type, l'ajouter dans `CARD_TYPES` (types.ts) et dans `ORDER` (Bible.tsx) et `TITLE_PLACEHOLDER` (CardNode.tsx).
 
 Le format est un contrat : toute évolution doit rester lisible par les versions précédentes ou passer par `version` dans `cosmos.json` avec une migration.
 
@@ -415,5 +418,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **« À faire »** n'a pas de données propres : tout est relu dans les textes (`collectTodos`). Cocher depuis le panneau réécrit le HTML de la carte ou de la scène (`toggleTodo`) ; l'éditeur de la scène se resynchronise sur le store.
 - **Mode focus du manuscrit** : `focusMode` du store, comme pour le scénario (la barre du haut s'efface). Réglages de l'appareil `settings.writing` (machine à écrire, mise en valeur). Phrase et paragraphe : décorations (`is-focus-on`) sur un texte estompé (`--page-ink-dim`) ; ligne : deux voiles posés au-dessus et au-dessous du curseur, sans toucher au texte. Échap ou Cmd/Ctrl+Maj+F en sortent ; quitter la vue aussi.
 - **Raccourcis globaux** (App.tsx) : Cmd/Ctrl+1 à 4 pour les vues, Cmd/Ctrl+/ pour la liste. Tout nouveau raccourci s'ajoute aussi dans `shortcuts.ts` et ses libellés dans `t.shortcuts.items`, sinon la fenêtre d'aide ment (un test le vérifie).
-- **Coller sur le canevas** : hors d'un champ, un lien devient une carte (titre = le site), un texte une citation, une image une carte image. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
+- **Coller sur le canevas** : hors d'un champ, un lien, un texte (citation) ou une image collés ou déposés deviennent une carte Source dans la zone Recherche (`addResearchClip`, `addResearchImage`), une étape d'historique. Un champ, un éditeur ou une fenêtre ouverte gardent leur collage normal.
+- **Zone Recherche** : un cadre ordinaire marqué `kind: "research"` dans `frames` (lu sans erreur par une version précédente). Il est créé à droite de tout le contenu au premier clip, grandit vers le bas quand il est plein, et « Organiser le canevas » le garde tel quel et n'y range pas les sources.
+- **Ouvrir une page** : toujours `openExternal` (platform.ts), qui passe par `tauri-plugin-opener` (permission `opener:default`) ; `window.open` ne fait rien dans l'app de bureau.
 

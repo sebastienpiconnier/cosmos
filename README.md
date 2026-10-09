@@ -39,7 +39,7 @@ Cosmos est en cours de développement (version 0.1).
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et tu écris directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Sept types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
-- **Coller pour garder une trace :** colle un lien, un texte ou une image sur le canevas, une carte naît.
+- **Zone Recherche :** colle ou dépose un lien, un texte ou une image sur le canevas, une carte Source naît dans le cadre « Recherche » (créé à droite au premier collage, retrouvé par le bouton signet). Une source garde son adresse, son auteur, sa date de publication et le jour où tu l'as consultée ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionne un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.

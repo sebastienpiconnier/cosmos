@@ -76,10 +76,9 @@ describe("mode focus et collage", () => {
   });
 
   it("un lien ou un texte collé sur le canevas", () => {
-    expect(clipFromText(" https://www.gallica.bnf.fr/ark:/123 ")).toEqual({ title: "gallica.bnf.fr", markdown: "<https://www.gallica.bnf.fr/ark:/123>" });
+    expect(clipFromText(" https://www.gallica.bnf.fr/ark:/123 ")).toEqual({ title: "gallica.bnf.fr", url: "https://www.gallica.bnf.fr/ark:/123", markdown: "" });
     expect(clipFromText("Ligne 1\n\nLigne 2")).toEqual({ title: "", markdown: "> Ligne 1\n>\n> Ligne 2" });
     expect(clipFromText("   ")).toBeNull();
-    expect(markdownToHtml(clipFromText("https://x.fr/a")!.markdown).trim()).toBe('<p><a href="https://x.fr/a">https://x.fr/a</a></p>');
   });
 
   it("chaque raccourci décrit a son libellé", () => {

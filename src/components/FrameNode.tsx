@@ -13,7 +13,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const deleteFrame = useCosmos((s) => s.deleteFrame);
 
   return (
-    <div className={`frame${selected ? " is-selected" : ""}`}>
+    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}`}>
       <NodeResizer minWidth={220} minHeight={140} isVisible={selected} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
       <div className="frame-handle">
         <input
