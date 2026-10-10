@@ -25,20 +25,40 @@ jobs:
           exit $missing
 
       - name: APPLE_CERTIFICATE et APPLE_CERTIFICATE_PASSWORD (le .p12 s'ouvre)
+        id: cert
         run: |
-          printf '%s' "$APPLE_CERTIFICATE" | tr -d '\r\n ' | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          size=$(printf '%s' "$APPLE_CERTIFICATE" | tr -d '\r\n ' | wc -c | tr -d ' ')
+          if ! printf '%s' "$APPLE_CERTIFICATE" | tr -d '\r\n ' | base64 --decode > "$RUNNER_TEMP/cert.p12" 2>/dev/null || [ ! -s "$RUNNER_TEMP/cert.p12" ]; then
+            echo "::error::APPLE_CERTIFICATE n'est pas du base64 valide ($size caractères). Recopie la sortie de : base64 -i ~/Desktop/cosmos.p12 | pbcopy"
+            exit 1
+          fi
+          kind=$(file -b "$RUNNER_TEMP/cert.p12")
+          echo "Fichier décodé : $(wc -c < "$RUNNER_TEMP/cert.p12") octets, $kind"
+          if ! openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin env:APPLE_CERTIFICATE_PASSWORD -nokeys -legacy > /dev/null 2>&1 \
+            && ! openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin env:APPLE_CERTIFICATE_PASSWORD -nokeys > /dev/null 2>&1; then
+            echo "::error::Le .p12 ne s'ouvre pas avec APPLE_CERTIFICATE_PASSWORD ($size caractères de base64, $(wc -c < "$RUNNER_TEMP/cert.p12") octets décodés). Soit le mot de passe est faux, soit APPLE_CERTIFICATE ne contient pas le bon fichier (par exemple un .cer au lieu du .p12)."
+            exit 1
+          fi
           security create-keychain -p ci "$RUNNER_TEMP/check.keychain"
           security unlock-keychain -p ci "$RUNNER_TEMP/check.keychain"
-          security import "$RUNNER_TEMP/cert.p12" -k "$RUNNER_TEMP/check.keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          echo "Identités trouvées dans le certificat :"
-          security find-identity -v -p codesigning "$RUNNER_TEMP/check.keychain"
+          if ! security import "$RUNNER_TEMP/cert.p12" -k "$RUNNER_TEMP/check.keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign; then
+            echo "::error::macOS refuse d'importer le .p12 (le mot de passe est pourtant bon)."
+            exit 1
+          fi
+          ids=$(security find-identity -v -p codesigning "$RUNNER_TEMP/check.keychain")
+          echo "$ids"
+          case "$ids" in
+            *"0 valid identities"*) echo "::error::Le .p12 contient le certificat mais pas sa clé privée. Réexporte-le depuis Mes certificats (le certificat doit avoir un triangle avec la clé dessous)."; exit 1 ;;
+          esac
+          echo "::notice::Certificat OK : $(echo "$ids" | grep -o '"[^"]*"' | head -1)"
 
       - name: APPLE_SIGNING_IDENTITY (correspond au certificat)
+        if: steps.cert.outcome == 'success'
         run: |
           ids=$(security find-identity -v -p codesigning "$RUNNER_TEMP/check.keychain")
           case "$ids" in
             *"\"$APPLE_SIGNING_IDENTITY\""*) echo "OK : identité trouvée." ;;
-            *) echo "::error::APPLE_SIGNING_IDENTITY ne correspond à aucune identité du certificat (voir l'étape précédente)."; exit 1 ;;
+            *) echo "::error::APPLE_SIGNING_IDENTITY ne correspond pas à l'identité du certificat (celle-ci est donnée par la note « Certificat OK »). Il faut le texte exact, sans guillemets."; exit 1 ;;
           esac
           case "$APPLE_SIGNING_IDENTITY" in
             "Developer ID Application:"*) echo "OK : certificat Developer ID Application." ;;
@@ -46,11 +66,23 @@ jobs:
           esac
 
       - name: APPLE_API_KEY, APPLE_API_ISSUER et APPLE_API_PRIVATE_KEY (Apple accepte la clé)
+        if: always()
         run: |
           key_path="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY.p8"
           printf '%s\n' "$APPLE_API_PRIVATE_KEY" > "$key_path"
-          xcrun notarytool history --key "$key_path" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" > /dev/null
-          echo "OK : la clé de notarisation est acceptée par Apple."
+          if ! grep -q "BEGIN PRIVATE KEY" "$key_path"; then
+            echo "::error::APPLE_API_PRIVATE_KEY doit contenir tout le fichier .p8, ligne -----BEGIN PRIVATE KEY----- comprise."; exit 1
+          fi
+          if ! printf '%s' "$APPLE_API_KEY" | grep -Eq '^[A-Z0-9]{10}$'; then
+            echo "::error::APPLE_API_KEY doit être le Key ID (10 caractères, majuscules et chiffres), il en fait ${#APPLE_API_KEY}."; exit 1
+          fi
+          if ! printf '%s' "$APPLE_API_ISSUER" | grep -Eq '^[0-9a-f-]{36}$'; then
+            echo "::error::APPLE_API_ISSUER doit être l'Issuer ID (36 caractères avec des tirets), il en fait ${#APPLE_API_ISSUER}."; exit 1
+          fi
+          if ! xcrun notarytool history --key "$key_path" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" > /dev/null 2> "$RUNNER_TEMP/notary.err"; then
+            echo "::error::Apple refuse la clé de notarisation : $(head -c 300 "$RUNNER_TEMP/notary.err" | tr '\n' ' ')"; exit 1
+          fi
+          echo "::notice::Clé de notarisation OK : Apple l'accepte."
 
       - name: Nettoyage
         if: always()
