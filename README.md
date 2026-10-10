@@ -31,7 +31,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 > **Premier lancement.** L'app n'est pas encore signée. Sur macOS, fais un clic droit sur l'app puis « Ouvrir ». Sur Windows, si SmartScreen s'affiche, clique sur « Informations complémentaires » puis « Exécuter quand même ».
 
-Cosmos est en cours de développement (version 0.1.2).
+Cosmos est en cours de développement (version 0.1.3).
 
 ## Fonctionnalités
 
