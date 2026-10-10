@@ -6,6 +6,7 @@ import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
 import { isTauri } from "./platform";
+import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 
 export type ThemePref = "system" | "light" | "dark";
@@ -79,12 +80,27 @@ interface SettingsState {
   /** Rubriques de la Bible : ordre et rubriques masquées. */
   bibleSections: BibleSections;
   setBibleSections: (sections: BibleSections) => void;
-  /** Clé de l'API Pexels (recherche de photos), propre à l'appareil comme les clés d'IA. Vide : pas de recherche. */
-  pexelsKey: string;
-  setPexelsKey: (key: string) => void;
+  /** Recherche de photos : clés Pixabay et Unsplash (propres à l'appareil comme celles de l'IA) et dernière source choisie. */
+  photos: PhotoSettings;
+  setPhotoKey: (source: "pixabay" | "unsplash", key: string) => void;
+  setPhotoSource: (source: PhotoSourceId) => void;
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; pexelsKey?: unknown } {
+export interface PhotoSettings {
+  source: PhotoSourceId;
+  keys: { pixabay: string; unsplash: string };
+}
+
+const cleanKey = (value: unknown) => (typeof value === "string" ? value.trim().slice(0, 200) : "");
+
+function readPhotos(raw: unknown): PhotoSettings {
+  const data = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const keys = (data.keys && typeof data.keys === "object" ? data.keys : {}) as Record<string, unknown>;
+  const source = PHOTO_SOURCES.includes(data.source as PhotoSourceId) ? (data.source as PhotoSourceId) : "openverse";
+  return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
+}
+
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -115,19 +131,20 @@ export const useSettings = create<SettingsState>((set) => ({
   setWriting: (writing) => set({ writing }),
   bibleSections: readSections(saved.bibleSections),
   setBibleSections: (bibleSections) => set({ bibleSections }),
-  pexelsKey: typeof saved.pexelsKey === "string" ? saved.pexelsKey.trim().slice(0, 200) : "",
-  setPexelsKey: (pexelsKey) => set({ pexelsKey: pexelsKey.trim().slice(0, 200) }),
+  photos: readPhotos(saved.photos),
+  setPhotoKey: (source, key) => set((s) => ({ photos: { ...s.photos, keys: { ...s.photos.keys, [source]: cleanKey(key) } } })),
+  setPhotoSource: (source) => set((s) => ({ photos: { ...s.photos, source } })),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing, pexelsKey }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing, photos }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing, pexelsKey }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing, photos }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

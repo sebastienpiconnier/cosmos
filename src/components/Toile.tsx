@@ -465,12 +465,12 @@ export function Toile() {
         <button
           type="button"
           className="icon-button has-label"
-          aria-label={t.pexels.button}
-          title={t.pexels.button}
+          aria-label={t.photos.button}
+          title={t.photos.button}
           onClick={() => {
             const rect = wrapper.current?.getBoundingClientRect();
             const at = rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
-            useCosmos.getState().openPexels({ kind: "canvas", at });
+            useCosmos.getState().openPhotos({ kind: "canvas", at });
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -479,7 +479,7 @@ export function Toile() {
             <circle cx="17" cy="16.5" r="3" />
             <path d="M19.2 18.7L21 20.5" />
           </svg>
-          <span className="tool-label" aria-hidden="true">{t.pexels.short}</span>
+          <span className="tool-label" aria-hidden="true">{t.photos.short}</span>
         </button>
         <button
           type="button"

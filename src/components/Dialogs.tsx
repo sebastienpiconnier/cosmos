@@ -9,7 +9,7 @@ import { isAppleKeyboard, openExternal } from "../platform";
 import { version } from "../../package.json";
 import { TrashList } from "./TrashList";
 import { DocumentViewer } from "./DocumentViewer";
-import { PexelsSearch } from "./PexelsSearch";
+import { PhotoSearch } from "./PhotoSearch";
 
 const REPO = "https://github.com/sebastienpiconnier/cosmos";
 
@@ -31,7 +31,7 @@ export function Dialogs() {
     ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
 
   return (
-    <dialog ref={ref} className={`app-dialog${dialog === "document" ? " is-document" : dialog === "pexels" ? " is-pexels" : ""}`} aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
+    <dialog ref={ref} className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : ""}`} aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
       {dialog === "shortcuts" && (
         <>
           <h2 id="app-dialog-title">{t.shortcuts.title}</h2>
@@ -58,7 +58,7 @@ export function Dialogs() {
       )}
       {dialog === "trash" && <TrashList />}
       {dialog === "document" && <DocumentViewer />}
-      {dialog === "pexels" && <PexelsSearch />}
+      {dialog === "photos" && <PhotoSearch />}
       {dialog === "about" && (
         <div className="about">
           <h2 id="app-dialog-title">

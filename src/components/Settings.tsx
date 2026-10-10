@@ -1,7 +1,7 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
-import { useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
 import { useCosmos } from "../store";
@@ -10,6 +10,7 @@ import { PAPERS, isPaper } from "../screenplay/layout";
 import { AI_PROVIDERS, AiError, PROVIDERS, isAiProvider, listModels } from "../ai/providers";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
+import { SOURCE_INFO } from "../imageSources";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -18,7 +19,7 @@ const OTHER_MODEL = "\u0000other";
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
-  const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi, pexelsKey } = useSettings();
+  const { lang, themePref, setLang, setThemePref, author, setAuthor, ai, setAi, photos } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
@@ -55,7 +56,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), pexels: useId(), pexelsHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), authorHint: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -205,19 +206,24 @@ export function Settings({ project = true }: { project?: boolean }) {
           <p className="settings-hint" id={ids.authorHint}>
             {t.settings.authorHint}
           </p>
-          {/* Photos Pexels : la clé de l'auteur, sur cet appareil seulement (comme celles de l'IA). */}
-          <label htmlFor={ids.pexels}>{t.pexels.settingsLabel}</label>
-          <input
-            id={ids.pexels}
-            type="password"
-            value={pexelsKey}
-            autoComplete="off"
-            spellCheck={false}
-            aria-describedby={ids.pexelsHint}
-            onChange={(e) => useSettings.getState().setPexelsKey(e.target.value)}
-          />
-          <p className="settings-hint" id={ids.pexelsHint}>
-            {t.pexels.settingsHint}
+          {/* Photos libres : Openverse sans clé ; Pixabay et Unsplash avec la clé de l'auteur, sur cet appareil seulement. */}
+          <div className="eyebrow settings-sep">{t.photos.settingsSection}</div>
+          {(["pixabay", "unsplash"] as const).map((source) => (
+            <Fragment key={source}>
+              <label htmlFor={ids[source]}>{fmt(t.photos.settingsKey, { source: SOURCE_INFO[source].name })}</label>
+              <input
+                id={ids[source]}
+                type="password"
+                value={photos.keys[source]}
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby={ids.photosHint}
+                onChange={(e) => useSettings.getState().setPhotoKey(source, e.target.value)}
+              />
+            </Fragment>
+          ))}
+          <p className="settings-hint" id={ids.photosHint}>
+            {t.photos.settingsHint}
           </p>
 
           {/* IA facultative : un service au choix, en ligne ou sur la machine */}

@@ -24,7 +24,7 @@ import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
-import type { PexelsPhoto } from "./pexels";
+import type { Photo } from "./imageSources";
 import { sourceUrl } from "./character";
 import { clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
@@ -94,11 +94,11 @@ interface CosmosState {
   setCardDocument: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
   /** L'auteur choisit un PDF : pour la carte `id`, sinon une nouvelle carte posée en `at`. */
   pickDocument: (id?: string, at?: { x: number; y: number }) => Promise<void>;
-  /** Où va la photo choisie dans la recherche Pexels : une nouvelle carte Image, ou la galerie d'une fiche. */
-  pexelsTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | null;
-  openPexels: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string }) => void;
+  /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, ou la galerie d'une fiche. */
+  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | null;
+  openPhotos: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string }) => void;
   /** Télécharge la photo choisie et la pose (carte Image créditée, ou galerie). Rend faux si le téléchargement échoue. */
-  addPexelsPhoto: (photo: PexelsPhoto) => Promise<boolean>;
+  addPhoto: (photo: Photo) => Promise<boolean>;
   /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
   documentCard: string | null;
   openDocument: (id: string) => void;
@@ -124,8 +124,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "pexels" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "pexels" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | null) => void;
   /** Ouvre une scène dans le manuscrit. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
@@ -570,13 +570,19 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (id) await get().setCardDocument(id, file);
       else await get().addDocument(file, at);
     },
-    pexelsTarget: null,
-    openPexels: (target) => set({ pexelsTarget: target, dialog: "pexels" }),
-    addPexelsPhoto: async (photo) => {
-      const target = get().pexelsTarget;
+    photoTarget: null,
+    openPhotos: (target) => set({ photoTarget: target, dialog: "photos" }),
+    addPhoto: async (photo) => {
+      const target = get().photoTarget;
       if (!target) return false;
-      const file = await fetchImage(photo.image).catch(() => null);
+      // La grande image d'abord ; si son hôte refuse (ou si elle est trop lourde), la suivante.
+      let file: Awaited<ReturnType<typeof fetchImage>> = null;
+      for (const url of photo.downloads) {
+        file = await fetchImage(url).catch(() => null);
+        if (file) break;
+      }
       if (!file) return false;
+      if (photo.source === "unsplash") void import("./imageSources").then((m) => m.trackChoice(photo, useSettings.getState().photos.keys.unsplash));
       if (target.kind === "gallery") return (await get().addGalleryImages(target.id, [file])) > 0;
       const ext = imageExtension(file.name) ?? "jpg";
       const name = `${newId()}.${ext}`;
@@ -586,15 +592,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         return false;
       }
-      // Le crédit va dans la fiche de la carte (comme pour un lien) : Pexels demande de citer le photographe.
-      const t = getT().pexels;
+      // Le crédit va dans la fiche de la carte (comme pour un lien) : auteur, page, source et licence.
+      const t = getT().photos;
       const id = get().addResearchCard(
         {
           type: "image",
-          title: photo.alt || (photo.photographer ? fmt(t.photoBy, { name: photo.photographer }) : ""),
+          title: photo.alt || (photo.author ? fmt(t.photoBy, { name: photo.author }) : ""),
           html: "",
           image: name,
-          fiche: { url: photo.page, ...(photo.photographer ? { auteur: photo.photographer } : {}), publication: "Pexels", consulte: today(useSettings.getState().lang) },
+          fiche: { url: photo.page, ...(photo.author ? { auteur: photo.author } : {}), publication: photo.credit, consulte: today(useSettings.getState().lang) },
         },
         target.at,
       );

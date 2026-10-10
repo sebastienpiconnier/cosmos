@@ -113,10 +113,10 @@ export function Gallery({ card }: { card: CardData }) {
           <span aria-hidden="true">+</span>
           {g.add}
         </button>
-        {/* Une photo de Pexels rejoint la galerie (la première devient l'image principale). */}
-        <button type="button" className="gallery-add" onClick={() => useCosmos.getState().openPexels({ kind: "gallery", id: card.id })}>
+        {/* Une photo libre (Openverse, Pixabay, Unsplash) rejoint la galerie (la première devient l'image principale). */}
+        <button type="button" className="gallery-add" onClick={() => useCosmos.getState().openPhotos({ kind: "gallery", id: card.id })}>
           <span aria-hidden="true">⌕</span>
-          {all.pexels.short}
+          {all.photos.short}
         </button>
       </div>
       {canDescribe && photos.length > 0 && !notes && <p className="gallery-hint">{PROVIDERS[config!.provider].local ? g.describeHintLocal : g.describeHintCloud}</p>}

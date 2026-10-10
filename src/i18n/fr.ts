@@ -251,11 +251,12 @@ export const fr = {
     pageAria: "Page {n}",
   },
 
-  // Recherche de photos sur Pexels (clé de l'auteur, dans les Réglages ou la fenêtre de recherche).
-  pexels: {
-    button: "Chercher une photo sur Pexels",
+  // Recherche de photos libres : Openverse (sans clé), Pixabay et Unsplash (clé de l'auteur, sur l'appareil).
+  photos: {
+    button: "Chercher une photo libre",
     short: "Photos",
-    title: "Photos Pexels",
+    title: "Photos libres",
+    sourceLabel: "Source des photos",
     search: "Chercher",
     queryLabel: "Ce que tu cherches",
     queryPlaceholder: "phare, tempête, forêt la nuit…",
@@ -267,19 +268,29 @@ export const fr = {
     pick: "Ajouter : {alt}",
     photoBy: "Photo de {name}",
     by: "{name}",
-    credit: "Photos fournies par Pexels",
-    keyTitle: "Une clé Pexels, une fois pour toutes",
-    keyIntro: "Pexels offre des photos libres d’utilisation. Pour chercher depuis Cosmos, crée une clé gratuite sur pexels.com/api (compte Pexels), puis colle-la ici. Elle reste sur cet appareil, jamais dans le projet.",
-    keyLabel: "Clé de l’API Pexels",
+    credit: "Photos fournies par {source}",
+    about: {
+      openverse: "Openverse (fondation WordPress) réunit des images sous licence libre (Creative Commons, domaine public) venues de Flickr, Wikimedia et de musées. Sans clé. La licence et l’auteur sont notés dans la fiche de la carte.",
+      pixabay: "Pixabay offre des photos libres de droits, utilisables sans citer l’auteur (Cosmos le note quand même dans la fiche).",
+      unsplash: "Unsplash offre des photos libres d’utilisation. Avec une clé de démonstration, 50 recherches par heure.",
+    },
+    keyTitle: "Une clé {source}, une fois pour toutes",
+    keyIntro: {
+      pixabay: "Crée un compte gratuit sur pixabay.com, puis ouvre la documentation de l’API : ta clé y est affichée. Colle-la ici. Elle reste sur cet appareil, jamais dans le projet.",
+      unsplash: "Crée un compte gratuit sur unsplash.com, puis une application dans « Your apps » : copie sa « Access Key » et colle-la ici. Elle reste sur cet appareil, jamais dans le projet.",
+    },
+    keyLabel: "Clé de l’API {source}",
     keySave: "Enregistrer la clé",
-    keyGet: "Créer une clé sur pexels.com",
+    keyGet: "Obtenir une clé sur {site}",
     keyChange: "Changer de clé",
-    errorKey: "Pexels refuse cette clé. Vérifie-la (ou crée-en une autre).",
-    errorLimit: "Trop de recherches pour l’instant : Pexels limite le nombre de requêtes. Réessaie dans un moment.",
-    errorNetwork: "Pexels ne répond pas. Vérifie la connexion à Internet.",
+    keyLater: "Chercher sur Openverse, sans clé",
+    errorKey: "{source} refuse cette clé. Vérifie-la (ou crée-en une autre).",
+    errorLimit: "Trop de recherches pour l’instant : {source} limite le nombre de requêtes. Réessaie dans un moment, ou change de source.",
+    errorNetwork: "{source} ne répond pas. Vérifie la connexion à Internet.",
     errorDownload: "La photo n’a pas pu être téléchargée.",
-    settingsLabel: "Clé Pexels (photos)",
-    settingsHint: "Pour chercher des photos depuis le canevas et la Bible. Gratuite, sur pexels.com/api.",
+    settingsSection: "Photos libres",
+    settingsKey: "Clé {source}",
+    settingsHint: "Openverse marche sans clé. Pixabay et Unsplash demandent une clé gratuite, gardée sur cet appareil seulement.",
   },
 
   exports: {
