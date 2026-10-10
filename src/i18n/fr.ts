@@ -275,6 +275,8 @@ export const fr = {
     button: "Chercher une photo libre",
     short: "Photos",
     title: "Photos libres",
+    titleCard: "Image de la carte",
+    fromDevice: "Choisir une image sur l’appareil…",
     sourceLabel: "Source des photos",
     search: "Chercher",
     queryLabel: "Ce que tu cherches",

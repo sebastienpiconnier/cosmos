@@ -271,6 +271,8 @@ export const en: Messages = {
     button: "Search for a free photo",
     short: "Photos",
     title: "Free photos",
+    titleCard: "Card image",
+    fromDevice: "Choose an image on this device…",
     sourceLabel: "Photo source",
     search: "Search",
     queryLabel: "What you’re looking for",

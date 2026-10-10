@@ -79,6 +79,24 @@ export function PhotoSearch() {
     else setError(t.errorDownload);
   };
 
+  // Image d'une carte ou galerie d'une fiche : un fichier de l'appareil reste possible, sans quitter la fenêtre.
+  const target = useCosmos((st) => st.photoTarget);
+  const fromDevice =
+    target && target.kind !== "canvas" ? (
+      <button
+        type="button"
+        className="ghost-button photos-device"
+        disabled={busy !== ""}
+        onClick={() => {
+          useCosmos.getState().setDialog(null);
+          if (target.kind === "card") void useCosmos.getState().pickCardImage(target.id);
+          else void useCosmos.getState().addGalleryImages(target.id);
+        }}
+      >
+        {t.fromDevice}
+      </button>
+    ) : null;
+
   const sources = (
     <div className="photos-sources" role="group" aria-label={t.sourceLabel}>
       {PHOTO_SOURCES.map((s) => (
@@ -93,7 +111,10 @@ export function PhotoSearch() {
 
   return (
     <div className="photos">
-      <h2 id="app-dialog-title">{t.title}</h2>
+      <div className="photos-head">
+        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : t.title}</h2>
+        {fromDevice}
+      </div>
       {sources}
       <p className="settings-hint">{t.about[source]}</p>
       {needKey && source !== "openverse" ? (

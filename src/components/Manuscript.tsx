@@ -367,16 +367,18 @@ export function Manuscript() {
     const kind = cards.find((c) => c.id === id)?.page;
     return isPageKind(kind) ? b.kinds[kind] : null;
   };
+  // Page de titre encore vide : elle reçoit le titre du projet et le nom de l'auteur (profil de l'appareil).
+  const fillTitlePage = (id: string) => {
+    if (plainText(useCosmos.getState().manuscript[id] ?? "")) return;
+    const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const { title: projectTitle } = useCosmos.getState();
+    const author = useSettings.getState().author.trim();
+    useCosmos.getState().setManuscriptText(id, `<h2>${esc(projectTitle.trim() || t.home.untitled)}</h2>${author ? `<p>${esc(author)}</p>` : ""}`);
+  };
   const setPageKind = (value: string) => {
     if (isPageKind(value)) {
       setSceneChapter(current, null);
-      // Page de titre encore vide : elle reçoit le titre du projet et le nom de l'auteur.
-      if (value === "titre" && !plainText(manuscript[current] ?? "")) {
-        const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const { title: projectTitle } = useCosmos.getState();
-        const author = useSettings.getState().author.trim();
-        useCosmos.getState().setManuscriptText(current, `<h2>${esc(projectTitle)}</h2>${author ? `<p>${esc(author)}</p>` : ""}`);
-      }
+      if (value === "titre") fillTitlePage(current);
       updateCard(current, { page: value, ...(card.title.trim() ? {} : { title: b.kinds[value] }) });
     } else {
       updateCard(current, { page: undefined });
@@ -386,6 +388,7 @@ export function Manuscript() {
     if (!isPageKind(value)) return;
     const id = addTitledCard("scene", b.kinds[value]);
     updateCard(id, { page: value });
+    if (value === "titre") fillTitlePage(id);
     go(id);
   };
 

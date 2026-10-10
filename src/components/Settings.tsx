@@ -296,11 +296,19 @@ export function Settings({ project = true }: { project?: boolean }) {
           )}
           </section>
           <div className="settings-links">
-            {useCosmos.getState().screen === "project" && (
-              <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setTour(0); }}>
-                {t.tour.open}
-              </button>
-            )}
+            {/* Visite guidée : dans un projet, elle s'ouvre sur place ; à l'accueil, avec le projet d'exemple. */}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                setOpen(false);
+                const { screen, setTour, tryExample } = useCosmos.getState();
+                if (screen === "project") setTour(0);
+                else void tryExample();
+              }}
+            >
+              {t.tour.open}
+            </button>
             <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("shortcuts"); }}>
               {t.shortcuts.open}
             </button>

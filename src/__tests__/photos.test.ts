@@ -147,6 +147,21 @@ describe("photo choisie", () => {
     expect(state().nodes.find((n) => n.id === id)!.data.image).toBeTruthy();
   });
 
+  it("sur une carte : devient son image ; une carte Image vide reçoit aussi le crédit", async () => {
+    const lieu = state().addCard({ x: 0, y: 0 }, "lieu");
+    state().openPhotos({ kind: "card", id: lieu });
+    const [p] = parseOpenverse({ results: [openverse("c1")] }).photos;
+    const before = state().nodes.length;
+    expect(await state().addPhoto(p)).toBe(true);
+    expect(state().nodes.length).toBe(before);
+    expect(state().nodes.find((n) => n.id === lieu)!.data.image).toBeTruthy();
+
+    const image = state().addCard({ x: 400, y: 0 }, "image");
+    state().openPhotos({ kind: "card", id: image });
+    expect(await state().addPhoto(p)).toBe(true);
+    expect(state().nodes.find((n) => n.id === image)!.data).toMatchObject({ title: "Phare de Kerbel", fiche: { auteur: "Anne Martin", publication: "Flickr via Openverse, CC BY-SA 2.0" } });
+  });
+
   it("aucune adresse ne répond : rien n'est créé", async () => {
     state().openPhotos({ kind: "canvas" });
     const before = state().nodes.length;

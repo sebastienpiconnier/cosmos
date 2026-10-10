@@ -45,7 +45,6 @@ interface MentionState {
 function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
   const deleteCard = useCosmos((s) => s.deleteCard);
-  const pickCardImage = useCosmos((s) => s.pickCardImage);
   const imageUrl = useMediaUrl(data.image);
   const { t, types, kind } = useVocab();
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
@@ -418,7 +417,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           className="card-delete card-image-add nodrag"
           aria-label={data.image ? t.card.changeImage : t.card.addImage}
           title={data.image ? t.card.changeImage : t.card.addImage}
-          onClick={() => pickCardImage(id)}
+          // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
+          onClick={() => useCosmos.getState().openPhotos({ kind: "card", id })}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />

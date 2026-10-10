@@ -146,6 +146,15 @@ describe("découpage en pages", () => {
     });
   });
 
+  it("page de titre ou dédicace : le texte commence plus bas, la page garde sa hauteur", () => {
+    // 9 lignes de marge en plus : 2 lignes de texte, il reste 55 - 9 - 2 = 44 lignes en bas de page.
+    expect(layoutPages([item(2, 0)], 55, 9)).toEqual({ breaks: [], tail: 44, pages: 1 });
+    // Le décalage ne vaut que pour la première page.
+    expect(layoutPages([item(40, 0), item(10, 0), item(3, 0)], 55, 9)).toEqual({ breaks: [{ index: 1, rest: 6, page: 2 }], tail: 42, pages: 2 });
+    // Un décalage négatif (marge plus petite) est ignoré.
+    expect(layoutPages([item(2, 0)], 55, -3).tail).toBe(53);
+  });
+
   it("une page exactement pleine ne déborde pas", () => {
     expect(layoutPages([item(50), item(4)], 55).breaks).toEqual([]);
     expect(layoutPages([item(50), item(4)], 55).tail).toBe(0);

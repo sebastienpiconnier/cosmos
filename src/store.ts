@@ -94,9 +94,9 @@ interface CosmosState {
   setCardDocument: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
   /** L'auteur choisit un PDF : pour la carte `id`, sinon une nouvelle carte posée en `at`. */
   pickDocument: (id?: string, at?: { x: number; y: number }) => Promise<void>;
-  /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, ou la galerie d'une fiche. */
-  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | null;
-  openPhotos: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string }) => void;
+  /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, la galerie d'une fiche, ou l'image d'une carte. */
+  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | null;
+  openPhotos: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string }) => void;
   /** Télécharge la photo choisie et la pose (carte Image créditée, ou galerie). Rend faux si le téléchargement échoue. */
   addPhoto: (photo: Photo) => Promise<boolean>;
   /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
@@ -584,6 +584,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!file) return false;
       if (photo.source === "unsplash") void import("./imageSources").then((m) => m.trackChoice(photo, useSettings.getState().photos.keys.unsplash));
       if (target.kind === "gallery") return (await get().addGalleryImages(target.id, [file])) > 0;
+      if (target.kind === "card") {
+        if (!(await get().setCardImage(target.id, file))) return false;
+        // Une carte Image sans référence reçoit le crédit de la photo (auteur, page, source et licence).
+        const card = get().nodes.find((n) => n.id === target.id)?.data;
+        if (card?.type === "image" && !card.fiche?.url) {
+          get().updateCard(target.id, {
+            fiche: { ...card.fiche, url: photo.page, ...(photo.author ? { auteur: photo.author } : {}), publication: photo.credit, consulte: today(useSettings.getState().lang) },
+            ...(card.title.trim() ? {} : { title: photo.alt || (photo.author ? fmt(getT().photos.photoBy, { name: photo.author }) : "") }),
+          });
+        }
+        return true;
+      }
       const ext = imageExtension(file.name) ?? "jpg";
       const name = `${newId()}.${ext}`;
       try {

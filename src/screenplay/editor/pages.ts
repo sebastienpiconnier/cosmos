@@ -26,15 +26,21 @@ export interface PageBreak {
 }
 
 /** Répartit des éléments en pages de `lines` lignes. Fonction pure, testée sans navigateur. */
-export function layoutPages(items: PageItem[], lines: number): { breaks: PageBreak[]; tail: number; pages: number } {
+/**
+ * `offset` : lignes déjà prises en haut de la première page (une page de titre ou une dédicace commence
+ * plus bas que le texte courant). Les pages suivantes commencent en haut.
+ */
+export function layoutPages(items: PageItem[], lines: number, offset = 0): { breaks: PageBreak[]; tail: number; pages: number } {
   const breaks: PageBreak[] = [];
-  let used = 0;
+  let start = Math.max(0, Math.min(offset, lines));
+  let used = start;
   let page = 1;
   items.forEach((item, index) => {
-    const margin = used === 0 ? 0 : item.margin;
+    const margin = used === start ? 0 : item.margin;
     // Tolérance d'un dixième de ligne : les hauteurs mesurées à l'écran ne tombent pas toujours juste.
-    if (used > 0 && used + margin + item.height + item.keep > lines + 0.1) {
+    if (used > start && used + margin + item.height + item.keep > lines + 0.1) {
       breaks.push({ index, rest: Math.max(0, lines - used), page: ++page });
+      start = 0;
       used = item.height;
     } else {
       used += margin + item.height;
@@ -154,7 +160,9 @@ export const Pages = Extension.create<PagesOptions>({
                 items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(node.type.name) });
                 positions.push(offset);
               });
-              const layout = layoutPages(items, lines);
+              // Marge haute plus grande que celle de la page (page de titre, dédicace…) : la première page commence plus bas.
+              const top = parseFloat(getComputedStyle(view.dom).paddingTop) / line;
+              const layout = layoutPages(items, lines, Number.isFinite(top) ? top - marginTop : 0);
               pages = layout.pages;
               const bottom = pageLines - marginTop - lines; // marge basse
               for (const b of layout.breaks) {

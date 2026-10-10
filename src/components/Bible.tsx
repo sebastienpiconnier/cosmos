@@ -81,7 +81,6 @@ export function Bible() {
   const setView = useCosmos((s) => s.setView);
   const updateCard = useCosmos((s) => s.updateCard);
   const addTitledCard = useCosmos((s) => s.addTitledCard);
-  const pickCardImage = useCosmos((s) => s.pickCardImage);
   const target = useCosmos((s) => s.bibleTarget);
   const clearTarget = useCosmos((s) => s.clearBibleTarget);
   // Fiche ouverte depuis le canevas (« 3 questions à compléter ») : assistant ouvert sur elle.
@@ -208,11 +207,11 @@ export function Bible() {
               <header>
                 {type === "personnage" &&
                   (card.image ? (
-                    <button type="button" className="bible-portrait-button" aria-label={t.card.changeImage} title={t.card.changeImage} onClick={() => pickCardImage(card.id)}>
+                    <button type="button" className="bible-portrait-button" aria-label={t.card.changeImage} title={t.card.changeImage} onClick={() => useCosmos.getState().openPhotos({ kind: "card", id: card.id })}>
                       <Portrait name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
                     </button>
                   ) : (
-                    <button type="button" className="bible-portrait-button is-empty" aria-label={t.character.addPortrait} title={t.character.addPortrait} onClick={() => pickCardImage(card.id)}>
+                    <button type="button" className="bible-portrait-button is-empty" aria-label={t.character.addPortrait} title={t.character.addPortrait} onClick={() => useCosmos.getState().openPhotos({ kind: "card", id: card.id })}>
                       <span aria-hidden="true">{(card.title.trim()[0] ?? "?").toUpperCase()}</span>
                     </button>
                   ))}
