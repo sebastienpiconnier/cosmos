@@ -4,7 +4,7 @@
 
 **Du chaos au monde ordonné : un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.**
 
-![Le canevas de Cosmos : quatre cartes (idée, personnage, lieu, scène) reliées par des fils étiquetés](docs/images/canevas-fr.png)
+<img width="1389" height="868" alt="preview (3)" src="https://github.com/user-attachments/assets/05dfbce7-cc79-433a-bb5a-b9e2ab889e2b" />
 
 [Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA](#lia-si-tu-veux) · [Plateformes](#plateformes) · [Développer](#pour-développer)
 
@@ -31,7 +31,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 > **Premier lancement.** L'app n'est pas encore signée. Sur macOS, fais un clic droit sur l'app puis « Ouvrir ». Sur Windows, si SmartScreen s'affiche, clique sur « Informations complémentaires » puis « Exécuter quand même ».
 
-Cosmos est en cours de développement (version 0.1).
+Cosmos est en cours de développement (version 0.1.2).
 
 ## Fonctionnalités
 
