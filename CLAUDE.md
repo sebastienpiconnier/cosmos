@@ -103,7 +103,7 @@ npm run tauri ios init && npm run tauri ios dev          # iOS (sur Mac, avec Xc
 npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
 ```
 
-Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/workflows/release.yml`, qui fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux dans un brouillon de Release GitHub. `ci.yml` vérifie le build à chaque push.
+Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/workflows/release.yml`, qui fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux dans un brouillon de Release GitHub. Les apps Mac sont signées et notarisées quand les secrets `APPLE_*` du dépôt sont posés (liste en tête de l'étape « Signature Apple » de `release.yml`), sinon elles sortent non signées. `ci.yml` vérifie le build à chaque push.
 
 ## Architecture
 

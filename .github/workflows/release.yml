@@ -52,12 +52,46 @@ jobs:
 
       - run: npm ci
 
+      # Signature et notarisation Apple, seulement si les secrets du dépôt sont posés
+      # (Settings › Secrets and variables › Actions) : APPLE_CERTIFICATE (.p12 en base64),
+      # APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY, APPLE_API_ISSUER, APPLE_API_KEY (identifiant
+      # de la clé) et APPLE_API_PRIVATE_KEY (contenu du fichier .p8). Sans eux, l'app sort non signée.
+      - name: Signature Apple (macOS)
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ] || [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "Pas de certificat Apple : installeurs non signés."
+            exit 0
+          fi
+          {
+            # Base64 sur une seule ligne (un retour à la ligne casserait $GITHUB_ENV).
+            echo "APPLE_CERTIFICATE=$(printf '%s' "$APPLE_CERTIFICATE" | tr -d '\r\n ')"
+            echo "APPLE_CERTIFICATE_PASSWORD=$APPLE_CERTIFICATE_PASSWORD"
+            echo "APPLE_SIGNING_IDENTITY=$APPLE_SIGNING_IDENTITY"
+          } >> "$GITHUB_ENV"
+          if [ -n "$APPLE_API_PRIVATE_KEY" ] && [ -n "$APPLE_API_KEY" ] && [ -n "$APPLE_API_ISSUER" ]; then
+            key_path="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY.p8"
+            printf '%s\n' "$APPLE_API_PRIVATE_KEY" > "$key_path"
+            {
+              echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
+              echo "APPLE_API_KEY=$APPLE_API_KEY"
+              echo "APPLE_API_KEY_PATH=$key_path"
+            } >> "$GITHUB_ENV"
+            echo "Signature et notarisation Apple activées."
+          else
+            echo "Signature Apple activée, sans notarisation (clé d'API absente)."
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signature Apple (facultatif, voir README) :
-          # APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
-          # APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
         with:
           # Lancé par une étiquette : celle-ci. Lancé à la main : v + la version de l'app (jamais « main »).
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
