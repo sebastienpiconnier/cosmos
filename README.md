@@ -31,7 +31,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 > **Premier lancement.** L'app n'est pas encore signée. Sur macOS, fais un clic droit sur l'app puis « Ouvrir ». Sur Windows, si SmartScreen s'affiche, clique sur « Informations complémentaires » puis « Exécuter quand même ».
 
-Cosmos est en cours de développement (version 0.1.3).
+Cosmos est en cours de développement (version 0.1.4).
 
 ## Fonctionnalités
 
@@ -48,6 +48,7 @@ Cosmos est en cours de développement (version 0.1.3).
 - **Mentions :** tape `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si tu renommes la carte, et tu peux créer la carte citée sans quitter ta phrase.
 - **Images :** dépose une image sur une carte ou sur le canevas, ou utilise le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **PDF :** dépose, colle ou importe un PDF (bouton « PDF » du canevas) : une carte **Document** naît, avec l'aperçu de sa première page, son nombre de pages, son auteur et son année quand le fichier les donne. « Lire le document » l'ouvre dans l'app, page après page. Le PDF est copié dans `medias/`.
+- **Ton profil d'auteur :** sur la page des projets, saisis une fois ton prénom, ton nom, ton nom de plume et tes coordonnées. Chaque nouveau scénario les reprend sur sa page de titre (auteur et contact), et le manuscrit exporté les porte sur sa page de garde. Ils restent sur l'appareil et se modifient à tout moment.
 - **Photos libres :** le bouton « Photos » du canevas (ou de la galerie d'une fiche) cherche des photos sur **Openverse** (images sous licence libre, sans clé), **Pixabay** ou **Unsplash** (clé gratuite, collée une fois, gardée sur l'appareil). La photo choisie devient une carte Image, avec l'auteur, le lien, la source et la licence dans sa fiche.
 - **Lien vers la fiche :** chaque carte typée a un bouton qui ouvre sa fiche dans la Bible.
 - **Sélection multiple :** Maj + glisser entoure des cartes, Ctrl/Cmd + clic en ajoute une, Ctrl/Cmd + A sélectionne tout, Échap désélectionne ; au doigt, le bouton « Sélection ». Les cartes choisies se déplacent ensemble, et une barre propose de les encadrer ou de les mettre à la corbeille.

@@ -4,6 +4,7 @@
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
 import { useEffect, useId, useRef, useState } from "react";
+import { contactLines } from "../profile";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
@@ -115,7 +116,9 @@ export function ExportMenu() {
     const cards = nodes.map((n) => n.data);
     const order = bookOrder(nodes, plan);
     const numbers = chapterNumbers(plan, order);
-    const doc = manuscriptDoc(info(), order, cards, manuscript, all.manuscript.untitled, (id) => {
+    // Le manuscrit porte les coordonnées du profil sur sa page de garde (pas la bible ni l'EPUB).
+    const contact = contactLines(useSettings.getState().profile);
+    const doc = manuscriptDoc({ ...info(), ...(format === "epub" ? {} : { contact }) }, order, cards, manuscript, all.manuscript.untitled, (id) => {
       // Page du livre (dédicace, prologue…) : un chapitre à elle seule, sous son nom.
       const page = cards.find((c) => c.id === id)?.page;
       if (isPageKind(page)) return { id: `page:${id}`, title: all.book.kinds[page] };

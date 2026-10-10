@@ -97,13 +97,25 @@ jobs:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
           releaseName: "Cosmos ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
           releaseBody: |
-            Première version d'essai de Cosmos, pour macOS (Apple Silicon et Intel), Windows et Linux.
+            Cosmos pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
 
-            Installeurs non signés pour l'instant :
-            - macOS : au premier lancement, clic droit sur Cosmos puis « Ouvrir » (ou Réglages Système › Confidentialité et sécurité › « Ouvrir quand même »).
-            - Windows : si SmartScreen s'affiche, « Informations complémentaires » puis « Exécuter quand même ».
+            **Installer**
+            - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse Cosmos dans Applications. L'app est signée et vérifiée par Apple.
+            - Windows : lance le .exe (ou le .msi). L'app n'est pas encore signée : si SmartScreen s'affiche, « Informations complémentaires » puis « Exécuter quand même ».
+            - Linux : AppImage, .deb ou .rpm.
 
             Pas de mise à jour automatique : chaque version se télécharge ici. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
+
+            ---
+
+            Cosmos for macOS (Apple Silicon and Intel), Windows and Linux.
+
+            **Install**
+            - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag Cosmos to Applications. The app is signed and verified by Apple.
+            - Windows: run the .exe (or the .msi). The app isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
+            - Linux: AppImage, .deb or .rpm.
+
+            No automatic updates: each version is downloaded here. Your projects remain folders of Markdown files, readable outside the app.
           releaseDraft: true
           prerelease: true
           args: ${{ matrix.args }}

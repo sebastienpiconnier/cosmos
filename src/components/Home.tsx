@@ -8,6 +8,8 @@ import { useCosmos } from "../store";
 import { storage, type ProjectEntry } from "../storage";
 import { PROJECT_KINDS, type ProjectKind } from "../types";
 import { Settings } from "./Settings";
+import { BrandMark } from "./BrandMark";
+import { ProfilePanel } from "./ProfilePanel";
 
 export function Home() {
   const t = useT();
@@ -49,11 +51,11 @@ export function Home() {
     <div className="home">
       <header className="topbar">
         <div className="brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19" />
-          </svg>
-          <span className="brand-name">Cosmos</span>
+          <BrandMark />
+          <span className="brand-text">
+            <span className="brand-name">Cosmos</span>
+            <span className="brand-tagline">{t.app.tagline}</span>
+          </span>
         </div>
         <div className="actions home-actions">
           <Settings project={false} />
@@ -156,6 +158,8 @@ export function Home() {
             </div>
           </form>
         </section>
+
+        <ProfilePanel />
       </main>
     </div>
   );

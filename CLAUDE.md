@@ -142,7 +142,8 @@ src/
   documents.ts          Cartes Document : titre crédible, année d'une date PDF, fiche (fonctions pures)
   pdfDocument.ts        pdf.js (legacy, chargé à la demande) : aperçu de la 1re page, métadonnées, rendu des pages de la liseuse
   imageSources.ts       Photos libres (Openverse sans clé, Pixabay, Unsplash) : requêtes (plugin HTTP de Tauri), réponses filtrées par source, crédit et licence, suivi Unsplash
-  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, nom d'auteur (appliqués avant le premier rendu)
+  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, profil d'auteur (appliqués avant le premier rendu)
+  profile.ts            Profil de l'auteur (prénom, nom, nom de plume, coordonnées) : nom signé, lignes de contact, reprise de l'ancien nom d'auteur (fonctions pures)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
     fr.ts               Textes de référence (type Messages)
@@ -153,7 +154,9 @@ src/
   components/
     Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
     TopBar.tsx          Logo et slogan, titre du projet, vues, statut, « À faire », bouton « Projets »
-    Settings.tsx        Menu Réglages : type de projet (roman/scénario), langue, apparence, nom d'auteur, service d'IA
+    Settings.tsx        Menu Réglages en colonnes (projet, appareil et photos, IA) : type de projet, langue, apparence, nom d'auteur (lu dans le profil), clés de photos, service d'IA
+    ProfilePanel.tsx    Profil de l'auteur sur la page des projets : formulaire tant qu'il est vide, puis résumé et « Modifier »
+    BrandMark.tsx       Logo (constellation), pour la barre du haut et la page des projets
     Toile.tsx           ReactFlow : double-clic / clic droit / appui long / bouton « + » / touche N = nouvelle carte, étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap, menu « Transformer en… »
     MentionNode.ts      Nœud TipTap d'une mention (insécable, porte l'identifiant de la carte citée)
@@ -315,7 +318,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Exports sans Pandoc** : le manuscrit et la bible sortent en Markdown, Word, EPUB et PDF par du code maison (`src/export/`), pour marcher aussi dans le navigateur et sur mobile. Un .docx et un .epub sont des ZIP de fichiers XML : `zip.ts` les écrit sans compression. Dans un EPUB, `mimetype` doit rester le premier fichier de l'archive.
 - **Un seul modèle pour tous les formats** : tout export part de `ExportDoc` (doc.ts). Ne pas convertir le HTML directement dans un format : ajouter le cas dans `htmlToBlocks`, les quatre formats en profitent. L'éditeur écrit `<li><p>…</p></li>` : le premier paragraphe est le texte de l'élément de liste.
 - **PDF en prose** : Courier Prime 12, marges d'un pouce, double interligne et alinéa pour le manuscrit, italique rendu par un soulignement (l'usage en Courier ; nous n'embarquons pas d'italique). La pagination se décide dans `prose.ts`, pas dans `pdf.ts`, qui n'est atteint que par `import()` dynamique.
-- **Nom d'auteur des exports** : celui de l'appareil (`settings.author`), saisi dans les Réglages ou sur la page de titre d'un scénario.
+- **Profil de l'auteur** : `settings.profile` (appareil, jamais le projet), saisi sur la page des projets. `settings.author` en est tiré (nom de plume, sinon prénom et nom) ; un nom tapé sur la page de titre d'un scénario met le profil à jour (`withAuthorName`). Un nouveau scénario reçoit auteur et contact sur sa page de titre (`firstScreenplay`), l'export du manuscrit (PDF, Word, Markdown, pas l'EPUB) porte les coordonnées sur sa page de garde (`ExportDoc.contact`). Les projets existants ne sont jamais réécrits. L'ancien réglage `author` est relu comme nom de plume (`readProfile`).
 - **Réponses de l'assistant** : une réponse remplit le champ de la fiche qui correspond à la question (`QUESTION_FIELD`) s'il est vide, sinon elle va dans `reponses` sous la clé de la question (`q:<texte>` pour une question de l'IA) ; le texte de la fiche n'est plus touché. Une question est « faite » si sa clé est dans `reponses` ou si son champ est rempli (`hasAnswer`). À l'ouverture, les réponses des anciens projets (question en gras dans le texte, réponse dessous) passent dans `reponses` (`adoptTextAnswers`), pour les questions connues dans une des langues : reformuler une question livrée casserait cette reprise.
 - **L'assistant n'écrit jamais à la place de l'auteur** : il pose la question, rien d'autre. Pas de réponse proposée, pas de texte généré.
 - **Manuscrit d'un roman** : un fichier `manuscrit/<id>.md` par scène écrite, sans en-tête (le titre reste celui de la carte, les notes de la carte restent dans `cartes/`). Une scène sans texte n'a pas de fichier. L'ordre est celui du Plan (`planOrder`). Le texte lu sur disque passe par `markdownToHtml`, donc par `sanitizeHtml`, et le nom du fichier doit être un identifiant de carte valide.
@@ -382,7 +385,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), plus un onglet « Par thème » (dix thèmes : passé, corps, voix, quotidien, émotions, colère, relations, espoirs, façon de penser, zones sombres), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée
 7. (fait) IA optionnelle : « Ranger les idées », questions sur mesure dans l'assistant personnage, alertes de cohérence. Services : Claude, OpenAI, OpenRouter, Ollama, LM Studio. Reste : clé dans le trousseau du système, cohérence étendue au manuscrit
-8. (fait) Export : manuscrit en PDF, Word, EPUB et Markdown, bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur se saisit dans les Réglages. Reste : EPUB de la bible
+8. (fait) Export : manuscrit en PDF, Word, EPUB et Markdown, bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur et les coordonnées viennent du profil (page des projets). Reste : EPUB de la bible
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
@@ -428,7 +431,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Pages hors récit** : une carte Scène avec `page` n'est ni dans le Plan ni dans un chapitre (`planScenes` = `storyScenes`, book.ts). Le manuscrit et l'export suivent `bookOrder` : pages de début, récit, pages de fin. Ne jamais lire l'ordre du manuscrit avec `planOrder` seul.
 - **Clic sous le texte** (extension `Pages`) : le curseur va à la fin du dernier paragraphe. Sinon ProseMirror le posait après lui et la frappe créait un paragraphe vide en tête du texte.
 - **Choix du modèle d'IA** : une liste déroulante dès que les modèles sont connus (chargés d'eux-mêmes pour un service local, `/api/tags` pour Ollama). Pas de `<datalist>` : le navigateur n'y propose que les modèles qui commencent comme le texte déjà saisi, donc un seul.
-- **Barre du haut** : grille en trois colonnes (`1fr auto 1fr`) pour que les vues soient au centre exact de la fenêtre, quelle que soit la largeur du titre ou des actions.
+- **Barre du haut** : grille en trois colonnes (`minmax(0, 1fr) auto minmax(max-content, 1fr)`) pour que les vues soient au centre exact de la fenêtre tant qu'il y a la place ; sinon c'est le titre qui cède, jamais les boutons de droite. Sous 960 px, les vues passent sur une seconde ligne. À l'accueil, les réglages sont dans la troisième colonne.
 - **Une carte se déplace aussi par son image** (`dragHandle: ".card-handle, .card-image"`) ; le bouton de retrait de l'image garde `nodrag`.
 - **Page du manuscrit** : la taille du texte suit la largeur disponible (`clamp(12px, 100cqw / 34, 23px)`), la page garde ses proportions.
 - **Rubriques de la Bible** : toutes affichées, même vides (on y crée une fiche), l'une sous l'autre sur une seule page ; le sommaire défile jusqu'à la rubrique (`data-group`) et suit le défilement. L'export de la bible prend les mêmes rubriques dans le même ordre (`bibleDoc(…, order)` avec `visibleSections`), et les images de chaque fiche (bloc `image` d'`ExportDoc`, octets chargés par `export/images.ts` ; le Markdown cite `medias/`). L'ordre et les rubriques décochées sont un réglage de l'appareil (`settings.bibleSections`, bibleSections.ts), pas une donnée du projet. Un type que l'ordre enregistré ignore (type ajouté plus tard) se range près de sa place par défaut (`sectionOrder`). Ouvrir une fiche d'une rubrique masquée la réaffiche.

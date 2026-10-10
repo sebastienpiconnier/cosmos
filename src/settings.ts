@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
 import { isTauri } from "./platform";
 import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
+import { authorName, cleanProfile, readProfile, withAuthorName, type AuthorProfile } from "./profile";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 
 export type ThemePref = "system" | "light" | "dark";
@@ -69,8 +70,12 @@ interface SettingsState {
   setThemePref: (pref: ThemePref) => void;
   sequencerMode: SequencerMode;
   setSequencerMode: (mode: SequencerMode) => void;
-  /** Nom d'auteur, proposé sur la page de titre des nouveaux scénarios. */
+  /** Profil de l'auteur (nom, nom de plume, coordonnées), repris par les nouveaux projets. */
+  profile: AuthorProfile;
+  setProfile: (profile: AuthorProfile) => void;
+  /** Nom signé sur les œuvres, tiré du profil (nom de plume, sinon prénom et nom). */
   author: string;
+  /** Nom tapé sur la page de titre d'un scénario : il met le profil à jour. */
   setAuthor: (author: string) => void;
   ai: AiSettings;
   setAi: (ai: AiSettings) => void;
@@ -100,7 +105,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -111,6 +116,7 @@ function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unk
 const resolve = (pref: ThemePref): Theme => (pref === "system" ? (darkQuery()?.matches ? "dark" : "light") : pref);
 
 const saved = readSaved();
+const initialProfile = readProfile(saved.profile, saved.author);
 const initialLang: Lang = isLang(saved.lang) ? saved.lang : detectLang();
 const initialPref: ThemePref =
   saved.themePref === "light" || saved.themePref === "dark" ? saved.themePref : "system";
@@ -123,8 +129,16 @@ export const useSettings = create<SettingsState>((set) => ({
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
   sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
-  author: typeof saved.author === "string" ? saved.author : "",
-  setAuthor: (author) => set({ author }),
+  profile: initialProfile,
+  setProfile: (profile) => {
+    const clean = cleanProfile(profile);
+    set({ profile: clean, author: authorName(clean) });
+  },
+  author: authorName(initialProfile),
+  setAuthor: (author) => set((s) => {
+    const profile = withAuthorName(s.profile, author);
+    return profile === s.profile ? {} : { profile, author: authorName(profile) };
+  }),
   ai: readAi(saved.ai),
   setAi: (ai) => set({ ai }),
   writing: readWriting(saved.writing),
@@ -138,13 +152,13 @@ export const useSettings = create<SettingsState>((set) => ({
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, author, ai, bibleSections, writing, photos }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, profile, ai, bibleSections, writing, photos }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, author, ai, bibleSections, writing, photos }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, profile, ai, bibleSections, writing, photos }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

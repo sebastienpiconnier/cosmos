@@ -214,9 +214,13 @@
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-@media (max-width: 720px) {
+/* Fenêtre moyenne : les vues passent sur une seconde ligne, sinon les boutons de droite débordent. */
+@media (max-width: 960px) {
   .topbar { display: flex; flex-wrap: wrap; justify-content: space-between; }
   .views { order: 3; width: 100%; justify-content: center; margin: 0; }
+}
+@media (max-width: 720px) {
+  .topbar > .actions { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; min-width: 0; }
   .brand-tagline { display: none; }
   .toile-hint { display: none; }
   .brand-project, .status, .runtime span { display: none; }

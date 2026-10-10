@@ -143,6 +143,10 @@ export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): Pros
       cover.push({ row: Math.floor(rows / 3) + titleLines.length * 2 + 2 + i * 2, segments: segments(line, Math.max(0, Math.floor((cols - lineLength(line)) / 2))) }),
     );
   }
+  // Coordonnées de l'auteur en haut à gauche, comme sur la page de garde d'un manuscrit envoyé à un éditeur.
+  (doc.contact ?? []).forEach((text, i) => {
+    if (i < Math.floor(rows / 3) - 1) cover.push({ row: i, segments: segments(wrap([{ text }], () => cols)[0] ?? [], 0) });
+  });
   pages.push({ lines: cover });
 
   // Manuscrit : double interligne. Autre document (bible) : interligne simple, une ligne vide entre les paragraphes.

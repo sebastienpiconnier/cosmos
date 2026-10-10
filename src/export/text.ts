@@ -24,6 +24,7 @@ const mdRuns = (runs: Run[]) => runs.map(mdRun).join("");
 export function toMarkdown(doc: ExportDoc): string {
   const out: string[] = [`# ${mdEscape(doc.title)}`];
   if (doc.author) out.push(mdEscape(doc.author));
+  if (doc.contact?.length) out.push(doc.contact.map(mdEscape).join("  \n"));
   for (const chapter of doc.chapters) {
     out.push(`## ${mdEscape(chapter.title)}`);
     let list: string[] = [];
@@ -109,6 +110,7 @@ export function documentXml(doc: ExportDoc): string {
   const images = docxImages(doc);
   const body: string[] = [docxPara("Title", docxRuns([{ text: doc.title }]))];
   if (doc.author) body.push(docxPara("Subtitle", docxRuns([{ text: doc.author }])));
+  for (const line of doc.contact ?? []) body.push(docxPara("Normal", docxRuns([{ text: line }])));
   for (const chapter of doc.chapters) {
     body.push(docxPara("Heading1", docxRuns([{ text: chapter.title }])));
     for (const block of chapter.blocks) {

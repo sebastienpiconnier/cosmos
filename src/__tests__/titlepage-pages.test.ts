@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
+import { EMPTY_PROFILE } from "../profile";
 import { META_FILE, SCREENPLAY_FILE, storage } from "../storage";
 import { parse } from "../screenplay/parse";
 import { serialize } from "../screenplay/serialize";
@@ -55,12 +56,12 @@ describe("champs de la page de titre", () => {
 describe("page de titre dans le projet", () => {
   beforeEach(async () => {
     localStorage.clear();
-    useSettings.setState({ lang: "fr", author: "" });
+    useSettings.setState({ lang: "fr", author: "", profile: EMPTY_PROFILE });
     useCosmos.setState({ loaded: false, screen: "home", projects: [], nodes: [], frames: [], edges: [], screenplay: null, savedScreenplay: null, paperChosen: false, lastFiles: {}, past: [], future: [] });
     await state().start();
     await state().createProject({ title: "Kerlaouen", kind: "scenario" });
   });
-  afterEach(() => useSettings.setState({ lang: "en", author: "" }));
+  afterEach(() => useSettings.setState({ lang: "en", author: "", profile: EMPTY_PROFILE }));
 
   it("nom d'auteur : enregistré, avec la mention « Écrit par » posée la première fois", async () => {
     state().setTitlePageField("author", "Inès Morvan");

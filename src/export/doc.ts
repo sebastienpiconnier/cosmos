@@ -37,6 +37,8 @@ export interface ExportDoc {
   title: string;
   /** Vide si l'auteur n'a pas donné son nom. */
   author: string;
+  /** Coordonnées de l'auteur, une ligne chacune (page de garde d'un manuscrit). Facultatif. */
+  contact?: string[];
   /** Langue du texte (balise BCP 47), pour les formats qui la déclarent. */
   lang: string;
   chapters: Chapter[];
@@ -143,6 +145,7 @@ export const runsText = (runs: Run[]) => runs.map((r) => r.text).join("");
 export interface DocInfo {
   title: string;
   author: string;
+  contact?: string[];
   lang: string;
 }
 

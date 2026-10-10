@@ -2,6 +2,7 @@
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
 import { renamedZone } from "./research";
+import { authorName, contactLines } from "./profile";
 import type { TrashedCard } from "./trash";
 import { type Edge, type Node } from "@xyflow/react";
 import { nanoid } from "nanoid";
@@ -114,13 +115,19 @@ export function sceneCards(nodes: CardNode[]): SceneCard[] {
  */
 export const planScenes = (nodes: CardNode[]): string[] => storyScenes(nodes);
 
-/** Premier scénario d'un projet : la page de titre porte aussi l'auteur connu de l'appareil. */
+/** Premier scénario d'un projet : la page de titre porte aussi l'auteur et les coordonnées du profil de l'appareil. */
 export function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
   const screenplay = initialScreenplay(title, sceneCards(nodes));
-  const author = useSettings.getState().author.trim();
-  if (!author) return screenplay;
-  let titlePage = writeTitleField(screenplay.titlePage, "credit", getT().screenplay.titlePage.creditDefault);
-  titlePage = writeTitleField(titlePage, "author", author);
+  const { profile } = useSettings.getState();
+  const author = authorName(profile);
+  const contact = contactLines(profile).join("\n");
+  if (!author && !contact) return screenplay;
+  let titlePage = screenplay.titlePage;
+  if (author) {
+    titlePage = writeTitleField(titlePage, "credit", getT().screenplay.titlePage.creditDefault);
+    titlePage = writeTitleField(titlePage, "author", author);
+  }
+  if (contact) titlePage = writeTitleField(titlePage, "contact", contact);
   return { ...screenplay, titlePage };
 }
 
